@@ -1,14 +1,21 @@
 'use client';
-import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, Settings, LogOut, ChevronRight 
+  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface SidebarProps {
+  isMobileOpen: boolean;
+  setIsMobileOpen: (value: boolean) => void;
+  isDesktopCollapsed: boolean;
+  setIsDesktopCollapsed: (value: boolean) => void;
+}
 
 const menuItems = [
-  { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
+  { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
   { name: 'Companies', icon: Building2, path: '/admin/companies' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
@@ -16,51 +23,109 @@ const menuItems = [
   { name: 'Settings', icon: Settings, path: '/admin/settings' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ 
+  isMobileOpen, setIsMobileOpen, 
+  isDesktopCollapsed, setIsDesktopCollapsed 
+}: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <div className="h-screen w-72 bg-white border-r border-gray-100 flex flex-col p-6 fixed left-0 top-0 z-40">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-2 mb-10">
-        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
-          A
-        </div>
-        <span className="font-bold text-xl text-gray-800 tracking-tight">ASBN Admin</span>
-      </div>
+    <>
+      {/* ---------------- MOBILE OVERLAY (Backdrop) ---------------- */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.path;
-          return (
-            <Link key={item.name} href={item.path}>
-              <motion.div
-                whileHover={{ x: 5 }}
-                className={`flex items-center justify-between p-3.5 rounded-xl transition-all ${
-                  isActive 
-                  ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100/50' 
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className={`font-medium ${isActive ? 'text-blue-700' : ''}`}>
+      {/* ---------------- SIDEBAR CONTAINER ---------------- */}
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out
+          ${/* Mobile Logic: Slide in/out */ ''}
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          
+          ${/* Desktop Logic: Always visible but width changes */ ''}
+          md:translate-x-0 
+          ${isDesktopCollapsed ? 'md:w-20' : 'md:w-72'}
+          w-72
+        `}
+      >
+        {/* Header: Logo & Toggle Buttons */}
+        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
+              A
+            </div>
+            {/* Show Text only if NOT collapsed on desktop OR if on Mobile */}
+            <span className={`font-bold text-xl text-gray-800 tracking-tight ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
+              ASBN Admin
+            </span>
+          </div>
+
+          {/* Close Button (Mobile Only) */}
+          <button 
+            onClick={() => setIsMobileOpen(false)} 
+            className="md:hidden p-1 text-gray-500 hover:text-red-500"
+          >
+            <X size={24} />
+          </button>
+
+          {/* Collapse Button (Desktop Only) */}
+          <button 
+            onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+            className="hidden md:flex w-6 h-6 bg-gray-50 border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-blue-600 absolute -right-3 top-7 shadow-sm"
+          >
+            {isDesktopCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        </div>
+
+        {/* Menu Items */}
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
+                <div
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
+                    ${isActive 
+                      ? 'bg-blue-50 text-blue-600' 
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    } 
+                    ${isDesktopCollapsed ? 'md:justify-center' : ''}
+                  `}
+                >
+                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
+                  
+                  <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
                     {item.name}
                   </span>
-                </div>
-                {isActive && <ChevronRight size={16} />}
-              </motion.div>
-            </Link>
-          );
-        })}
-      </nav>
 
-      {/* Logout */}
-      <button className="mt-auto flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all font-semibold">
-        <LogOut size={20} />
-        Logout
-      </button>
-    </div>
+                  {/* Desktop Tooltip when collapsed */}
+                  {isDesktopCollapsed && (
+                    <div className="hidden md:block absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
+                      {item.name}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Footer Logout */}
+        <div className="p-4 border-t border-gray-100">
+          <button className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}>
+            <LogOut size={20} className="flex-shrink-0" />
+            <span className={`font-semibold ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
