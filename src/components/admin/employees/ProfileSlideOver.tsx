@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Phone, Mail, ShieldAlert, Calendar, Edit2, Save, Trash2, Camera, Loader2 } from 'lucide-react';
 import { updateEmployeeAction, getCloudinarySignature } from '@/app/admin/employees/actions';
@@ -10,10 +10,20 @@ interface Profile {
   id: string;
   created_at: string;
   username: string;
-  full_name: string;
-  avatar_url: string;
+  full_name: string | null;
+  avatar_url: string | null;
   role: 'agent' | 'supervisor';
-  phone: string;
+  phone: string | null;
+}
+
+interface FormData {
+    id: string;
+    created_at: string;
+    username: string;
+    full_name: string;
+    avatar_url: string;
+    role: 'agent' | 'supervisor';
+    phone: string;
 }
 
 // Props Definition using the Profile type
@@ -26,10 +36,24 @@ interface ProfileProps {
 
 export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete }: ProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Profile>({ ...employee });
+  const [formData, setFormData] = useState<FormData>({ 
+      ...employee,
+      full_name: employee.full_name || '',
+      avatar_url: employee.avatar_url || '',
+      phone: employee.phone || '',
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setFormData({
+      ...employee,
+      full_name: employee.full_name || '',
+      avatar_url: employee.avatar_url || '',
+      phone: employee.phone || '',
+    });
+  }, [employee]);
 
   // --- Image Resizing & Upload Logic ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +105,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
   // Helper: Resize Image
   const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -193,7 +217,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
           <div className="text-center mb-8">
             {isEditing ? (
               <input
-                className="text-2xl font-bold text-center border-b-2 border-blue-500 outline-none w-full pb-1 mb-2"
+                className="text-2xl font-bold text-center border-b-2 border-blue-500 outline-none w-full pb-1 mb-2 text-gray-800"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               />
@@ -242,7 +266,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
                 <Phone className="text-gray-400" size={20} />
                 {isEditing ? (
                   <input
-                    className="bg-white p-1 rounded border w-full"
+                    className="bg-white p-1 rounded border w-full text-gray-800"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
@@ -264,7 +288,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
                 <ShieldAlert className="text-gray-400" size={20} />
                 {isEditing ? (
                   <select
-                    className="bg-white p-1 rounded border w-full"
+                    className="bg-white p-1 rounded border w-full text-gray-800"
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as 'agent' | 'supervisor' })}
                   >

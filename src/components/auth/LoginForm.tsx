@@ -44,9 +44,11 @@ export default function LoginForm({ role }: LoginFormProps) {
 
       router.refresh();
       
-    } catch (err: any) {
-      console.error("Login Error:", err.message);
-      setError('Invalid ID or Password. Please try again.');
+    } catch (err) {
+        if (err instanceof Error) {
+            console.error("Login Error:", err.message);
+            setError('Invalid ID or Password. Please try again.');
+        }
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,13 @@
-"use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, UserPlus, Trash2, Check, User, 
   Briefcase, Loader2, X, Edit, Clock, CalendarDays, History 
-} from "lucide-react";
-import { format } from "date-fns";
+} from 'lucide-react';
+import { format } from 'date-fns';
+import Image from 'next/image';
 
 // --- Types ---
 type Agent = {
@@ -36,57 +37,53 @@ export default function TeamManagement() {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
 
   // Form States
-  const [teamName, setTeamName] = useState("");
+  const [teamName, setTeamName] = useState('');
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
   // ---------------------------------------------------------
   // 1. DATA FETCHING
   // ---------------------------------------------------------
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     // ১. সব এজেন্ট আনো
     const { data: agentsData } = await supabase
-      .from("profiles")
-      .select("id, username, full_name, avatar_url")
-      .eq("role", "agent");
+      .from('profiles')
+      .select('id, username, full_name, avatar_url')
+      .eq('role', 'agent');
 
     // ২. শুধু আজকের এক্টিভ টিমগুলো আনো (History আলাদা পেজে দেখানো ভালো)
     const today = new Date().toISOString().split('T')[0];
     
     const { data: teamsData } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("status", "active") // শুধু রানিং টিম
-      .eq("shift_date", today) // শুধু আজকের ডেট
-      .order("created_at", { ascending: false });
+      .from('teams')
+      .select('*')
+      .eq('status', 'active') // শুধু রানিং টিম
+      .eq('shift_date', today) // শুধু আজকের ডেট
+      .order('created_at', { ascending: false });
 
-    if (agentsData) setAgents(agentsData);
-    if (teamsData) setTeams(teamsData);
+    if (agentsData) setAgents(agentsData as Agent[]);
+    if (teamsData) setTeams(teamsData as Team[]);
     
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // ---------------------------------------------------------
   // 2. AVAILABILITY LOGIC (The Brain) 🧠
   // ---------------------------------------------------------
-  // এই ফাংশনটি চেক করবে কে কে "Available" আছে।
-  // একজন এজেন্ট Available যদি সে অন্য কোনো টিমে না থাকে।
   const getAvailableAgents = () => {
-    // বর্তমানে যারা অন্য টিমে ব্যস্ত তাদের আইডি বের করা
     const busyAgentIds = teams
-      .filter(t => t.id !== editingTeamId) // এডিট করার সময় নিজের টিমের মেম্বারদের ব্যস্ত দেখাবো না
+      .filter(t => t.id !== editingTeamId)
       .flatMap(t => t.member_ids);
     
-    // যারা ব্যস্ত লিস্টে নেই, তারাই শুধু Available
     return agents.filter(agent => !busyAgentIds.includes(agent.id));
   };
 
@@ -94,35 +91,32 @@ export default function TeamManagement() {
   // 3. ACTIONS
   // ---------------------------------------------------------
 
-  // Open Create Modal
   const openCreateModal = () => {
-    setModalMode("create");
-    setTeamName("");
+    setModalMode('create');
+    setEditingTeamId(null);
+    setTeamName('');
     setSelectedAgentIds([]);
     setIsModalOpen(true);
   };
 
-  // Open Edit Modal
   const openEditModal = (team: Team) => {
-    setModalMode("edit");
+    setModalMode('edit');
     setEditingTeamId(team.id);
     setTeamName(team.team_name);
-    setSelectedAgentIds(team.member_ids); // লোড কারেন্ট মেম্বারস
+    setSelectedAgentIds(team.member_ids);
     setIsModalOpen(true);
   };
 
-  // Handle Submit (Create or Update)
   const handleSubmit = async () => {
     if (!teamName || selectedAgentIds.length === 0) {
-      alert("Please enter team name and select members.");
+      alert('Please enter team name and select members.');
       return;
     }
 
     const timestamp = new Date().toISOString();
 
-    if (modalMode === "create") {
-      // --- CREATE NEW TEAM ---
-      const { data, error } = await supabase.from("teams").insert([{
+    if (modalMode === 'create') {
+      const { data } = await supabase.from('teams').insert([{
         team_name: teamName,
         member_ids: selectedAgentIds,
         status: 'active',
@@ -134,19 +128,17 @@ export default function TeamManagement() {
         setTeams([data[0], ...teams]);
         setIsModalOpen(false);
       }
-    } else if (modalMode === "edit" && editingTeamId) {
-      // --- UPDATE EXISTING TEAM ---
+    } else if (modalMode === 'edit' && editingTeamId) {
       const { error } = await supabase
-        .from("teams")
+        .from('teams')
         .update({
           team_name: teamName,
           member_ids: selectedAgentIds,
-          updated_at: timestamp // সময় আপডেট হবে
+          updated_at: timestamp
         })
-        .eq("id", editingTeamId);
+        .eq('id', editingTeamId);
 
       if (!error) {
-        // UI আপডেট (Re-fetch না করে)
         setTeams(teams.map(t => 
           t.id === editingTeamId 
           ? { ...t, team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp } 
@@ -157,19 +149,15 @@ export default function TeamManagement() {
     }
   };
 
-  // Delete / Archive Team
   const handleDeleteTeam = async (id: number) => {
-    if(!confirm("Are you sure? This will remove the team from today's schedule.")) return;
+    if(!confirm('Are you sure? This will remove the team from today\'s schedule.')) return;
     
-    // ডাটাবেস থেকে ডিলিট না করে স্ট্যাটাস 'archived' করা যেতে পারে যদি সফট ডিলিট চান
-    // তবে আপাতত আমরা ডিলিট করছি যাতে আবার নতুন করে টিম বানানো যায়
-    const { error } = await supabase.from("teams").delete().eq("id", id);
+    const { error } = await supabase.from('teams').delete().eq('id', id);
     if (!error) {
       setTeams(teams.filter(t => t.id !== id));
     }
   };
 
-  // Helper
   const getAgentDetails = (id: string) => agents.find(a => a.id === id);
 
   return (
@@ -182,12 +170,11 @@ export default function TeamManagement() {
             <Briefcase className="text-blue-600" /> Daily Squad
           </h1>
           <p className="text-gray-500 mt-1 flex items-center gap-2">
-            <CalendarDays size={16}/> Today: {format(new Date(), "dd MMM yyyy")}
+            <CalendarDays size={16}/> Today: {format(new Date(), 'dd MMM yyyy')}
           </p>
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
-          {/* History Button (Future Implementation) */}
           <button className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-all" title="View History">
             <History size={20} />
           </button>
@@ -222,7 +209,6 @@ export default function TeamManagement() {
                 transition={{ delay: idx * 0.1 }}
                 className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
               >
-                {/* Top Banner with Edit Info */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-400"></div>
                 
                 <div className="flex justify-between items-start mb-6">
@@ -233,12 +219,11 @@ export default function TeamManagement() {
                      <div>
                         <h3 className="font-bold text-lg text-gray-800">{team.team_name}</h3>
                         <p className="text-xs text-gray-400 flex items-center gap-1">
-                           <Clock size={10} /> Updated: {format(new Date(team.updated_at), "h:mm a")}
+                           <Clock size={10} /> Updated: {format(new Date(team.updated_at), 'h:mm a')}
                         </p>
                      </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex gap-2">
                     <button 
                       onClick={() => openEditModal(team)}
@@ -257,7 +242,6 @@ export default function TeamManagement() {
                   </div>
                 </div>
 
-                {/* Members List */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Members</p>
@@ -271,15 +255,15 @@ export default function TeamManagement() {
                       const agent = getAgentDetails(memberId);
                       return (
                         <div key={memberId} className="flex items-center gap-3 p-2 bg-gray-50/80 rounded-xl border border-gray-50">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
+                          <div className="relative w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
                              {agent?.avatar_url ? (
-                                <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                <Image src={agent.avatar_url} alt="Avatar" fill className="object-cover" />
                              ) : (
                                 agent?.username?.slice(0,2).toUpperCase() || <User size={14}/>
                              )}
                           </div>
                           <span className="text-sm font-medium text-gray-700">
-                            {agent?.full_name || agent?.username || "Unknown Agent"}
+                            {agent?.full_name || agent?.username || 'Unknown Agent'}
                           </span>
                         </div>
                       );
@@ -306,7 +290,6 @@ export default function TeamManagement() {
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]"
             >
-              {/* Header */}
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <div>
                    <h2 className="text-xl font-bold text-gray-800">
@@ -321,7 +304,6 @@ export default function TeamManagement() {
                 </button>
               </div>
 
-              {/* Body */}
               <div className="p-6 overflow-y-auto flex-1">
                 <div className="mb-6">
                   <label className="block text-sm font-bold text-gray-700 mb-2">Team Name</label>
@@ -345,18 +327,10 @@ export default function TeamManagement() {
                      <div className="p-4 bg-yellow-50 text-yellow-600 rounded-xl text-sm">No agents in system.</div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* লজিক: আমরা Available Agents দেখাব + যারা অলরেডি এই টিমে সিলেক্টেড তাদের দেখাব।
-                         অন্য টিমের মেম্বারদের এখানে দেখাবো না (Hidden)।
-                      */}
                       {agents.map((agent) => {
                         const isSelected = selectedAgentIds.includes(agent.id);
-                        
-                        // Check availability using our helper logic
-                        // If creating: Show only available
-                        // If editing: Show available + current members of THIS team
                         const isAvailable = getAvailableAgents().find(a => a.id === agent.id);
                         
-                        // যদি সিলেক্ট করা না থাকে এবং এভেইলেবল না থাকে -> দেখাবো না
                         if (!isSelected && !isAvailable) return null;
 
                         return (
@@ -378,9 +352,9 @@ export default function TeamManagement() {
                             <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-gray-300 bg-white"}`}>
                               {isSelected ? <Check size={14} /> : <UserPlus size={14} className="text-gray-300"/>}
                             </div>
-                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
+                            <div className="relative w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
                                {agent.avatar_url ? (
-                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                  <Image src={agent.avatar_url} alt="Avatar" fill className="object-cover" />
                                ) : agent.username.slice(0,2).toUpperCase()}
                             </div>
                             <div>
@@ -397,7 +371,6 @@ export default function TeamManagement() {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
                 <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-gray-600 hover:bg-gray-200 rounded-xl font-medium">Cancel</button>
                 <button 

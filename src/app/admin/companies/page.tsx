@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, Plus, Search, Trash2, 
-  Home, Key, Layers, ArrowRight, Loader2, AlertTriangle 
+  Home, Key, Layers, ArrowRight, Loader2 
 } from 'lucide-react';
 
 // --- Types ---
@@ -66,7 +66,7 @@ export default function CompanyManagement() {
     };
 
     fetchCompanies();
-  }, []);
+  }, [supabase]);
 
   // ---------------------------------------------------------
   // 2. REACTIVE FETCH: Fetch Units whenever 'selectedCompany' changes
@@ -93,7 +93,7 @@ export default function CompanyManagement() {
     };
 
     fetchUnits();
-  }, [selectedCompany]); // এই dependency [] খুবই গুরুত্বপূর্ণ
+  }, [selectedCompany, supabase]); // এই dependency [] খুবই গুরুত্বপূর্ণ
 
   // ---------------------------------------------------------
   // Actions
