@@ -1,7 +1,7 @@
 'use client';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight 
+  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight, Contact
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,6 +16,7 @@ interface SidebarProps {
 
 const menuItems = [
   { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
+  { name: 'Employees', icon: Contact, path: '/admin/employees' },
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
   { name: 'Companies', icon: Building2, path: '/admin/companies' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },

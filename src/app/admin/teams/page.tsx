@@ -1,11 +1,12 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Users, UserPlus, Trash2, Check, Search, 
-  Shield, User, Briefcase, Loader2, X 
-} from 'lucide-react';
+  Users, UserPlus, Trash2, Check, User, 
+  Briefcase, Loader2, X, Edit, Clock, CalendarDays, History 
+} from "lucide-react";
+import { format } from "date-fns";
 
 // --- Types ---
 type Agent = {
@@ -18,7 +19,11 @@ type Agent = {
 type Team = {
   id: number;
   team_name: string;
-  member_ids: string[]; // Array of UUIDs
+  member_ids: string[];
+  status: string;
+  created_at: string;
+  updated_at: string;
+  shift_date: string;
 };
 
 export default function TeamManagement() {
@@ -29,9 +34,13 @@ export default function TeamManagement() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal & Form States
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+
+  // Form States
+  const [teamName, setTeamName] = useState("");
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
   // ---------------------------------------------------------
@@ -44,17 +53,21 @@ export default function TeamManagement() {
   const fetchData = async () => {
     setLoading(true);
     
-    // ১. সব এজেন্টদের নিয়ে আসা
+    // ১. সব এজেন্ট আনো
     const { data: agentsData } = await supabase
-      .from('profiles')
-      .select('id, username, full_name, avatar_url')
-      .eq('role', 'agent'); // শুধু এজেন্টদের দরকার
+      .from("profiles")
+      .select("id, username, full_name, avatar_url")
+      .eq("role", "agent");
 
-    // ২. সব টিম নিয়ে আসা
+    // ২. শুধু আজকের এক্টিভ টিমগুলো আনো (History আলাদা পেজে দেখানো ভালো)
+    const today = new Date().toISOString().split('T')[0];
+    
     const { data: teamsData } = await supabase
-      .from('teams')
-      .select('*')
-      .order('id', { ascending: false });
+      .from("teams")
+      .select("*")
+      .eq("status", "active") // শুধু রানিং টিম
+      .eq("shift_date", today) // শুধু আজকের ডেট
+      .order("created_at", { ascending: false });
 
     if (agentsData) setAgents(agentsData);
     if (teamsData) setTeams(teamsData);
@@ -63,101 +76,142 @@ export default function TeamManagement() {
   };
 
   // ---------------------------------------------------------
-  // 2. ACTIONS
+  // 2. AVAILABILITY LOGIC (The Brain) 🧠
   // ---------------------------------------------------------
-  
-  // Toggle Agent Selection
-  const toggleAgentSelection = (agentId: string) => {
-    if (selectedAgentIds.includes(agentId)) {
-      setSelectedAgentIds(selectedAgentIds.filter(id => id !== agentId));
-    } else {
-      setSelectedAgentIds([...selectedAgentIds, agentId]);
-    }
+  // এই ফাংশনটি চেক করবে কে কে "Available" আছে।
+  // একজন এজেন্ট Available যদি সে অন্য কোনো টিমে না থাকে।
+  const getAvailableAgents = () => {
+    // বর্তমানে যারা অন্য টিমে ব্যস্ত তাদের আইডি বের করা
+    const busyAgentIds = teams
+      .filter(t => t.id !== editingTeamId) // এডিট করার সময় নিজের টিমের মেম্বারদের ব্যস্ত দেখাবো না
+      .flatMap(t => t.member_ids);
+    
+    // যারা ব্যস্ত লিস্টে নেই, তারাই শুধু Available
+    return agents.filter(agent => !busyAgentIds.includes(agent.id));
   };
 
-  // Create Team
-  const handleCreateTeam = async () => {
-    if (!newTeamName || selectedAgentIds.length === 0) {
-      alert('Please enter a team name and select at least one member.');
+  // ---------------------------------------------------------
+  // 3. ACTIONS
+  // ---------------------------------------------------------
+
+  // Open Create Modal
+  const openCreateModal = () => {
+    setModalMode("create");
+    setTeamName("");
+    setSelectedAgentIds([]);
+    setIsModalOpen(true);
+  };
+
+  // Open Edit Modal
+  const openEditModal = (team: Team) => {
+    setModalMode("edit");
+    setEditingTeamId(team.id);
+    setTeamName(team.team_name);
+    setSelectedAgentIds(team.member_ids); // লোড কারেন্ট মেম্বারস
+    setIsModalOpen(true);
+  };
+
+  // Handle Submit (Create or Update)
+  const handleSubmit = async () => {
+    if (!teamName || selectedAgentIds.length === 0) {
+      alert("Please enter team name and select members.");
       return;
     }
 
-    // Optimistic Update
-    const tempTeam = { 
-      id: Date.now(), 
-      team_name: newTeamName, 
-      member_ids: selectedAgentIds 
-    };
-    setTeams([tempTeam, ...teams]);
-    setIsCreateOpen(false);
-    setNewTeamName('');
-    setSelectedAgentIds([]);
+    const timestamp = new Date().toISOString();
 
-    // DB Call
-    const { data, error } = await supabase.from('teams').insert([{
-      team_name: newTeamName,
-      member_ids: selectedAgentIds
-    }]).select();
+    if (modalMode === "create") {
+      // --- CREATE NEW TEAM ---
+      const { data, error } = await supabase.from("teams").insert([{
+        team_name: teamName,
+        member_ids: selectedAgentIds,
+        status: 'active',
+        shift_date: new Date().toISOString().split('T')[0],
+        updated_at: timestamp
+      }]).select();
 
-    if (error) {
-      console.error(error);
-      alert('Failed to create team');
-      fetchData(); // Revert on error
-    } else if (data) {
-      // Replace temp with real data
-      setTeams([data[0], ...teams.filter(t => t.id !== tempTeam.id)]);
+      if (data) {
+        setTeams([data[0], ...teams]);
+        setIsModalOpen(false);
+      }
+    } else if (modalMode === "edit" && editingTeamId) {
+      // --- UPDATE EXISTING TEAM ---
+      const { error } = await supabase
+        .from("teams")
+        .update({
+          team_name: teamName,
+          member_ids: selectedAgentIds,
+          updated_at: timestamp // সময় আপডেট হবে
+        })
+        .eq("id", editingTeamId);
+
+      if (!error) {
+        // UI আপডেট (Re-fetch না করে)
+        setTeams(teams.map(t => 
+          t.id === editingTeamId 
+          ? { ...t, team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp } 
+          : t
+        ));
+        setIsModalOpen(false);
+      }
     }
   };
 
-  // Delete Team
+  // Delete / Archive Team
   const handleDeleteTeam = async (id: number) => {
-    if(!confirm('Delete this team?')) return;
-
-    // Optimistic Remove
-    const prevTeams = [...teams];
-    setTeams(teams.filter(t => t.id !== id));
-
-    const { error } = await supabase.from('teams').delete().eq('id', id);
+    if(!confirm("Are you sure? This will remove the team from today's schedule.")) return;
     
-    if (error) {
-      alert('Error deleting team');
-      setTeams(prevTeams);
+    // ডাটাবেস থেকে ডিলিট না করে স্ট্যাটাস 'archived' করা যেতে পারে যদি সফট ডিলিট চান
+    // তবে আপাতত আমরা ডিলিট করছি যাতে আবার নতুন করে টিম বানানো যায়
+    const { error } = await supabase.from("teams").delete().eq("id", id);
+    if (!error) {
+      setTeams(teams.filter(t => t.id !== id));
     }
   };
 
-  // Helper to get agent details by ID
+  // Helper
   const getAgentDetails = (id: string) => agents.find(a => a.id === id);
 
   return (
-    <div className='min-h-screen pb-20'>
+    <div className="min-h-screen pb-20 p-2 md:p-6">
       
-      {/* --- Page Header --- */}
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8'>
+      {/* --- Header Section --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className='text-3xl font-bold text-gray-800 flex items-center gap-3'>
-            <Briefcase className='text-blue-600' /> Team Management
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <Briefcase className="text-blue-600" /> Daily Squad
           </h1>
-          <p className='text-gray-500 mt-1'>Create and manage cleaning crews.</p>
+          <p className="text-gray-500 mt-1 flex items-center gap-2">
+            <CalendarDays size={16}/> Today: {format(new Date(), "dd MMM yyyy")}
+          </p>
         </div>
-        <button 
-          onClick={() => setIsCreateOpen(true)}
-          className='px-6 py-3 bg-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2'
-        >
-          <UserPlus size={20} /> Create New Team
-        </button>
+        
+        <div className="flex gap-3 w-full md:w-auto">
+          {/* History Button (Future Implementation) */}
+          <button className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-all" title="View History">
+            <History size={20} />
+          </button>
+          
+          <button 
+            onClick={openCreateModal}
+            className="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+          >
+            <UserPlus size={20} /> Create Squad
+          </button>
+        </div>
       </div>
 
       {/* --- Teams Grid --- */}
       {loading ? (
-        <div className='flex justify-center mt-20'><Loader2 className='animate-spin text-blue-500' size={40}/></div>
+        <div className="flex justify-center mt-20"><Loader2 className="animate-spin text-blue-500" size={40}/></div>
       ) : teams.length === 0 ? (
-        <div className='text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed'>
-          <Users size={64} className='mx-auto text-gray-200 mb-4' />
-          <h3 className='text-xl font-bold text-gray-400'>No teams created yet</h3>
-          <p className='text-gray-400 text-sm'>Click the button above to start.</p>
+        <div className="text-center py-20 bg-white/50 rounded-3xl border border-gray-200 border-dashed">
+          <Users size={64} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-xl font-bold text-gray-500">No active teams for today</h3>
+          <p className="text-gray-400 text-sm mt-2">Start by creating a squad for the morning shift.</p>
         </div>
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence>
             {teams.map((team, idx) => (
               <motion.div
@@ -166,39 +220,66 @@ export default function TeamManagement() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: idx * 0.1 }}
-                className='bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative'
+                className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
               >
-                {/* Delete Button */}
-                <button 
-                  onClick={() => handleDeleteTeam(team.id)}
-                  className='absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100'
-                >
-                  <Trash2 size={18} />
-                </button>
-
-                <div className='flex items-center gap-4 mb-6'>
-                  <div className='w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-xl border border-blue-100'>
-                    {team.team_name.charAt(0).toUpperCase()}
+                {/* Top Banner with Edit Info */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+                
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3">
+                     <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-lg">
+                        {team.team_name.charAt(0).toUpperCase()}
+                     </div>
+                     <div>
+                        <h3 className="font-bold text-lg text-gray-800">{team.team_name}</h3>
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                           <Clock size={10} /> Updated: {format(new Date(team.updated_at), "h:mm a")}
+                        </p>
+                     </div>
                   </div>
-                  <div>
-                    <h3 className='font-bold text-lg text-gray-800'>{team.team_name}</h3>
-                    <p className='text-sm text-gray-500'>{team.member_ids?.length || 0} Members</p>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => openEditModal(team)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Edit / Adjust Members"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteTeam(team.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Disband Team"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Member Avatars */}
-                <div className='space-y-3'>
-                  <p className='text-xs font-bold text-gray-400 uppercase tracking-wider'>Team Members</p>
-                  <div className='flex flex-col gap-2'>
+                {/* Members List */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Members</p>
+                    <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                       {team.member_ids?.length || 0} On Duty
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
                     {team.member_ids && team.member_ids.map(memberId => {
                       const agent = getAgentDetails(memberId);
                       return (
-                        <div key={memberId} className='flex items-center gap-3 p-2 bg-gray-50 rounded-xl'>
-                          <div className='w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600'>
-                            {agent?.username?.slice(0,2).toUpperCase() || <User size={14}/>}
+                        <div key={memberId} className="flex items-center gap-3 p-2 bg-gray-50/80 rounded-xl border border-gray-50">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
+                             {agent?.avatar_url ? (
+                                <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                             ) : (
+                                agent?.username?.slice(0,2).toUpperCase() || <User size={14}/>
+                             )}
                           </div>
-                          <span className='text-sm font-medium text-gray-700'>
-                            {agent?.full_name || agent?.username || 'Unknown Agent'}
+                          <span className="text-sm font-medium text-gray-700">
+                            {agent?.full_name || agent?.username || "Unknown Agent"}
                           </span>
                         </div>
                       );
@@ -211,70 +292,103 @@ export default function TeamManagement() {
         </div>
       )}
 
-      {/* --- CREATE TEAM MODAL --- */}
+      {/* --- CREATE / EDIT MODAL --- */}
       <AnimatePresence>
-        {isCreateOpen && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsCreateOpen(false)}
-              className='absolute inset-0 bg-black/60 backdrop-blur-sm'
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className='bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]'
+              className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]"
             >
-              {/* Modal Header */}
-              <div className='p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50'>
-                <h2 className='text-xl font-bold text-gray-800'>Create New Team</h2>
-                <button onClick={() => setIsCreateOpen(false)} className='p-2 hover:bg-gray-200 rounded-full text-gray-500'>
+              {/* Header */}
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                   <h2 className="text-xl font-bold text-gray-800">
+                      {modalMode === 'create' ? 'Create New Squad' : 'Adjust Team Members'}
+                   </h2>
+                   <p className="text-sm text-gray-500">
+                      {modalMode === 'create' ? 'Select available agents for today.' : 'Add or remove members based on workload.'}
+                   </p>
+                </div>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500">
                   <X size={20} />
                 </button>
               </div>
 
-              {/* Modal Body */}
-              <div className='p-6 overflow-y-auto flex-1'>
-                {/* Team Name Input */}
-                <div className='mb-6'>
-                  <label className='block text-sm font-bold text-gray-700 mb-2'>Team Name</label>
+              {/* Body */}
+              <div className="p-6 overflow-y-auto flex-1">
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Team Name</label>
                   <input 
-                    autoFocus
-                    placeholder='e.g. Team Alpha'
-                    className='w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg'
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
+                    placeholder="e.g. Team Alpha"
+                    className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
                   />
                 </div>
 
-                {/* Agent Selection Grid */}
                 <div>
-                  <label className='block text-sm font-bold text-gray-700 mb-3'>Select Members</label>
+                  <div className="flex justify-between items-center mb-3">
+                     <label className="block text-sm font-bold text-gray-700">Available Agents</label>
+                     <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                        {getAvailableAgents().length} Available
+                     </span>
+                  </div>
+                  
                   {agents.length === 0 ? (
-                     <div className='p-4 bg-yellow-50 text-yellow-600 rounded-xl text-sm'>No agents found in the system. Create agents first!</div>
+                     <div className="p-4 bg-yellow-50 text-yellow-600 rounded-xl text-sm">No agents in system.</div>
                   ) : (
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* লজিক: আমরা Available Agents দেখাব + যারা অলরেডি এই টিমে সিলেক্টেড তাদের দেখাব।
+                         অন্য টিমের মেম্বারদের এখানে দেখাবো না (Hidden)।
+                      */}
                       {agents.map((agent) => {
                         const isSelected = selectedAgentIds.includes(agent.id);
+                        
+                        // Check availability using our helper logic
+                        // If creating: Show only available
+                        // If editing: Show available + current members of THIS team
+                        const isAvailable = getAvailableAgents().find(a => a.id === agent.id);
+                        
+                        // যদি সিলেক্ট করা না থাকে এবং এভেইলেবল না থাকে -> দেখাবো না
+                        if (!isSelected && !isAvailable) return null;
+
                         return (
                           <div 
                             key={agent.id}
-                            onClick={() => toggleAgentSelection(agent.id)}
+                            onClick={() => {
+                               if (isSelected) {
+                                  setSelectedAgentIds(selectedAgentIds.filter(id => id !== agent.id));
+                               } else {
+                                  setSelectedAgentIds([...selectedAgentIds, agent.id]);
+                               }
+                            }}
                             className={`p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition-all ${
                               isSelected 
-                              ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' 
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" 
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
-                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 bg-white'}`}>
-                              {isSelected && <Check size={14} />}
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-gray-300 bg-white"}`}>
+                              {isSelected ? <Check size={14} /> : <UserPlus size={14} className="text-gray-300"/>}
                             </div>
-                            <div className='w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600'>
-                              {agent.username.slice(0,2).toUpperCase()}
+                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden">
+                               {agent.avatar_url ? (
+                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                               ) : agent.username.slice(0,2).toUpperCase()}
                             </div>
-                            <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
-                              {agent.full_name || agent.username}
-                            </span>
+                            <div>
+                               <span className={`block font-medium text-sm ${isSelected ? "text-blue-700" : "text-gray-700"}`}>
+                                 {agent.full_name || agent.username}
+                               </span>
+                               {isSelected && <span className="text-[10px] text-green-600 font-bold">Assigned</span>}
+                            </div>
                           </div>
                         )
                       })}
@@ -283,15 +397,15 @@ export default function TeamManagement() {
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className='p-6 border-t border-gray-100 bg-gray-50 flex gap-3'>
-                <button onClick={() => setIsCreateOpen(false)} className='flex-1 py-3 text-gray-600 hover:bg-gray-200 rounded-xl font-medium'>Cancel</button>
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
+                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-gray-600 hover:bg-gray-200 rounded-xl font-medium">Cancel</button>
                 <button 
-                  onClick={handleCreateTeam} 
-                  disabled={!newTeamName || selectedAgentIds.length === 0}
-                  className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200'
+                  onClick={handleSubmit} 
+                  disabled={!teamName || selectedAgentIds.length === 0}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200"
                 >
-                  Create Team ({selectedAgentIds.length})
+                  {modalMode === 'create' ? 'Create Squad' : 'Update & Save'}
                 </button>
               </div>
             </motion.div>
