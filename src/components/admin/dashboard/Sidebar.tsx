@@ -1,7 +1,7 @@
 'use client';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight, Contact
+  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight, Contact, ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,6 +19,7 @@ const menuItems = [
   { name: 'Employees', icon: Contact, path: '/admin/employees' },
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
   { name: 'Companies', icon: Building2, path: '/admin/companies' },
+  { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
   { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
   { name: 'Settings', icon: Settings, path: '/admin/settings' },
