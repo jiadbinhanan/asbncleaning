@@ -29,8 +29,10 @@ export async function middleware(request: NextRequest) {
 
   // This will refresh session if expired - required for Server Components
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const user = session?.user
 
   const { pathname } = request.nextUrl
 

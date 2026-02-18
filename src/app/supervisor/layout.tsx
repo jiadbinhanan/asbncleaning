@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import SupervisorSidebar from '@/components/supervisor/dashboard/Sidebar';
 import SupervisorTopNav from '@/components/supervisor/TopNav';
+import { createClient } from '@/utils/supabase/client';
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isLoginPage = pathname === '/supervisor/login';
 
   // Mobile: Sidebar default CLOSED (false)
@@ -13,6 +15,40 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
 
   // Desktop: Sidebar default OPEN (false means NOT collapsed)
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (isLoginPage) return;
+
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push('/supervisor/login');
+        return;
+      }
+
+      // Check role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || profile.role !== 'supervisor') {
+        // Redirect to appropriate login based on their role
+        if (profile?.role === 'admin') {
+          router.push('/admin/login');
+        } else if (profile?.role === 'agent') {
+          router.push('/agent/login');
+        } else {
+          router.push('/login');
+        }
+      }
+    };
+
+    checkAuth();
+  }, [pathname, router, isLoginPage]);
 
   if (isLoginPage) {
     return <>{children}</>;
