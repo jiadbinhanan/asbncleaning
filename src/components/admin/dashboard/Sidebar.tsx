@@ -1,7 +1,7 @@
 'use client';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, Settings, LogOut, X, ChevronLeft, ChevronRight, Contact, ClipboardList
+  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,7 +22,7 @@ const menuItems = [
   { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
   { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
-  { name: 'Settings', icon: Settings, path: '/admin/settings' },
+  { name: 'Profile', icon: User, path: '/admin/profile' },
 ];
 
 export default function Sidebar({ 
