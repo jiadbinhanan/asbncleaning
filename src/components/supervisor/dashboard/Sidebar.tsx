@@ -1,7 +1,7 @@
 'use client';
-import { 
-  LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, ClipboardList
+import {
+  LayoutDashboard, Users, CalendarCheck,
+  FileText, User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,19 +15,17 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
-  { name: 'Employees', icon: Contact, path: '/admin/employees' },
-  { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
-  { name: 'Companies', icon: Building2, path: '/admin/companies' },
-  { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
-  { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
-  { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
-  { name: 'Profile', icon: User, path: '/admin/profile' },
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/supervisor/dashboard' },
+  { name: 'My Teams', icon: Users, path: '/supervisor/teams' },
+  { name: 'Task Management', icon: ClipboardList, path: '/supervisor/tasks' },
+  { name: 'Schedule', icon: CalendarCheck, path: '/supervisor/schedule' },
+  { name: 'Reports', icon: TrendingUp, path: '/supervisor/reports' },
+  { name: 'Profile', icon: User, path: '/supervisor/profile' },
 ];
 
-export default function Sidebar({ 
-  isMobileOpen, setIsMobileOpen, 
-  isDesktopCollapsed, setIsDesktopCollapsed 
+export default function SupervisorSidebar({
+  isMobileOpen, setIsMobileOpen,
+  isDesktopCollapsed, setIsDesktopCollapsed
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -51,9 +49,9 @@ export default function Sidebar({
         className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out
           ${/* Mobile Logic: Slide in/out */ ''}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          
+
           ${/* Desktop Logic: Always visible but width changes */ ''}
-          md:translate-x-0 
+          md:translate-x-0
           ${isDesktopCollapsed ? 'md:w-20' : 'md:w-72'}
           w-72
         `}
@@ -61,27 +59,27 @@ export default function Sidebar({
         {/* Header: Logo & Toggle Buttons */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
-              A
+            <div className="w-9 h-9 bg-gradient-to-br from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
+              S
             </div>
             {/* Show Text only if NOT collapsed on desktop OR if on Mobile */}
             <span className={`font-bold text-xl text-gray-800 tracking-tight ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
-              ASBN Admin
+              Supervisor
             </span>
           </div>
 
           {/* Close Button (Mobile Only) */}
-          <button 
-            onClick={() => setIsMobileOpen(false)} 
+          <button
+            onClick={() => setIsMobileOpen(false)}
             className="md:hidden p-1 text-gray-500 hover:text-red-500"
           >
             <X size={24} />
           </button>
 
           {/* Collapse Button (Desktop Only) */}
-          <button 
+          <button
             onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
-            className="hidden md:flex w-6 h-6 bg-gray-50 border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-blue-600 absolute -right-3 top-7 shadow-sm"
+            className="hidden md:flex w-6 h-6 bg-gray-50 border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-orange-600 absolute -right-3 top-7 shadow-sm"
           >
             {isDesktopCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
@@ -95,15 +93,15 @@ export default function Sidebar({
               <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
                 <div
                   className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-600' 
+                    ${isActive
+                      ? 'bg-orange-50 text-orange-600'
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                    } 
+                    }
                     ${isDesktopCollapsed ? 'md:justify-center' : ''}
                   `}
                 >
                   <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
-                  
+
                   <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
                     {item.name}
                   </span>
@@ -127,7 +125,7 @@ export default function Sidebar({
               const { createClient } = await import('@/utils/supabase/client');
               const supabase = createClient();
               await supabase.auth.signOut();
-              window.location.href = '/admin/login';
+              window.location.href = '/supervisor/login';
             }}
             className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}
           >

@@ -60,7 +60,7 @@ export default function Navbar() {
 
               <div className="flex flex-col md:flex-row justify-center items-center gap-4">
                 <Link
-                  href="/login?role=admin"
+                  href="/admin/login"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-all border border-purple-100 group w-full md:w-auto"
                 >
@@ -74,7 +74,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/login?role=supervisor"
+                  href="/supervisor/login"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 transition-all border border-orange-100 group w-full md:w-auto"
                 >
@@ -88,7 +88,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/login?role=agent"
+                  href="/agent/login"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-all border border-green-100 group w-full md:w-auto"
                 >
