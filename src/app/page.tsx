@@ -20,7 +20,7 @@ export default function Home() {
       
       {/* Simple Footer */}
       <footer className="py-8 text-center text-gray-400 text-sm bg-gray-900 border-t border-gray-800">
-        © 2026 ASBN Cleaning Services. All rights reserved.
+        © 2024 ASBN Cleaning Services. All rights reserved.
       </footer>
     </main>
   );

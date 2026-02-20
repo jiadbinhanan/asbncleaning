@@ -337,7 +337,7 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
             ASBN Cleaning Service Est. is committed to providing high-quality cleaning services delivered by trained and professional staff. Our primary goal is to achieve complete customer satisfaction by consistently maintaining the highest standards of cleanliness and service.
           </Text>
           <Text style={styles.paragraph}>
-            Guests typically expect a clean, comfortable, and well-equipped space with essential amenities and reliable service. To meet and exceed these expectations, we focus on understanding our clients\' needs and delivering consistent, dependable results.
+            Guests typically expect a clean, comfortable, and well-equipped space with essential amenities and reliable service. To meet and exceed these expectations, we focus on understanding our clients' needs and delivering consistent, dependable results.
           </Text>
           <Text style={styles.paragraph}>
             We are pleased to share our service pricing with you. For your reference, please find below the rates for our check-out cleaning, in-stay cleaning, touch-up cleaning, and deep cleaning services. We look forward to the opportunity to serve you and build a long-term professional relationship.

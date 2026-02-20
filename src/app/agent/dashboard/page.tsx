@@ -1,10 +1,10 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, CheckCircle2, DollarSign, ArrowUpRight, User } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, DollarSign, ArrowUpRight } from 'lucide-react';
 
 export default function AgentDashboardPage() {
   const stats = [
-    { label: 'Today\'s Tasks', value: '5 Units', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-100/50', change: '3 Completed' },
+    { label: "Today's Tasks", value: '5 Units', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-100/50', change: '3 Completed' },
     { label: 'Hours Worked', value: '6.5 hrs', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100/50', change: 'This Week' },
     { label: 'Tasks Completed', value: '23 Units', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100/50', change: 'This Month' },
     { label: 'Earnings', value: 'AED 850', icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-100/50', change: '+12%' },
@@ -59,7 +59,7 @@ export default function AgentDashboardPage() {
 
       {/* Today's Tasks */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Today's Schedule</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Today&apos;s Schedule</h2>
         <div className="space-y-4">
           {todaysTasks.map((task, idx) => (
             <motion.div

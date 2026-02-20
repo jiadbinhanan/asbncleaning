@@ -68,7 +68,10 @@ cloudinary.config({
                                                                                                                                           }
                                                                                                                                               
                                                                                                                                                   return { success: true };
-                                                                                                                                                    } catch (err: any) {
+                                                                                                                                                    } catch (err: unknown) {
+                                                                                                                                                      if (err instanceof Error) {
                                                                                                                                                         return { success: false, error: err.message };
-                                                                                                                                                          }
-                                                                                                                                                          }
+                                                                                                                                                      }
+                                                                                                                                                      return { success: false, error: "An unknown error occurred" };
+                                                                                                                                                    }
+                                                                                                                                                    }

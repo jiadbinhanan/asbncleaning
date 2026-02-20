@@ -1,7 +1,7 @@
 'use client';
 import {
   LayoutDashboard, Users, CalendarCheck,
-  FileText, User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp
+  User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -90,29 +90,30 @@ export default function SupervisorSidebar({
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
-              <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
-                <div
-                  className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
-                    ${isActive
-                      ? 'bg-orange-50 text-orange-600'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                    ${isDesktopCollapsed ? 'md:justify-center' : ''}
-                  `}
-                >
-                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
+              <Link
+                key={item.name}
+                href={item.path}
+                onClick={() => setIsMobileOpen(false)}
+                className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
+                  ${isActive
+                    ? 'bg-orange-50 text-orange-600'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  }
+                  ${isDesktopCollapsed ? 'md:justify-center' : ''}
+                `}
+              >
+                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
 
-                  <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
+                <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
+                  {item.name}
+                </span>
+
+                {/* Desktop Tooltip when collapsed */}
+                {isDesktopCollapsed && (
+                  <div className="hidden md:block absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
                     {item.name}
-                  </span>
-
-                  {/* Desktop Tooltip when collapsed */}
-                  {isDesktopCollapsed && (
-                    <div className="hidden md:block absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
-                      {item.name}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </Link>
             );
           })}
