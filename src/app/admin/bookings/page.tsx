@@ -67,19 +67,7 @@ export default function BookingManagement() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState<{id: number, price: string, assigned_team_id: string, checklist_template_id: string} | null>(null);
 
-  // 1. Initial Data Fetch
-  useEffect(() => {
-    fetchBookings();
-    fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = () => setActiveMenuId(null);
-    if(activeMenuId !== null) window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
-  }, [activeMenuId]);
-
-  const fetchInitialData = async () => {
+    const fetchInitialData = async () => {
     const { data: compData } = await supabase.from("companies").select("*");
     const { data: teamData } = await supabase.from("teams").select("*").eq("status", "active");
     const { data: listData } = await supabase.from("checklist_templates").select("id, title"); // Fetch Checklists
@@ -109,6 +97,19 @@ export default function BookingManagement() {
     setLoading(false);
   };
 
+
+  // 1. Initial Data Fetch
+  useEffect(() => {
+    fetchBookings();
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenuId(null);
+    if(activeMenuId !== null) window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [activeMenuId]);
+
   // 2. Load Units when Company is selected
   useEffect(() => {
     if (formData.company_id) {
@@ -121,7 +122,7 @@ export default function BookingManagement() {
       };
       fetchUnits();
     }
-  }, [formData.company_id]);
+  }, [formData.company_id, supabase]);
 
   // 3. Add Booking
   const handleAddBooking = async (e: React.FormEvent) => {

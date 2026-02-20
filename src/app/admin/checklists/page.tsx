@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ClipboardList, Plus, Trash2, Save, ChevronDown, 
-  ChevronRight, GripVertical, Loader2, X, LayoutTemplate 
+  ClipboardList, Plus, Trash2, Save, 
+  GripVertical, Loader2, X, LayoutTemplate 
 } from "lucide-react";
 
 // --- Types ---
