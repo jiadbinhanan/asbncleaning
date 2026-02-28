@@ -13,17 +13,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ASBN Cleaning Services",
+  title: "BTM Cleaning and Technical Services Co.",
   description: "Top-rated professional cleaning services in Dubai. We offer residential and commercial cleaning solutions. Book your service today!",
   openGraph: {
-    title: "ASBN Cleaning Services",
+    title: "BTM Cleaning and Technical Services Co.",
     description: "Top-rated professional cleaning services in Dubai.",
     images: [
       {
-        url: "/og_asbn.jpg",
+        url: "/og_btm.jpg",
         width: 1200,
         height: 630,
-        alt: "ASBN Cleaning Services Banner",
+        alt: "BTM Cleaning Services Banner",
       },
     ],
     type: "website",
@@ -36,12 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

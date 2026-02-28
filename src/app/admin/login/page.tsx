@@ -38,7 +38,7 @@ function AdminLoginContent() {
           <AdminLoginForm />
 
           <p className="text-center text-xs text-gray-400 mt-10">
-            Protected by Supabase Auth & Cloud Security. <br />
+            Protected by 256-bit encrypted Auth & Cloud Security. <br />
             Problem logging in? Contact System Admin.
           </p>
         </div>

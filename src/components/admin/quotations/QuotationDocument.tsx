@@ -265,7 +265,7 @@ const BackgroundGraphics = () => (
     </Svg>
     <View style={styles.watermarkContainer}>
       <View style={styles.watermarkCircle}>
-        <Text style={styles.watermarkText}>ASBN{"\n"}Cleaning</Text>
+        <Text style={styles.watermarkText}>BTM{"\n"}Cleaning</Text>
       </View>
     </View>
   </View>
@@ -318,23 +318,23 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
           
           <View style={styles.header}>
             <View style={styles.logoBox}>
-              <Image src="/Logo_asbn.jpg" style={styles.logo} /> 
+              <Image src="/logo_btm.png" style={styles.logo} /> 
               <Text style={styles.quoteBadge}>Quotation</Text>
             </View>
             <View style={styles.companyInfo}>
-              <Text style={styles.companyName}>ASBN CLEANING SERVICE EST.</Text>
+              <Text style={styles.companyName}>BTM CLEANING AND TECHNICAL SERVICE CO.</Text>
               <Text>Quote No: <Text style={styles.goldText}>{quoteNo}</Text></Text>
               <Text>Date: <Text style={styles.goldText}>{date}</Text></Text>
               <Text>Phone: +971-544-374231</Text>
-              <Text>Email: sales@asbncleaning.com</Text>
-              <Text>Web: www.asbncleaning.com</Text>
+              <Text>Email: sales@btmcleaning.com</Text>
+              <Text>Web: www.btmcleaning.com</Text>
             </View>
           </View>
 
           <Text style={styles.clientGreeting}>To: {customerName}</Text>
 
           <Text style={styles.paragraph}>
-            ASBN Cleaning Service Est. is committed to providing high-quality cleaning services delivered by trained and professional staff. Our primary goal is to achieve complete customer satisfaction by consistently maintaining the highest standards of cleanliness and service.
+            BTM Cleaning and Technical Service Co. is committed to providing high-quality cleaning services delivered by trained and professional staff. Our primary goal is to achieve complete customer satisfaction by consistently maintaining the highest standards of cleanliness and service.
           </Text>
           <Text style={styles.paragraph}>
             Guests typically expect a clean, comfortable, and well-equipped space with essential amenities and reliable service. To meet and exceed these expectations, we focus on understanding our clients' needs and delivering consistent, dependable results.
@@ -449,11 +449,11 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
             </View>
             <View style={styles.sigBlock}>
                <View style={styles.stampArea}>
-                  <Image src="/asbn_stamp.png" style={styles.stampImg} />
+                  <Image src="/stamp_btm.png" style={styles.stampImg} />
                </View>
                <View style={styles.sigLine}></View>
                <Text style={styles.sigText}>AUTHORIZED SIGNATORY</Text>
-               <Text style={styles.sigSubText}>ASBN Cleaning Service Est.</Text>
+               <Text style={styles.sigSubText}>BTM Cleaning and Technical Service Co.</Text>
             </View>
           </View>
 

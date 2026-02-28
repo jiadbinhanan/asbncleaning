@@ -14,10 +14,10 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-20">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                A
+                B
               </div>
               <span className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-teal-500">
-                ASBN Cleaning
+                B T M Cleaning
               </span>
             </Link>
             <button

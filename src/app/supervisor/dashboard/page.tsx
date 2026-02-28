@@ -1,106 +1,113 @@
-'use client';
-import { motion } from 'framer-motion';
-import { TrendingUp, Users, Clock, CheckCircle2, ArrowUpRight, UserCog } from 'lucide-react';
+"use client";
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { Loader2 } from "lucide-react";
 
-export default function SupervisorDashboardPage() {
-  const stats = [
-    { label: 'My Teams', value: '3 Teams', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100/50', change: 'Active' },
-    { label: 'Pending Tasks', value: '8 Units', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100/50', change: 'Needs Action' },
-    { label: 'Completed Today', value: '12 Units', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100/50', change: 'On Track' },
-    { label: 'Team Performance', value: '94%', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100/50', change: '+5%' },
-  ];
+// Components
+import DashboardHeader from "@/components/supervisor/dashboard/DashboardHeader";
+import OverviewCards from "@/components/supervisor/dashboard/OverviewCards";
+import TodaysWorkField from "@/components/supervisor/dashboard/TodaysWorkField";
+import TeamRadar from "@/components/supervisor/dashboard/TeamRadar";
+import ActivityFeed from "@/components/supervisor/dashboard/ActivityFeed";
+
+export default function SupervisorDashboard() {
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  
+  const [profile, setProfile] = useState<any>(null);
+  
+  // 🚨 ADVANCED FILTER STATE
+  const [filter, setFilter] = useState({
+    type: 'month', // 'month', 'date', 'range'
+    month: format(new Date(), 'yyyy-MM'),
+    singleDate: format(new Date(), 'yyyy-MM-dd'),
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd'),
+  });
+  
+  const [monthlyBookings, setMonthlyBookings] = useState<any[]>([]);
+  const [todayTeams, setTodayTeams] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // 1. Calculate Date Range based on Filter Type
+      let queryStart, queryEnd;
+      
+      if (filter.type === 'month') {
+        const year = parseInt(filter.month.split('-')[0]);
+        const monthIndex = parseInt(filter.month.split('-')[1]) - 1;
+        queryStart = format(startOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
+        queryEnd = format(endOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
+      } else if (filter.type === 'date') {
+        queryStart = filter.singleDate;
+        queryEnd = filter.singleDate;
+      } else {
+        queryStart = filter.startDate;
+        queryEnd = filter.endDate;
+      }
+
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+      // 2. 🚨 Single Parallel Fetch
+      const [profileRes, bookingsRes, teamsRes] = await Promise.all([
+        supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
+        supabase.from('bookings').select(`id, status, price, cleaning_date, cleaning_time, service_type, units(unit_number, companies(name)), teams(team_name)`).gte('cleaning_date', queryStart).lte('cleaning_date', queryEnd),
+        supabase.from('teams').select(`id, team_name, member_ids, status, bookings!bookings_assigned_team_id_fkey(id, status)`).eq('shift_date', todayStr)
+      ]);
+
+      if (profileRes.data) setProfile(profileRes.data);
+      if (bookingsRes.data) setMonthlyBookings(bookingsRes.data);
+      if (teamsRes.data) setTodayTeams(teamsRes.data);
+
+      setLoading(false);
+    };
+
+    fetchDashboardData();
+  }, [supabase, filter]); 
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+
+  // --- 📊 CALCULATIONS ---
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  
+  const revenueProcessed = monthlyBookings.filter(b => b.status === 'finalized').reduce((acc, b) => acc + (b.price || 0), 0);
+  const pendingBillingAmount = monthlyBookings.filter(b => b.status === 'completed').reduce((acc, b) => acc + (b.price || 0), 0);
+  const todayBookings = monthlyBookings.filter(b => b.cleaning_date === todayStr);
+  const pendingReviewCount = monthlyBookings.filter(b => b.status === 'completed').length;
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Supervisor Dashboard</h1>
-          <p className="text-gray-500 mt-1">Monitor your teams and manage daily operations.</p>
+    // 🚨 Added overflow-x-hidden and w-full to prevent horizontal scrolling/crashing
+    <div className="p-4 md:p-6 lg:p-8 w-full max-w-[100vw] overflow-x-hidden min-h-screen bg-[#F4F7FA] font-sans pb-24">
+      
+      {/* 1. Ultra Premium Header & Filter */}
+      <DashboardHeader 
+        profile={profile} 
+        filter={filter} 
+        setFilter={setFilter} 
+        pendingReviewCount={pendingReviewCount} // 🚨 Added this prop
+      />
+
+      <div className="mt-8 space-y-8">
+        
+        {/* 🚨 <UrgentAlerts pendingReviewCount={pendingReviewCount} /> এটা ডিলিট করে দিয়েছি */}
+
+        <OverviewCards bookings={monthlyBookings} revenue={revenueProcessed} pendingBillingAmount={pendingBillingAmount} />
+        <TodaysWorkField todayBookings={todayBookings} />
+        
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2">
+             <TeamRadar todayTeams={todayTeams} />
+          </div>
+          <div className="xl:col-span-1">
+             <ActivityFeed />
+          </div>
         </div>
-        <button className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-200 transition-all flex items-center gap-2">
-          <ArrowUpRight size={18} /> View Team Reports
-        </button>
-      </div>
-
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            key={stat.label}
-            className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <stat.icon size={24} strokeWidth={2.5} />
-              </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${stat.change.includes('+') ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                {stat.change}
-              </span>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm font-medium">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</h3>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center">
-              <UserCog size={24} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-800">Manage Teams</h3>
-              <p className="text-sm text-gray-500">Assign tasks and monitor progress</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-              <Clock size={24} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-800">Daily Schedule</h3>
-              <p className="text-sm text-gray-500">View and update team schedules</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
-              <CheckCircle2 size={24} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-800">Task Completion</h3>
-              <p className="text-sm text-gray-500">Review and approve completed work</p>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

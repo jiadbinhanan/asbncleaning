@@ -1,16 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Home, Users, CheckCircle2, AlertCircle, 
   Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList 
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 // --- Types ---
 type Booking = {
   id: number;
+  booking_ref: string | null; // Added
+  created_at: string; // Added
   unit_id: number;
   cleaning_date: string;
   cleaning_time: string;
@@ -18,14 +20,14 @@ type Booking = {
   status: string;
   price: number;
   assigned_team_id: number | null;
-  checklist_template_id: number | null; // Added
+  checklist_template_id: number | null;
   units: {
     unit_number: string;
     building_name: string;
     companies: { name: string }
   };
   teams?: { team_name: string };
-  checklist_templates?: { title: string }; // Added to show template name
+  checklist_templates?: { title: string };
 };
 
 export default function BookingManagement() {
@@ -36,7 +38,7 @@ export default function BookingManagement() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [activeTeams, setActiveTeams] = useState<any[]>([]);
-  const [checklists, setChecklists] = useState<any[]>([]); // New State
+  const [checklists, setChecklists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // UI States
@@ -59,7 +61,7 @@ export default function BookingManagement() {
     cleaning_time: "09:00",
     service_type: "Check-out Cleaning",
     assigned_team_id: "",
-    checklist_template_id: "", // New Field
+    checklist_template_id: "",
     price: ""
   });
 
@@ -67,10 +69,10 @@ export default function BookingManagement() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState<{id: number, price: string, assigned_team_id: string, checklist_template_id: string} | null>(null);
 
-    const fetchInitialData = async () => {
+  const fetchInitialData = async () => {
     const { data: compData } = await supabase.from("companies").select("*");
     const { data: teamData } = await supabase.from("teams").select("*").eq("status", "active");
-    const { data: listData } = await supabase.from("checklist_templates").select("id, title"); // Fetch Checklists
+    const { data: listData } = await supabase.from("checklist_templates").select("id, title");
     
     if (compData) setCompanies(compData);
     if (teamData) setActiveTeams(teamData);
@@ -82,7 +84,7 @@ export default function BookingManagement() {
     const { data, error } = await supabase
       .from("bookings")
       .select(`
-        *,
+        id, booking_ref, created_at, unit_id, cleaning_date, cleaning_time, service_type, status, price, assigned_team_id, checklist_template_id,
         units ( 
           unit_number,
           building_name,
@@ -92,11 +94,10 @@ export default function BookingManagement() {
         checklist_templates ( title )
       `)
       .order("cleaning_date", { ascending: false });
-
+    
     if (data) setBookings(data as any);
     setLoading(false);
   };
-
 
   // 1. Initial Data Fetch
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function BookingManagement() {
     }
   }, [formData.company_id, supabase]);
 
-  // 3. Add Booking
+  // 3. Add Booking (ID generation is now handled by Supabase trigger)
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     const { data, error } = await supabase.from("bookings").insert([{
@@ -133,7 +134,7 @@ export default function BookingManagement() {
       cleaning_time: formData.cleaning_time,
       service_type: formData.service_type,
       assigned_team_id: formData.assigned_team_id || null,
-      checklist_template_id: formData.checklist_template_id || null, // Insert Checklist ID
+      checklist_template_id: formData.checklist_template_id || null,
       price: formData.price ? parseFloat(formData.price) : 0,
       status: 'pending'
     }]).select();
@@ -141,7 +142,7 @@ export default function BookingManagement() {
     if (!error) {
       setIsAddOpen(false);
       fetchBookings();
-      setFormData({...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: ""}); 
+      setFormData({...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: ""});
     } else {
       alert("Error: " + error.message);
     }
@@ -151,17 +152,14 @@ export default function BookingManagement() {
   const handleUpdateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editData) return;
-
     const prevBookings = [...bookings];
     
-    // Update logic for UI
     setBookings(bookings.map(b => b.id === editData.id ? { 
       ...b, 
       price: parseFloat(editData.price) || 0, 
       assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
       checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
     } : b));
-    
     setIsEditOpen(false);
 
     const { error } = await supabase.from("bookings").update({
@@ -174,7 +172,7 @@ export default function BookingManagement() {
       alert("Failed to update booking");
       setBookings(prevBookings);
     } else {
-      fetchBookings(); // Refresh to get relations properly
+      fetchBookings(); 
     }
   };
 
@@ -189,7 +187,7 @@ export default function BookingManagement() {
     }
   };
 
-  // 6. Filters
+  // 6. Filters & Grouping Logic
   const filteredBookings = bookings.filter(b => {
     let match = true;
     if (filterDate && b.cleaning_date !== filterDate) match = false;
@@ -204,16 +202,29 @@ export default function BookingManagement() {
     setFilterStatus("");
   };
 
+  // 🚨 Group by Date
+  const groupedBookings = useMemo(() => {
+    const groups: Record<string, Booking[]> = {};
+    filteredBookings.forEach(b => {
+      if (!groups[b.cleaning_date]) groups[b.cleaning_date] = [];
+      groups[b.cleaning_date].push(b);
+    });
+    return groups;
+  }, [filteredBookings]);
+
+  // Sort dates descending (Newest first)
+  const sortedDates = Object.keys(groupedBookings).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
   return (
     <div className="min-h-screen pb-10">
       
-      {/* Header */}
+      {/* Header (Original Design Preserved) */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <Calendar className="text-blue-600" /> Bookings & Schedule
           </h1>
-          <p className="text-gray-500 text-sm">Manage daily cleaning operations</p>
+          <p className="text-gray-500 text-sm font-medium mt-1">B T M Cleaning And Technical Services CO.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button 
@@ -271,7 +282,7 @@ export default function BookingManagement() {
         )}
       </AnimatePresence>
 
-      {/* Bookings List */}
+      {/* Bookings List (Grouped by Date) */}
       {loading ? (
         <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
       ) : filteredBookings.length === 0 ? (
@@ -280,115 +291,133 @@ export default function BookingManagement() {
           <h3 className="text-gray-500 font-bold">No bookings found</h3>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredBookings.map((booking) => (
-            <motion.div 
-              key={booking.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-shadow relative">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${booking.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
-                  <Home size={24} />
+        <div className="space-y-8">
+          {sortedDates.map(date => {
+            // Sort by time within the date group
+            const dayBookings = groupedBookings[date].sort((a, b) => a.cleaning_time.localeCompare(b.cleaning_time));
+            
+            return (
+              <div key={date} className="space-y-4">
+                {/* Date Header using original styling format */}
+                <div className="flex items-center gap-3 pl-2">
+                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar size={18} /></div>
+                  <h2 className="text-lg font-bold text-gray-800">{format(parseISO(date), 'EEEE, dd MMM yyyy')}</h2>
+                  <div className="h-px bg-gray-200 flex-1 ml-4"></div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg">Unit {booking.units?.unit_number}</h3>
-                  <p className="text-sm text-gray-500">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
-                </div>
+
+                {dayBookings.map((booking) => (
+                  <motion.div 
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-shadow relative"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${booking.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                        <Home size={24} />
+                      </div>
+                      <div>
+                        {/* Booking Ref Badge */}
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider">
+                          {booking.booking_ref || `ID-${booking.id}`}
+                        </span>
+                        <h3 className="font-bold text-gray-800 text-lg leading-tight">Unit {booking.units?.unit_number}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-10">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time</p>
+                        <p className="text-xs font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
+                          <Clock size={12} className="text-blue-500" /> {booking.cleaning_time}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service & Checklist</p>
+                        <p className="text-sm font-semibold text-gray-900">{booking.service_type}</p>
+                        {booking.checklist_templates ? (
+                          <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
+                            <ClipboardList size={10} /> {booking.checklist_templates.title}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-orange-500 italic mt-0.5">No checklist assigned</p>
+                        )}
+                        {booking.price > 0 ? (
+                          <p className="text-xs text-green-600 font-bold bg-green-50 inline-block px-1.5 py-0.5 rounded mt-1">AED {booking.price}</p>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 font-medium italic mt-1 flex items-center gap-1">
+                            <AlertCircle size={10} /> Price not set
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Assigned Team</p>
+                        {booking.teams ? (
+                          <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800">
+                            <Users size={14} /> {booking.teams.team_name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md">
+                            <AlertCircle size={14} /> Unassigned
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-start md:items-end gap-2">
+                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {booking.status}
+                        </span>
+                        {/* Booked at Time */}
+                        <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">
+                          Booked: {format(new Date(booking.created_at), 'hh:mm a')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 3 Dot Menu */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                        <MoreVertical size={20} />
+                      </button>
+                      
+                      {activeMenuId === booking.id && (
+                        <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
+                          <button 
+                            onClick={() => {
+                              setEditData({ 
+                                id: booking.id, 
+                                price: booking.price?.toString() || "", 
+                                assigned_team_id: booking.assigned_team_id?.toString() || "",
+                                checklist_template_id: booking.checklist_template_id?.toString() || "" 
+                              });
+                              setIsEditOpen(true);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
+                            <Edit2 size={16} /> Edit Details
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
+                            <Trash2 size={16} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-
-              <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-10">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Date & Time</p>
-                  <p className="text-sm font-semibold text-gray-900 flex items-center gap-1">
-                    <Calendar size={14} className="text-blue-500" /> {booking.cleaning_date}
-                  </p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    <Clock size={12} /> {booking.cleaning_time}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service & Checklist</p>
-                  <p className="text-sm font-semibold text-gray-900">{booking.service_type}</p>
-                  
-                  {/* Checklist Badge */}
-                  {booking.checklist_templates ? (
-                    <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                      <ClipboardList size={10} /> {booking.checklist_templates.title}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-orange-500 italic mt-0.5">No checklist assigned</p>
-                  )}
-
-                  {/* Price */}
-                  {booking.price > 0 ? (
-                    <p className="text-xs text-green-600 font-bold bg-green-50 inline-block px-1.5 py-0.5 rounded mt-1">AED {booking.price}</p>
-                  ) : (
-                    <p className="text-[11px] text-gray-400 font-medium italic mt-1 flex items-center gap-1">
-                      <AlertCircle size={10} /> Price not set
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Assigned Team</p>
-                  {booking.teams ? (
-                    <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800">
-                      <Users size={14} /> {booking.teams.team_name}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md">
-                      <AlertCircle size={14} /> Unassigned
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {booking.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* 3 Dot Menu */}
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
-                <button 
-                  onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                  <MoreVertical size={20} />
-                </button>
-                
-                {activeMenuId === booking.id && (
-                  <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
-                    <button 
-                      onClick={() => {
-                        setEditData({ 
-                          id: booking.id, 
-                          price: booking.price?.toString() || "", 
-                          assigned_team_id: booking.assigned_team_id?.toString() || "",
-                          checklist_template_id: booking.checklist_template_id?.toString() || "" 
-                        });
-                        setIsEditOpen(true);
-                        setActiveMenuId(null);
-                      }}
-                      className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
-                      <Edit2 size={16} /> Edit Details
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteBooking(booking.id)}
-                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* --- ADD BOOKING MODAL --- */}
+      {/* --- ADD BOOKING MODAL (Original form preserved) --- */}
       <AnimatePresence>
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -405,9 +434,6 @@ export default function BookingManagement() {
               </div>
 
               <form onSubmit={handleAddBooking} className="p-6 space-y-5 overflow-y-auto">
-                {/* (Previous Input Fields...) */}
-                {/* ... (Client, Unit, Date, Time fields are same as before) ... */}
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
@@ -420,7 +446,7 @@ export default function BookingManagement() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
                     <select required disabled={!formData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium" onChange={(e) => setFormData({...formData, unit_id: e.target.value})}>
                       <option value="">Select Unit</option>
-                      {units.map(u => <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>)}
+                      {units.filter(u => u.company_id.toString() === formData.company_id).map(u => <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -455,7 +481,6 @@ export default function BookingManagement() {
                   )}
                 </div>
 
-                {/* NEW: Checklist Template Selection */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
                   <select 
@@ -463,7 +488,7 @@ export default function BookingManagement() {
                     onChange={(e) => setFormData({...formData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                  </select>
+                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
@@ -483,11 +508,11 @@ export default function BookingManagement() {
                 <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all">Confirm Booking</button>
               </form>
             </motion.div>
-          </div>
+           </div>
         )}
       </AnimatePresence>
 
-      {/* --- EDIT BOOKING MODAL --- */}
+      {/* --- EDIT BOOKING MODAL (Original structure preserved) --- */}
       <AnimatePresence>
         {isEditOpen && editData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -501,7 +526,8 @@ export default function BookingManagement() {
               <form onSubmit={handleUpdateBooking} className="p-5 space-y-5">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Update Price (AED)</label>
-                  <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
+                  <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" 
+                    value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign / Change Team</label>
@@ -511,7 +537,6 @@ export default function BookingManagement() {
                   </select>
                 </div>
                 
-                {/* Edit Checklist */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Checklist Template</label>
                   <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>

@@ -15,13 +15,13 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard' },
-  { name: 'My Tasks', icon: Calendar, path: '/agent/tasks' },
-  { name: 'Work History', icon: CheckCircle2, path: '/agent/history' },
-  { name: 'Time Tracking', icon: Clock, path: '/agent/time' },
-  { name: 'Earnings', icon: DollarSign, path: '/agent/earnings' },
-  { name: 'Performance', icon: TrendingUp, path: '/agent/performance' },
-  { name: 'Profile', icon: User, path: '/agent/profile' },
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/agent/dashboard', disabled: false },
+  { name: 'My Tasks', icon: Calendar, path: '#', disabled: true },
+  { name: 'Work History', icon: CheckCircle2, path: '#', disabled: true },
+  { name: 'Time Tracking', icon: Clock, path: '#', disabled: true },
+  { name: 'Earnings', icon: DollarSign, path: '#', disabled: true },
+  { name: 'Performance', icon: TrendingUp, path: '#', disabled: true },
+  { name: 'Profile', icon: User, path: '#', disabled: true },
 ];
 
 export default function AgentSidebar({
@@ -89,31 +89,52 @@ export default function AgentSidebar({
         {/* Menu Items */}
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
           {menuItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
-                <div
-                  className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
-                    ${isActive
-                      ? 'bg-green-50 text-green-600'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                    ${isDesktopCollapsed ? 'md:justify-center' : ''}
-                  `}
-                >
-                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
+            const isActive = !item.disabled && pathname === item.path;
+            
+            const MenuItemContent = (
+              <div
+                className={`flex items-center gap-4 p-3 rounded-xl transition-all group relative
+                  ${isDesktopCollapsed ? 'md:justify-center' : ''}
+                  ${isActive
+                    ? 'bg-green-50 text-green-600'
+                    : item.disabled
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 cursor-pointer'
+                  }
+                `}
+              >
+                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
 
-                  <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
-                    {item.name}
-                  </span>
-
-                  {/* Desktop Tooltip when collapsed */}
-                  {isDesktopCollapsed && (
-                    <div className="hidden md:block absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
-                      {item.name}
+                <span className={`font-medium whitespace-nowrap ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
+                  {item.name}
+                </span>
+                
+                {/* Desktop Tooltip */}
+                {isDesktopCollapsed && (
+                  <div className="hidden md:block absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
+                    {item.disabled ? 'Coming Soon' : item.name}
+                  </div>
+                )}
+                 {/* Tooltip for disabled items when NOT collapsed */}
+                 {item.disabled && !isDesktopCollapsed && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+                      Coming Soon
                     </div>
                   )}
+              </div>
+            );
+
+            if (item.disabled) {
+              return (
+                <div key={item.name}>
+                  {MenuItemContent}
                 </div>
+              );
+            }
+
+            return (
+              <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
+                {MenuItemContent}
               </Link>
             );
           })}

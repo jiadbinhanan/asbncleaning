@@ -15,7 +15,7 @@ type Company = {
 
 type Unit = {
   id: number;
-  company_id: number; // Foreign Key Added to Type
+  company_id: number;
   unit_number: string;
   building_name: string;
   layout: string;
@@ -33,6 +33,7 @@ export default function CompanyManagement() {
   // Loaders
   const [loading, setLoading] = useState(true);
   const [unitLoading, setUnitLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modals
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
@@ -57,7 +58,6 @@ export default function CompanyManagement() {
       
       if (data) {
         setCompanies(data);
-        // যদি কোম্পানি থাকে, তবে প্রথমটি সিলেক্ট করো
         if (data.length > 0) {
           setSelectedCompany(data[0]); 
         }
@@ -80,7 +80,7 @@ export default function CompanyManagement() {
         .from('units')
         .select('*')
         .eq('company_id', selectedCompany.id)
-        .order('id', { ascending: false }); // Changed from 'created_at'
+        .order('id', { ascending: false });
 
       if (error) console.error('Error fetching units:', error);
       
@@ -93,7 +93,7 @@ export default function CompanyManagement() {
     };
 
     fetchUnits();
-  }, [selectedCompany, supabase]); // এই dependency [] খুবই গুরুত্বপূর্ণ
+  }, [selectedCompany, supabase]);
 
   // ---------------------------------------------------------
   // Actions
@@ -101,15 +101,20 @@ export default function CompanyManagement() {
 
   // Add Company
   const handleAddCompany = async () => {
-    if (!newCompanyName) return;
+    if (!newCompanyName || isSaving) return;
+    setIsSaving(true);
+
     const { data, error } = await supabase.from('companies').insert([{ name: newCompanyName }]).select();
     
     if (data) {
       setCompanies([...companies, data[0]]);
-      setSelectedCompany(data[0]); // Auto select new company
+      setSelectedCompany(data[0]);
       setIsAddCompanyOpen(false);
       setNewCompanyName('');
+    } else {
+      console.error('Error adding company:', error);
     }
+    setIsSaving(false);
   };
 
   // Delete Company
@@ -123,41 +128,32 @@ export default function CompanyManagement() {
       const updatedCompanies = companies.filter(c => c.id !== id);
       setCompanies(updatedCompanies);
       
-      // Reset Selection Logic
       if (selectedCompany?.id === id) {
-        if (updatedCompanies.length > 0) setSelectedCompany(updatedCompanies[0]);
-        else {
-          setSelectedCompany(null);
-          setUnits([]);
-        }
+        setSelectedCompany(updatedCompanies.length > 0 ? updatedCompanies[0] : null);
+        if (updatedCompanies.length === 0) setUnits([]);
       }
     }
   };
 
   // Add Unit
   const handleAddUnit = async () => {
-    if (!selectedCompany || !newUnit.unit_number) return;
-    
-    const optimisticUnit = { ...newUnit, id: Date.now(), company_id: selectedCompany.id };
-    const previousUnits = [...units];
-
-    setUnits([optimisticUnit, ...units]);
-    setIsAddCompanyOpen(false);
-    setNewUnit({ unit_number: '', building_name: '', layout: '', door_code: '' });
+    if (!selectedCompany || !newUnit.unit_number || isSaving) return;
+    setIsSaving(true);
 
     const { data, error } = await supabase.from('units').insert([{
       company_id: selectedCompany.id,
       ...newUnit
     }]).select();
 
-    if (error) {
+    if (data) {
+        setUnits(prevUnits => [data[0], ...prevUnits]);
+        setIsAddUnitOpen(false);
+        setNewUnit({ unit_number: '', building_name: '', layout: '', door_code: '' });
+    } else {
       console.error('Error adding unit:', error);
       alert('Failed to add unit!');
-      setUnits(previousUnits); 
-    } else if (data) {
-        // Replace optimistic unit with the real one from the DB
-        setUnits(prevUnits => [data[0], ...prevUnits.filter(u => u.id !== optimisticUnit.id)]);
-    }
+    }    
+    setIsSaving(false);
   };
 
   // Delete Unit
@@ -172,7 +168,7 @@ export default function CompanyManagement() {
     if (error) {
       console.error('Error deleting unit:', error);
       alert('Failed to delete unit!');
-      setUnits(previousUnits); // Revert
+      setUnits(previousUnits);
     }
   };
 
@@ -181,7 +177,6 @@ export default function CompanyManagement() {
       
       {/* ---------------- LEFT COLUMN: COMPANIES LIST ---------------- */}
       <div className='w-full md:w-1/3 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden'>
-        {/* Header */}
         <div className='p-6 border-b border-gray-100 bg-gray-50/50'>
           <div className='flex justify-between items-center mb-4'>
             <h2 className='text-xl font-bold text-gray-800 flex items-center gap-2'>
@@ -204,7 +199,6 @@ export default function CompanyManagement() {
           </div>
         </div>
 
-        {/* List */}
         <div className='flex-1 overflow-y-auto p-3 space-y-2'>
           {loading ? (
             <div className='flex justify-center p-10'><Loader2 className='animate-spin text-blue-500'/></div>
@@ -224,7 +218,6 @@ export default function CompanyManagement() {
               >
                 <div className='flex-1 font-semibold truncate pr-8'>{company.name}</div>
                 
-                {/* Delete Company Button */}
                 <div className='flex items-center gap-2'>
                     {selectedCompany?.id === company.id && <ArrowRight size={16} className='opacity-80' />}
                     
@@ -250,7 +243,6 @@ export default function CompanyManagement() {
       <div className='w-full md:w-2/3 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden relative'>
         {selectedCompany ? (
           <>
-            {/* Header */}
             <div className='p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50'>
               <div>
                 <h2 className='text-2xl font-bold text-gray-800'>{selectedCompany.name}</h2>
@@ -266,7 +258,6 @@ export default function CompanyManagement() {
               </button>
             </div>
 
-            {/* Units Grid */}
             <div className='flex-1 overflow-y-auto p-6'>
               {unitLoading ? (
                 <div className='flex justify-center mt-20'><Loader2 className='animate-spin text-gray-400' size={30}/></div>
@@ -338,7 +329,7 @@ export default function CompanyManagement() {
           <div className='fixed inset-0 z-50 flex items-center justify-center px-4'>
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsAddCompanyOpen(false)}
+              onClick={() => !isSaving && setIsAddCompanyOpen(false)}
               className='absolute inset-0 bg-black/60 backdrop-blur-sm'
             />
             <motion.div 
@@ -348,14 +339,17 @@ export default function CompanyManagement() {
               <h3 className='text-xl font-bold mb-4'>Add New Client</h3>
               <input 
                 autoFocus
-                className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 mb-6'
+                className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 mb-6 text-gray-900 placeholder:text-gray-500'
                 placeholder='Client Name (e.g. Arabian Coast)'
                 value={newCompanyName}
                 onChange={(e) => setNewCompanyName(e.target.value)}
               />
               <div className='flex gap-3'>
-                <button onClick={() => setIsAddCompanyOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium'>Cancel</button>
-                <button onClick={handleAddCompany} className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700'>Save Client</button>
+                <button onClick={() => setIsAddCompanyOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
+                <button onClick={handleAddCompany} className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
+                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
+                  Save Client
+                </button>
               </div>
             </motion.div>
           </div>
@@ -368,7 +362,7 @@ export default function CompanyManagement() {
           <div className='fixed inset-0 z-50 flex items-center justify-center px-4'>
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsAddUnitOpen(false)}
+              onClick={() => !isSaving && setIsAddUnitOpen(false)}
               className='absolute inset-0 bg-black/60 backdrop-blur-sm'
             />
             <motion.div 
@@ -383,7 +377,7 @@ export default function CompanyManagement() {
                    <div className='space-y-1'>
                      <label className='text-xs font-bold text-gray-500 uppercase'>Unit No</label>
                      <input 
-                       className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500'
+                       className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500'
                        placeholder='e.g. 5411'
                        value={newUnit.unit_number}
                        onChange={(e) => setNewUnit({...newUnit, unit_number: e.target.value})}
@@ -392,7 +386,7 @@ export default function CompanyManagement() {
                    <div className='space-y-1'>
                      <label className='text-xs font-bold text-gray-500 uppercase'>Door Code</label>
                      <input 
-                       className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500'
+                       className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500'
                        placeholder='e.g. 6422'
                        value={newUnit.door_code}
                        onChange={(e) => setNewUnit({...newUnit, door_code: e.target.value})}
@@ -403,7 +397,7 @@ export default function CompanyManagement() {
                 <div className='space-y-1'>
                    <label className='text-xs font-bold text-gray-500 uppercase'>Building Name</label>
                    <input 
-                     className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500'
+                     className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500'
                      placeholder='e.g. Paramount Hotel'
                      value={newUnit.building_name}
                      onChange={(e) => setNewUnit({...newUnit, building_name: e.target.value})}
@@ -413,7 +407,7 @@ export default function CompanyManagement() {
                 <div className='space-y-1'>
                    <label className='text-xs font-bold text-gray-500 uppercase'>Layout</label>
                    <select 
-                     className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500'
+                     className='w-full p-3 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900'
                      value={newUnit.layout}
                      onChange={(e) => setNewUnit({...newUnit, layout: e.target.value})}
                    >
@@ -429,8 +423,11 @@ export default function CompanyManagement() {
               </div>
 
               <div className='flex gap-3 mt-8'>
-                <button onClick={() => setIsAddUnitOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium'>Cancel</button>
-                <button onClick={handleAddUnit} className='flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-black'>Add Unit</button>
+                <button onClick={() => setIsAddUnitOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
+                <button onClick={handleAddUnit} className='flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
+                  {isSaving && <Loader2 size={16} className="animate-spin"/>}
+                  Add Unit
+                </button>
               </div>
             </motion.div>
           </div>

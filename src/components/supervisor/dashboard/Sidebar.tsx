@@ -1,7 +1,7 @@
 'use client';
 import {
   LayoutDashboard, Users, CalendarCheck,
-  User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp
+  User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp, Zap, ListTodo, Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,10 +16,10 @@ interface SidebarProps {
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/supervisor/dashboard' },
+  { name: 'Activations', icon: Zap, path: '/supervisor/activations' },
+  { name: 'Review & Pricing', icon: ListTodo, path: '/supervisor/reviews' },
   { name: 'My Teams', icon: Users, path: '/supervisor/teams' },
-  { name: 'Task Management', icon: ClipboardList, path: '/supervisor/tasks' },
-  { name: 'Schedule', icon: CalendarCheck, path: '/supervisor/schedule' },
-  { name: 'Reports', icon: TrendingUp, path: '/supervisor/reports' },
+  { name: 'Bookings', icon: Calendar, path: '/supervisor/bookings' },
   { name: 'Profile', icon: User, path: '/supervisor/profile' },
 ];
 
@@ -47,10 +47,9 @@ export default function SupervisorSidebar({
       {/* ---------------- SIDEBAR CONTAINER ---------------- */}
       <aside
         className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out
-          ${/* Mobile Logic: Slide in/out */ ''}
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-
-          ${/* Desktop Logic: Always visible but width changes */ ''}
+          ${
+            isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }
           md:translate-x-0
           ${isDesktopCollapsed ? 'md:w-20' : 'md:w-72'}
           w-72
@@ -62,7 +61,6 @@ export default function SupervisorSidebar({
             <div className="w-9 h-9 bg-gradient-to-br from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
               S
             </div>
-            {/* Show Text only if NOT collapsed on desktop OR if on Mobile */}
             <span className={`font-bold text-xl text-gray-800 tracking-tight ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
               Supervisor
             </span>

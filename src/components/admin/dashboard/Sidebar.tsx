@@ -1,7 +1,8 @@
 'use client';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, ClipboardList
+  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, 
+  ClipboardList, FileDigit, FileCheck, Package
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,11 +17,14 @@ interface SidebarProps {
 
 const menuItems = [
   { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
-  { name: 'Employees', icon: Contact, path: '/admin/employees' },
+  { name: 'Work Records', icon: FileCheck, path: '/admin/work-records' },
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
-  { name: 'Companies', icon: Building2, path: '/admin/companies' },
-  { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
+  { name: 'Invoices', icon: FileDigit, path: '/admin/invoices' },
+  { name: 'Companies', icon: Building2, path: '/admin/companies' },
+  { name: 'Employees', icon: Contact, path: '/admin/employees' },
+  { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
+  { name: 'Equipment Setup', icon: Package, path: '/admin/equipment' },
   { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
   { name: 'Profile', icon: User, path: '/admin/profile' },
 ];
@@ -62,11 +66,11 @@ export default function Sidebar({
         <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
-              A
+              BTM
             </div>
             {/* Show Text only if NOT collapsed on desktop OR if on Mobile */}
             <span className={`font-bold text-xl text-gray-800 tracking-tight ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>
-              ASBN Admin
+            Admin
             </span>
           </div>
 

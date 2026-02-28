@@ -2,6 +2,7 @@ import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import BookingForm from "@/components/landing/BookingForm";
 import TeamLogin from "@/components/landing/TeamLogin";
+import Footer from '@/components/landing/Footer';
 
 export default function Home() {
   return (
@@ -18,10 +19,7 @@ export default function Home() {
 
       <TeamLogin />
       
-      {/* Simple Footer */}
-      <footer className="py-8 text-center text-gray-400 text-sm bg-gray-900 border-t border-gray-800">
-        © 2024 ASBN Cleaning Services. All rights reserved.
-      </footer>
+      <Footer />
     </main>
   );
 }

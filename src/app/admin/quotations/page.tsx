@@ -27,7 +27,7 @@ export default function QuotationManager() {
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const random = Math.floor(1000 + Math.random() * 9000); 
     
-    setQuoteNo(`ASBN/DXB-Q${yy}${mm}-${random}`);
+    setQuoteNo(`BTM/QUOT-Q${yy}${mm}-${random}`);
     setDate(today.toISOString().split('T')[0]);
   }, []);
 

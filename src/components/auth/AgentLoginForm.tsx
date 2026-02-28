@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Lock, User as UserIcon, Loader2, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, User as UserIcon, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AgentLoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,13 +107,27 @@ export default function AgentLoginForm() {
             <Lock size={18} />
           </div>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
+            className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
             required
           />
+          <AnimatePresence mode="wait">
+            <motion.button
+              key={showPassword ? 'eye-off' : 'eye'}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.1 }}
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 cursor-pointer"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </motion.button>
+          </AnimatePresence>
         </div>
       </div>
 
@@ -129,8 +144,7 @@ export default function AgentLoginForm() {
         ) : (
           <>
             Access Agent Panel <ArrowRight size={18} />
-          </>
-        )}
+          </>        )}
       </motion.button>
     </motion.form>
   );

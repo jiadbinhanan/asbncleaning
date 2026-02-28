@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Lock, User as UserIcon, Loader2, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, User as UserIcon, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminLoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,6 @@ export default function AdminLoginForm() {
 
       if (authError) throw authError;
 
-      // Check if user has admin role
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -46,7 +46,6 @@ export default function AdminLoginForm() {
         throw new Error('Access denied. Admin privileges required.');
       }
 
-      // Success - redirect to admin dashboard
       router.push('/admin/dashboard');
       router.refresh();
 
@@ -68,7 +67,6 @@ export default function AdminLoginForm() {
       onSubmit={handleLogin}
       className="space-y-6 w-full max-w-sm mx-auto"
     >
-      {/* Error Message */}
       {error && (
         <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -80,7 +78,6 @@ export default function AdminLoginForm() {
         </motion.div>
       )}
 
-      {/* Username Input */}
       <div className="space-y-2">
         <label className="text-sm font-semibold text-gray-700 ml-1">Admin User ID</label>
         <div className="relative group">
@@ -98,7 +95,6 @@ export default function AdminLoginForm() {
         </div>
       </div>
 
-      {/* Password Input */}
       <div className="space-y-2">
         <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
         <div className="relative group">
@@ -106,17 +102,30 @@ export default function AdminLoginForm() {
             <Lock size={18} />
           </div>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
+            className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
             required
           />
+          <AnimatePresence mode="wait">
+            <motion.button
+              key={showPassword ? 'eye-off' : 'eye'}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.2 }}
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 cursor-pointer"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </motion.button>
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Login Button */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}

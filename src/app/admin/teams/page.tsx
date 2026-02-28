@@ -114,6 +114,7 @@ export default function TeamManagement() {
   // ---------------------------------------------------------
   const openCreateModal = () => {
     setModalMode('create');
+    setEditingTeamId(null); // 🚨 This line is added to clear the previous edit ID
     setTeamName('');
     setSelectedAgentIds([]);
     setIsModalOpen(true);
