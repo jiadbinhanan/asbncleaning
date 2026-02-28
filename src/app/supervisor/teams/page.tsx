@@ -15,21 +15,14 @@ type Profile = {
   avatar_url: string;
 };
 
-type Booking = {
-  id: number;
-  cleaning_time: string;
-  service_type: string;
-  status: string;
-  units?: { unit_number: string; companies?: { name: string } };
-};
-
+// 🚨 FIXED: Removed strict Booking type and used any[] to solve Vercel Build Error
 type Team = {
   id: number;
   team_name: string;
   member_ids: string[];
   status: string;
   shift_date: string;
-  bookings?: Booking[];
+  bookings?: any[]; 
 };
 
 export default function SupervisorTeamsPage() {
@@ -43,51 +36,51 @@ export default function SupervisorTeamsPage() {
     const fetchTeamsData = async () => {
       setLoading(true);
 
-      // 1. Fetch Teams with their Assigned Bookings (1 API Call)
-      const { data: teamsData, error: teamsError } = await supabase
+      // 1. Fetch Teams with their Assigned Bookings (1 API Call - Highly Optimized)
+      const { data: teamsData, error } = await supabase
         .from('teams')
         .select(`
-          id, team_name, member_ids, status, shift_date,
+          *,
           bookings (
             id, cleaning_time, service_type, status,
             units ( unit_number, companies ( name ) )
           )
         `)
-        .order('shift_date', { ascending: false })
-        .limit(30); // limiting to recent records for performance
+        .order('shift_date', { ascending: false });
 
-      if (teamsError || !teamsData) {
-        console.error("Error fetching teams:", teamsError?.message);
+      if (error) {
+        console.error("Error fetching teams:", error);
         setLoading(false);
         return;
       }
 
-      // 2. Extract all unique member IDs from all teams
-      const allMemberIds = Array.from(new Set(teamsData.flatMap(t => t.member_ids || [])));
+      const fetchedTeams = (teamsData as any[]) || [];
 
-      // 3. Fetch Profiles for those members in Bulk (1 API Call)
+      // 2. Extract all unique member IDs to fetch profiles
+      const allMemberIds = Array.from(new Set(fetchedTeams.flatMap(t => t.member_ids || [])));
+      
       if (allMemberIds.length > 0) {
+        // 3. Fetch Profiles (2nd API Call - Optimized)
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
           .in('id', allMemberIds);
 
         if (profilesData) {
-          const pMap = profilesData.reduce((acc, profile) => {
-            acc[profile.id] = profile;
-            return acc;
-          }, {} as Record<string, Profile>);
+          const pMap: Record<string, Profile> = {};
+          profilesData.forEach(p => pMap[p.id] = p);
           setProfilesMap(pMap);
         }
       }
 
-      // 4. Group Teams (Today vs Past)
-      const todayStr = new Date().toISOString().split('T')[0];
+      // 4. Categorize Teams (Today/Active vs Past)
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
       const today: Team[] = [];
       const past: Record<string, Team[]> = {};
 
-      teamsData.forEach(team => {
-        const tDate = team.shift_date || todayStr;
+      fetchedTeams.forEach(team => {
+        const tDate = team.shift_date;
+        
         // active status or today's date goes to Today's section
         if (tDate === todayStr || team.status === 'active') {
           today.push(team);
@@ -105,142 +98,129 @@ export default function SupervisorTeamsPage() {
     fetchTeamsData();
   }, [supabase]);
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F8FAFC]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
-
-  // Sorting past dates descending
-  const sortedPastDates = Object.keys(pastTeamsGroups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen bg-[#F8FAFC] font-sans pb-24">
+    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
       
-      {/* HEADER: Blue Gradient Theme */}
-      <div className="mb-10 bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
-            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 rounded-2xl shadow-inner"><Users size={28} /></div>
-            My Teams Overview
-          </h1>
-          <p className="text-gray-500 font-medium mt-2">Monitor daily active teams, agents on duty, and their assigned locations.</p>
-        </div>
-        <div className="px-6 py-3 bg-blue-50 rounded-xl border border-blue-100 text-sm font-black text-blue-800 shadow-sm flex items-center gap-2">
-          <ShieldCheck size={18}/> {todayTeams.length} Active Teams Today
+      {/* PREMIUM HEADER */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-6 md:px-12 shadow-2xl relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+        <div className="max-w-5xl mx-auto relative z-10">
+           <p className="text-blue-400 font-black uppercase tracking-widest text-[10px] mb-1 flex items-center gap-1.5"><Sparkles size={12}/> Workforce Control</p>
+           <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+             <Users className="text-blue-500" size={32}/> Team Rosters
+           </h1>
         </div>
       </div>
 
-      <div className="space-y-12">
-
-        {/* --- SECTION 1: TODAY'S HIGHLIGHTED TEAMS --- */}
+      <div className="max-w-5xl mx-auto px-4 md:px-8 -mt-10 relative z-20 space-y-12">
+        
+        {/* --- SECTION 1: TODAY / ACTIVE TEAMS --- */}
         <div>
-          <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2 pl-2">
-            <Sparkles className="text-blue-600" size={24}/> Today's Active Teams
+          <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2 pl-2">
+            <CheckCircle2 className="text-green-600" size={20}/> Active / Today's Teams
           </h2>
           
           {todayTeams.length === 0 ? (
-            <div className="bg-white p-12 rounded-[2rem] border border-gray-100 text-center text-gray-400 shadow-sm">
-              <Users size={56} className="mx-auto mb-4 opacity-30 text-blue-500"/>
-              <p className="text-xl font-black text-gray-800 mb-1">No active teams</p>
-              <p className="text-sm">No teams have been assigned or activated for today yet.</p>
+            <div className="bg-white p-10 rounded-[2rem] border border-gray-100 text-center shadow-sm">
+               <ShieldCheck size={48} className="mx-auto text-gray-300 mb-3"/>
+               <p className="text-gray-500 font-bold">No active teams for today.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {todayTeams.map((team) => (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={team.id} 
-                  className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-6 shadow-xl shadow-blue-900/20 relative overflow-hidden"
-                >
-                  {/* Glowing BG Effects */}
-                  <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-                  
-                  <div className="relative z-10 flex justify-between items-start mb-6">
-                    <div>
-                      <span className="px-3 py-1 bg-white/20 text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/20 backdrop-blur-sm mb-2 inline-block">Live Status</span>
-                      <h3 className="text-3xl font-black text-white tracking-tight">Team {team.team_name}</h3>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {todayTeams.map(team => (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={team.id} className="bg-white rounded-[2rem] p-6 shadow-xl shadow-blue-900/5 border border-blue-50 relative overflow-hidden group">
+                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-green-400"></div>
+                   
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <h3 className="text-xl font-black text-gray-900">{team.team_name}</h3>
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 flex items-center gap-1"><Calendar size={12}/> {format(parseISO(team.shift_date), 'dd MMM yyyy')}</p>
+                     </div>
+                     <span className="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-lg border border-green-200">Active</span>
+                   </div>
 
-                  {/* Agents List (Horizontal Avatar Group) */}
-                  <div className="bg-black/20 rounded-2xl p-4 backdrop-blur-md border border-white/10 mb-6">
-                    <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-3">Agents on Duty ({team.member_ids?.length || 0})</p>
-                    <div className="flex flex-wrap gap-3">
-                      {team.member_ids?.map(id => {
-                        const profile = profilesMap[id];
-                        return (
-                          <div key={id} className="flex items-center gap-2 bg-white/10 pr-3 rounded-full border border-white/5 transition-colors hover:bg-white/20">
-                            {profile?.avatar_url ? (
-                              <img src={profile.avatar_url} alt="avatar" className="w-8 h-8 rounded-full object-cover border border-blue-300/50" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-blue-500/50 flex items-center justify-center text-white"><UserCircle size={20}/></div>
-                            )}
-                            <span className="text-sm font-bold text-white">{profile?.full_name || "Agent"}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                   {/* Members */}
+                   <div className="mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Assigned Members ({team.member_ids?.length || 0})</p>
+                     <div className="flex flex-wrap gap-2">
+                       {team.member_ids?.map(id => {
+                         const p = profilesMap[id];
+                         return (
+                           <div key={id} className="flex items-center gap-2 bg-white pr-3 p-1 rounded-full border border-gray-200 shadow-sm">
+                             <div className="w-6 h-6 rounded-full bg-blue-100 overflow-hidden flex items-center justify-center">
+                               {p?.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover"/> : <UserCircle size={16} className="text-blue-500"/>}
+                             </div>
+                             <span className="text-xs font-bold text-gray-700">{p?.full_name?.split(' ')[0] || "Unknown"}</span>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </div>
 
-                  {/* Assigned Bookings List */}
-                  <div>
-                    <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-3">Assigned Locations</p>
-                    <div className="space-y-3">
-                      {team.bookings && team.bookings.length > 0 ? (
-                        team.bookings.map(booking => (
-                          <div key={booking.id} className="bg-white/95 rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm hover:scale-[1.01] transition-transform">
-                            <div>
-                               <p className="text-sm font-black text-gray-900 flex items-center gap-1.5"><Building2 size={14} className="text-blue-500"/> {booking.units?.companies?.name}</p>
-                               <p className="text-xs font-bold text-gray-500 ml-5">Unit {booking.units?.unit_number} • {booking.service_type}</p>
-                            </div>
-                            <div className="text-right flex flex-col items-end">
-                               <span className="text-xs font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md flex items-center gap-1"><Clock size={12}/> {booking.cleaning_time}</span>
-                               {booking.status === 'completed' && <span className="text-[10px] text-green-600 font-bold mt-1 flex items-center gap-1"><CheckCircle2 size={10}/> Done</span>}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="bg-white/10 rounded-xl p-3 text-center border border-white/10 border-dashed">
-                          <p className="text-sm text-blue-200 font-medium">No units assigned yet.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                   {/* Bookings Minimal View */}
+                   <div>
+                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Assigned Works ({team.bookings?.length || 0})</p>
+                     <div className="space-y-2">
+                       {team.bookings && team.bookings.length > 0 ? (
+                         team.bookings.map(booking => {
+                           // 🚨 Safe extraction of company name array handling
+                           const companyName = Array.isArray(booking.units?.companies) 
+                             ? booking.units.companies[0]?.name 
+                             : booking.units?.companies?.name;
+
+                           return (
+                             <div key={booking.id} className="bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex items-center justify-between group-hover:bg-blue-50 transition-colors">
+                                <span className="text-xs font-bold text-gray-800 truncate pr-2 flex items-center gap-1.5">
+                                  <MapPin size={14} className="text-blue-500"/> 
+                                  {companyName || "Unknown"} <span className="text-gray-400 font-medium">| U{booking.units?.unit_number}</span>
+                                </span>
+                                <span className="text-[10px] font-black text-blue-700 bg-white px-2 py-1 rounded-lg border border-blue-200 shadow-sm shrink-0">{booking.cleaning_time}</span>
+                             </div>
+                           );
+                         })
+                       ) : (
+                         <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">No assigned work yet.</p>
+                       )}
+                     </div>
+                   </div>
                 </motion.div>
               ))}
             </div>
           )}
         </div>
 
-        {/* --- SECTION 2: PREVIOUS / ARCHIVED TEAMS --- */}
-        {sortedPastDates.length > 0 && (
-          <div className="space-y-8 pt-8 border-t-2 border-gray-200 border-dashed">
-            <h2 className="text-xl font-black text-gray-500 mb-6 pl-2">Previous Teams History</h2>
+        {/* --- SECTION 2: PAST TEAMS --- */}
+        {Object.keys(pastTeamsGroups).length > 0 && (
+          <div>
+            <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2 pl-2 border-t border-gray-200 pt-8">
+              <Clock className="text-gray-500" size={20}/> Past Rosters
+            </h2>
             
-            {sortedPastDates.map((dateStr) => (
-              <div key={dateStr} className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-600 flex items-center gap-2 bg-gray-200/60 w-fit px-4 py-1.5 rounded-lg border border-gray-300/50">
-                  <Calendar size={16}/> {format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}
-                </h3>
+            {Object.keys(pastTeamsGroups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map(dateStr => (
+              <div key={dateStr} className="mb-8 relative pl-6 md:pl-8 border-l-2 border-gray-200">
+                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-[#F4F7FA]"></div>
+                <h3 className="text-sm font-black text-gray-500 tracking-widest uppercase mb-4">{format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {pastTeamsGroups[dateStr].map(team => (
-                    <div key={team.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                       <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                         <h4 className="font-black text-gray-900 text-xl">Team {team.team_name}</h4>
-                         <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-black uppercase rounded-md">Archived</span>
+                    <div key={team.id} className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+                       <div className="flex justify-between items-center mb-3">
+                         <h4 className="font-black text-gray-800">{team.team_name}</h4>
+                         <span className="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{team.status}</span>
                        </div>
-
-                       {/* Members Minimal View */}
-                       <div className="mb-4">
-                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Members ({team.member_ids?.length || 0})</p>
-                         <div className="flex -space-x-2 overflow-hidden">
-                           {team.member_ids?.map(id => {
-                              const profile = profilesMap[id];
-                              return profile?.avatar_url ? (
-                                <img key={id} src={profile.avatar_url} alt="avatar" className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" title={profile.full_name} />
-                              ) : (
-                                <div key={id} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 ring-2 ring-white text-gray-500 text-xs font-bold" title={profile?.full_name}>
-                                  {profile?.full_name?.charAt(0) || "A"}
-                                </div>
-                              );
-                           })}
-                         </div>
+                       
+                       {/* Members Minimal */}
+                       <div className="mb-4 flex flex-wrap gap-1">
+                         {team.member_ids?.map(id => {
+                           const p = profilesMap[id];
+                           return (
+                             <span key={id} className="text-[10px] font-bold text-gray-600 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">
+                               {p?.full_name?.split(' ')[0] || "U"}
+                             </span>
+                           )
+                         })}
                        </div>
 
                        {/* Bookings Minimal View */}
@@ -248,12 +228,21 @@ export default function SupervisorTeamsPage() {
                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Assigned Works</p>
                          <div className="space-y-2">
                            {team.bookings && team.bookings.length > 0 ? (
-                             team.bookings.map(booking => (
-                               <div key={booking.id} className="bg-gray-50 rounded-lg p-2.5 border border-gray-100 flex items-center justify-between">
-                                  <span className="text-xs font-bold text-gray-700 truncate pr-2"><MapPin size={12} className="inline text-gray-400 mr-1"/>{booking.units?.companies?.name} - U{booking.units?.unit_number}</span>
-                                  <span className="text-[10px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded border border-gray-200 shrink-0">{booking.cleaning_time}</span>
-                               </div>
-                             ))
+                             team.bookings.map(booking => {
+                               const companyName = Array.isArray(booking.units?.companies) 
+                                 ? booking.units.companies[0]?.name 
+                                 : booking.units?.companies?.name;
+
+                               return (
+                                 <div key={booking.id} className="bg-gray-50 rounded-lg p-2.5 border border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-bold text-gray-700 truncate pr-2 flex items-center gap-1">
+                                      <MapPin size={10} className="text-gray-400"/>
+                                      {companyName} - U{booking.units?.unit_number}
+                                    </span>
+                                    <span className="text-[9px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded border border-gray-200 shrink-0">{booking.cleaning_time}</span>
+                                 </div>
+                               );
+                             })
                            ) : (
                              <p className="text-xs text-gray-400 italic">No assigned work.</p>
                            )}
