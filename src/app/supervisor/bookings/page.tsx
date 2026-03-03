@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Building2, CheckCircle2, 
-  Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Sparkles, AlertCircle
+  Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Sparkles, Users
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -23,7 +23,7 @@ type Booking = {
     building_name: string;
     companies: { id: number, name: string }
   };
-  teams?: { team_name: string };
+  teams?: { id: number, team_name: string }; // 🚨 UPDATED: Added team id
   checklist_templates?: { title: string };
 };
 
@@ -35,14 +35,15 @@ export default function SupervisorBookings() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [checklists, setChecklists] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]); // 🚨 NEW: Team state
   const [loading, setLoading] = useState(true);
-  
+
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  
-  // Form State (No Team Assignment Field)
+
+  // Form State (🚨 UPDATED: Added team_id)
   const [formData, setFormData] = useState({
     id: null as number | null,
     company_id: "",
@@ -51,29 +52,32 @@ export default function SupervisorBookings() {
     cleaning_time: "",
     service_type: "Check-out Cleaning",
     price: "",
-    checklist_template_id: ""
+    checklist_template_id: "",
+    team_id: "" // 🚨 NEW
   });
 
   // 1. OPTIMIZED FETCH: Load everything in parallel
   const fetchData = async () => {
     setLoading(true);
-    
-    const [bookingsRes, companiesRes, unitsRes, checklistsRes] = await Promise.all([
+
+    const [bookingsRes, companiesRes, unitsRes, checklistsRes, teamsRes] = await Promise.all([
       supabase.from('bookings').select(`
         id, unit_id, cleaning_date, cleaning_time, service_type, status, price, checklist_template_id,
         units ( unit_number, building_name, companies ( id, name ) ),
-        teams ( team_name ),
+        teams ( id, team_name ),
         checklist_templates ( title )
       `).order('cleaning_date', { ascending: false }).order('cleaning_time', { ascending: true }),
       supabase.from('companies').select('id, name').order('name'),
       supabase.from('units').select('id, company_id, unit_number, building_name'),
-      supabase.from('checklist_templates').select('id, title')
+      supabase.from('checklist_templates').select('id, title'),
+      supabase.from('teams').select('id, team_name').eq('status', 'active') // 🚨 NEW: Fetch active teams
     ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data as any);
     if (companiesRes.data) setCompanies(companiesRes.data);
     if (unitsRes.data) setUnits(unitsRes.data);
     if (checklistsRes.data) setChecklists(checklistsRes.data);
+    if (teamsRes.data) setTeams(teamsRes.data);
     
     setLoading(false);
   };
@@ -87,7 +91,7 @@ export default function SupervisorBookings() {
   const openNewModal = () => {
     setFormData({
       id: null, company_id: "", unit_id: "", cleaning_date: "", cleaning_time: "",
-      service_type: "Check-out Cleaning", price: "", checklist_template_id: ""
+      service_type: "Check-out Cleaning", price: "", checklist_template_id: "", team_id: ""
     });
     setEditMode(false);
     setIsModalOpen(true);
@@ -103,7 +107,8 @@ export default function SupervisorBookings() {
       cleaning_time: booking.cleaning_time,
       service_type: booking.service_type,
       price: booking.price.toString(),
-      checklist_template_id: booking.checklist_template_id?.toString() || ""
+      checklist_template_id: booking.checklist_template_id?.toString() || "",
+      team_id: booking.teams?.id?.toString() || "" // 🚨 Extract team ID
     });
     setEditMode(true);
     setIsModalOpen(true);
@@ -120,7 +125,8 @@ export default function SupervisorBookings() {
       cleaning_time: formData.cleaning_time,
       service_type: formData.service_type,
       price: formData.price ? parseFloat(formData.price) : 0,
-      checklist_template_id: formData.checklist_template_id ? parseInt(formData.checklist_template_id) : null
+      checklist_template_id: formData.checklist_template_id ? parseInt(formData.checklist_template_id) : null,
+      assigned_team_id: formData.team_id ? parseInt(formData.team_id) : null // 🚨 NEW: Save team ID to DB
     };
 
     if (editMode && formData.id) {
@@ -171,7 +177,7 @@ export default function SupervisorBookings() {
             <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm"><Calendar size={28} /></div>
             Booking Records
           </h1>
-          <p className="text-blue-100 font-medium mt-2">Add and manage client booking requests. (Team assignment restricted)</p>
+          <p className="text-blue-100 font-medium mt-2">Add, manage, and assign teams to client booking requests.</p>
         </div>
         
         <button onClick={openNewModal} className="relative z-10 px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 hover:shadow-lg rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95 shadow-sm">
@@ -242,27 +248,24 @@ export default function SupervisorBookings() {
         )}
       </div>
 
-      {/* --- FORM MODAL (No Team Assignment) --- */}
+      {/* --- FORM MODAL (🚨 UPDATED: With Team Assignment) --- */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl custom-scrollbar relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"/>
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative z-10 w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               
-              <div className="sticky top-0 bg-white/90 backdrop-blur-md px-8 py-6 border-b border-gray-100 flex justify-between items-center z-10">
+              <div className="p-6 md:p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center shrink-0">
                 <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
                   <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><ClipboardList size={20}/></div>
                   {editMode ? "Edit Booking Record" : "New Booking Record"}
                 </h2>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"><X size={20}/></button>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-600 rounded-full transition-colors shadow-sm"><X size={20}/></button>
               </div>
 
-              <form onSubmit={handleSave} className="p-8 space-y-6">
-                
-                {/* Information Notice */}
-                <div className="bg-blue-50 border border-blue-100 text-blue-800 text-xs font-bold p-4 rounded-xl flex items-center gap-3">
-                  <AlertCircle size={20} className="shrink-0"/>
-                  <p>As a supervisor, you can record bookings but <span className="underline">team assignment is restricted</span>. It can be done during Morning Activations or by an Admin.</p>
-                </div>
+              <form onSubmit={handleSave} className="p-6 md:p-8 overflow-y-auto custom-scrollbar space-y-6">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Company */}
@@ -313,6 +316,15 @@ export default function SupervisorBookings() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Estimated Price (AED)</label>
                     <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Optional" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900" />
                   </div>
+                </div>
+
+                {/* 🚨 NEW: Team Assignment */}
+                <div className="pt-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Users size={14}/> Assign Team</label>
+                  <select name="team_id" value={formData.team_id} onChange={handleChange} className="w-full p-4 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-black text-blue-900 transition-all cursor-pointer">
+                    <option value="">Unassigned (Pending)</option>
+                    {teams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
+                  </select>
                 </div>
 
                 {/* Checklist Template */}

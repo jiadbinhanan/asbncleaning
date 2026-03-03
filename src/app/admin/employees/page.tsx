@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { createEmployeeAction, deleteEmployeeAction } from './actions';
+import { createEmployeeAction, deleteEmployeeAction, updateEmployeeCredentialsAction } from './actions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Plus, Search, Loader2 } from 'lucide-react';
+import { User, Plus, Search, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
 import ProfileSlideOver from '@/components/admin/employees/ProfileSlideOver';
 import Image from 'next/image';
 
@@ -31,6 +31,13 @@ export default function EmployeeManagement() {
   // Form State (New Employee)
   const [newEmp, setNewEmp] = useState({ fullName: '', username: '', password: '', phone: '', role: 'agent' as 'agent' | 'supervisor' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- New States for Credentials Update ---
+  const [isCredsOpen, setIsCredsOpen] = useState(false);
+  const [credEmp, setCredEmp] = useState<Profile | null>(null);
+  const [credsForm, setCredsForm] = useState({ username: '', password: '' });
+  const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Fetch Data using useCallback
   const fetchEmployees = useCallback(async () => {
@@ -78,6 +85,24 @@ export default function EmployeeManagement() {
 
     await deleteEmployeeAction(id);
   };
+  
+  // --- Handler for Credentials Update ---
+  const handleUpdateCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!credEmp) return;
+    setIsUpdatingCreds(true);
+
+    const res = await updateEmployeeCredentialsAction(credEmp.id, credsForm.username, credsForm.password);
+    
+    if (res?.error) {
+      alert("Error: " + res.error);
+    } else {
+      alert("Credentials updated successfully!");
+      setIsCredsOpen(false);
+      fetchEmployees(); // রিফ্রেশ ডেটা
+    }
+    setIsUpdatingCreds(false);
+  };
 
   const filteredEmployees = employees.filter(
     (e) =>
@@ -124,7 +149,7 @@ export default function EmployeeManagement() {
               key={emp.id}
               whileHover={{ y: -5 }}
               onClick={() => setSelectedEmp(emp)}
-              className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg cursor-pointer transition-all flex items-center gap-4"
+              className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg cursor-pointer transition-all flex items-center gap-4 relative group"
             >
               <div
                 className={`relative w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden border-2 ${emp.role === 'supervisor' ? 'border-orange-100 bg-orange-50 text-orange-600' : 'border-blue-100 bg-blue-50 text-blue-600'}`}>
@@ -141,6 +166,20 @@ export default function EmployeeManagement() {
                   className={`text-xs px-2 py-0.5 rounded-md mt-1 inline-block capitalize ${emp.role === 'supervisor' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
                   {emp.role}
                 </span>
+              </div>
+              <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCredEmp(emp);
+                    setCredsForm({ username: emp.username, password: '' }); // পাসওয়ার্ড ব্ল্যাংক থাকবে
+                    setIsCredsOpen(true);
+                  }}
+                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                  title="Change User ID & Password"
+                >
+                  <KeyRound size={18} />
+                </button>
               </div>
             </motion.div>
           ))}
@@ -238,6 +277,92 @@ export default function EmployeeManagement() {
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" /> : 'Create Account'}
                 </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      {/* --- CHANGE CREDENTIALS MODAL --- */}
+      <AnimatePresence>
+        {isCredsOpen && credEmp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCredsOpen(false)}
+              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6 md:p-8"
+            >
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Update Credentials</h2>
+              <p className="text-sm font-bold text-gray-500 mb-6">
+                Change User ID or Password for <span className="text-blue-600">{credEmp.full_name}</span>
+              </p>
+
+              <form onSubmit={handleUpdateCredentials} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">New User ID (Username)</label>
+                  <input
+                    type="text"
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold"
+                    placeholder="Leave blank to keep current"
+                    value={credsForm.username}
+                    onChange={(e) => setCredsForm({ ...credsForm, username: e.target.value })}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">This will change their login ID.</p>
+                </div>
+                <div className="relative">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">New Password</label>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="w-full p-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold"
+                    placeholder="Leave blank to keep current"
+                    value={credsForm.password}
+                    onChange={(e) => setCredsForm({ ...credsForm, password: e.target.value })}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 mt-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={showPassword ? 'eye-off' : 'eye'}
+                        initial={{ opacity: 0, rotate: -45, scale: 0.8 }}
+                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                        exit={{ opacity: 0, rotate: 45, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
+                      </motion.div>
+                    </AnimatePresence>
+                  </button>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setIsCredsOpen(false)}
+                    className="flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium disabled:opacity-50"
+                    disabled={isUpdatingCreds}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={isUpdatingCreds}
+                  >
+                    {isUpdatingCreds && <Loader2 size={16} className="animate-spin" />}
+                    Update
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

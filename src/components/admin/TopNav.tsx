@@ -1,26 +1,50 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { Search, Bell, UserCircle, Menu } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 interface TopNavProps {
   onMenuClick: () => void;
 }
 
 export default function TopNav({ onMenuClick }: TopNavProps) {
+  const supabase = createClient();
+  const [profile, setProfile] = useState<{ full_name: string | null, avatar_url: string | null } | null>(null);
+
+  // Fetch Logged-in Admin Profile Data
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+          
+        if (data) setProfile(data);
+      }
+    };
+    
+    fetchAdminProfile();
+  }, [supabase]);
+
   return (
-    <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm gap-2">
       
       {/* Left Side: Mobile Menu Button & Search */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 flex-1">
         {/* Hamburger Menu (Mobile Only) */}
         <button 
           onClick={onMenuClick}
-          className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg shrink-0"
         >
           <Menu size={24} />
         </button>
 
-        {/* Search Bar (Hidden on small mobile) */}
-        <div className="relative w-full max-w-xs hidden sm:block">
+        {/* Search Bar (Now adaptive for both mobile and desktop) */}
+        <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
@@ -31,18 +55,22 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
       </div>
 
       {/* Right Side Actions */}
-      <div className="flex items-center gap-3">
-        <button className="p-2 bg-white border border-gray-100 rounded-xl text-gray-500 hover:text-blue-600 relative">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        <button className="p-2 bg-white border border-gray-100 rounded-xl text-gray-500 hover:text-blue-600 relative shrink-0">
           <Bell size={20} />
           <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
         </button>
 
         <div className="flex items-center gap-2 pl-1 cursor-pointer">
-          <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 border border-blue-100">
-            <UserCircle size={24} />
+          <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 border border-blue-100 overflow-hidden shrink-0">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Admin Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle size={24} />
+            )}
           </div>
           <div className="hidden md:block text-sm">
-             <p className="font-bold text-gray-800">Admin</p>
+             <p className="font-bold text-gray-800">{profile?.full_name || 'Admin'}</p>
           </div>
         </div>
       </div>

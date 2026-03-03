@@ -53,7 +53,7 @@ export async function createEmployeeAction(formData: FormData) {
   const role = formData.get("role") as string;
 
   // ইউজারনেম থেকে ইমেল বানানো (সিস্টেমের জন্য)
-  const email = `${username.toLowerCase().trim()}@test.com`;
+  const email = `${username.toLowerCase().trim()}@btm.com`;
 
   // ১. Auth User তৈরি (Admin পাওয়ার দিয়ে)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -105,4 +105,47 @@ export async function deleteEmployeeAction(userId: string) {
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
   if (error) return { error: error.message };
   return { success: true };
+}
+
+// --- 5. Update Employee Credentials ---
+export async function updateEmployeeCredentialsAction(
+  userId: string, 
+  newUsername?: string, 
+  newPassword?: string
+) {
+  if (!supabaseAdmin) return { error: "Admin client not initialized" };
+  
+  try {
+    const authUpdates: any = {};
+    
+    // যদি নতুন ইউজারনেম দেয়, তবে Auth এর ইমেইল আপডেট করতে হবে
+    if (newUsername && newUsername.trim() !== "") {
+      authUpdates.email = `${newUsername.toLowerCase().trim()}@btm.com`;
+    }
+    
+    // যদি নতুন পাসওয়ার্ড দেয়, তবে পাসওয়ার্ড আপডেট করতে হবে
+    if (newPassword && newPassword.trim() !== "") {
+      authUpdates.password = newPassword;
+    }
+
+    // ১. Supabase Auth আপডেট (Admin API)
+    if (Object.keys(authUpdates).length > 0) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, authUpdates);
+      if (authError) return { error: authError.message };
+    }
+
+    // ২. Profiles টেবিলে ইউজারনেম আপডেট
+    if (newUsername && newUsername.trim() !== "") {
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ username: newUsername.toLowerCase().trim() })
+        .eq("id", userId);
+        
+      if (profileError) return { error: profileError.message };
+    }
+
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message };
+  }
 }

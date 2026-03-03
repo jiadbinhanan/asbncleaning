@@ -32,14 +32,14 @@ const styles = StyleSheet.create({
   // Page base with 5mm margin
   page: { padding: '5mm', backgroundColor: '#ffffff', fontFamily: 'Montserrat', position: 'relative' },
   
-  // 🚨 FIXED BORDER & WATERMARK (Shows on EVERY page automatically)
+  // FIXED BORDER & WATERMARK
   fixedBackground: { position: 'absolute', top: '5mm', left: '5mm', right: '5mm', bottom: '5mm', border: `1pt solid ${colors.gold}`, zIndex: -1 },
   watermark: { position: 'absolute', top: '30%', left: '15%', width: '70%', opacity: 0.05, zIndex: 1 },
   
-  // Content Wrapper (Padding inside the border)
+  // Content Wrapper
   content: { padding: '5mm 15mm 15mm 15mm', flex: 1 },
   
-  // Header (Only renders once at the top)
+  // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2pt solid ${colors.charcoal}`, paddingBottom: 10, marginBottom: 15 },
   brandWrapper: { flexDirection: 'row', gap: 10 },
   logoImg: { height: 60, width: 60, objectFit: 'contain' },
@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
   billToName: { fontSize: 15, fontFamily: 'Cinzel', fontWeight: 700, color: colors.charcoal },
   metaTable: { width: '30%', justifyContent: 'flex-end' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  
   metaLabel: { fontSize: 11, color: colors.grayText },
   metaValue: { fontSize: 11, fontWeight: 600, color: colors.charcoal },
 
@@ -71,14 +72,14 @@ const styles = StyleSheet.create({
   td: { fontSize: 10, fontWeight: 500, color: colors.charcoal },
   unitRow: { backgroundColor: colors.goldLight, padding: 8, borderBottom: `1pt solid ${colors.gold}` },
   unitName: { fontFamily: 'Cinzel', fontSize: 11, fontWeight: 700, color: colors.charcoal },
-  
+ 
   // Columns Width
   colDate: { width: '20%' },
   colType: { width: '50%' },
   colQty: { width: '10%', textAlign: 'center' },
   colRate: { width: '20%', textAlign: 'right' },
 
-  // Bottom Section (wrap={false} so it stays together)
+  // Bottom Section
   bottomSection: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10 },
   bankInfo: { width: '53%', backgroundColor: colors.goldLight, padding: 12, borderLeft: `3pt solid ${colors.gold}` },
   bankTitle: { fontSize: 12, color: colors.charcoal, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   grandLabel: { fontFamily: 'Cinzel', fontSize: 14, fontWeight: 700, color: colors.charcoal },
   grandValue: { fontSize: 14, fontWeight: 700, color: colors.charcoal },
 
-  // Footer (wrap={false})
+  // Footer
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 20 },
   footerNote: { width: '60%', fontSize: 9, color: colors.grayText, lineHeight: 1.5 },
   signatureBox: { width: '30%', alignItems: 'flex-end', position: 'relative' },
@@ -103,128 +104,165 @@ const styles = StyleSheet.create({
   sigText: { fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: colors.charcoal }
 });
 
-export const InvoiceDocument = ({ 
-  invoiceNo, dateRange, issueDate, companyName, groupedBookings, subtotal, bankDetails 
-}: any) => (
-  <Document>
-    <Page size="A4" style={styles.page} wrap>
-      
-      {/* 🚨 This view is FIXED. It will automatically repeat on every new page */}
-      <View style={styles.fixedBackground} fixed>
-        <Image src="/watermark_btm.png" style={styles.watermark} />
-      </View>
+export const InvoiceDocument = ({ data }: any) => {
+  // ১. page.tsx থেকে পাঠানো 'data' অবজেক্ট থেকে সব ইনফরমেশন বের করে নেওয়া হলো
+  const { invoiceNo, date, companyName, bookings, subtotal, bankDetails, invoiceMode } = data || {};
 
-      {/* Main Content inside the border */}
-      <View style={styles.content}>
+  // ২. ফ্ল্যাট bookings array-কে আপনার ডিজাইনের জন্য ইউনিট অনুযায়ী গ্রুপ করা হলো
+  const groupedBookings = bookings?.reduce((acc: any, b: any) => {
+    const unitName = `${b.units?.building_name || 'Unknown'} | Unit-${b.units?.unit_number || 'N/A'}`;
+    if (!acc[unitName]) acc[unitName] = [];
+    acc[unitName].push(b);
+    return acc;
+  }, {}) || {};
+
+  // ডেট ফরম্যাটিং
+  const issueDate = date ? format(parseISO(date), "dd-MMM-yyyy") : "";
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page} wrap>
         
-        {/* Header - Only appears at the beginning of the document */}
-        <View style={styles.header}>
-          <View style={styles.brandWrapper}>
-            {/* 🚨 Fetching Logo from public folder */}
-            <Image src="/logo_btm.png" style={styles.logoImg} />
-            <View style={styles.companyDetails}>
-              <Text style={styles.compNameTitle}>B T M Cleaning Service</Text>
-              <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Phone:</Text> +971-544-374231</Text>
-              <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Email:</Text> sales@btmcleaning.com</Text>
-              <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Web:</Text> btm-cleaning.com</Text>
-            </View>
-          </View>
-          <View style={styles.invoiceTitleBox}>
-            <Text style={styles.invoiceTitle}>INVOICE</Text>
-            <Text style={styles.invNumber}>{invoiceNo}</Text>
-            <Text style={styles.invDateRange}>DATE RANGE: {dateRange}</Text>
-          </View>
+        {/* 🚨 FIXED BORDER & WATERMARK */}
+        <View style={styles.fixedBackground} fixed>
+          <Image src="/watermark_btm.png" style={styles.watermark} />
         </View>
 
-        {/* Info Grid */}
-        <View style={styles.infoSection}>
-          <View style={styles.billTo}>
-            <Text style={styles.sectionLabel}>Billed To</Text>
-            <Text style={styles.billToName}>{companyName}</Text>
-          </View>
-          <View style={styles.metaTable}>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Date of Issue:</Text>
-              <Text style={styles.metaValue}>{issueDate}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Due Date:</Text>
-              <Text style={styles.metaValue}>Upon Receipt</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Table - Automatically wraps to next page if too long */}
-        <View style={styles.table}>
-          {/* Table Header (Repeats on new page if broken) */}
-          <View style={styles.thRow} fixed>
-            <Text style={[styles.th, styles.colDate]}>Date</Text>
-            <Text style={[styles.th, styles.colType]}>Cleaning Type</Text>
-            <Text style={[styles.th, styles.colQty]}>Qty</Text>
-            <Text style={[styles.th, styles.colRate]}>Rate (AED)</Text>
-          </View>
-
-          {/* Table Body */}
-          {Object.entries(groupedBookings).map(([unitName, bookings]: any) => (
-            <React.Fragment key={unitName}>
-              <View style={styles.unitRow}>
-                <Text style={styles.unitName}>{unitName.toUpperCase()}</Text>
+        <View style={styles.content}>
+          
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.brandWrapper}>
+              <Image src="/logo_btm.png" style={styles.logoImg} />
+              <View style={styles.companyDetails}>
+                <Text style={styles.compNameTitle}>B T M Cleaning Service</Text>
+                <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Phone:</Text> +971-544-374231</Text>
+                <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Email:</Text> sales@btmcleaning.com</Text>
+                <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Web:</Text> btm-cleaning.com</Text>
               </View>
-              {bookings.map((b: any) => (
-                <View style={styles.tdRow} key={b.id} wrap={false}>
-                  <Text style={[styles.td, styles.colDate]}>{format(parseISO(b.cleaning_date), "dd-MMM-yyyy")}</Text>
-                  <Text style={[styles.td, styles.colType]}>{b.service_type}</Text>
-                  <Text style={[styles.td, styles.colQty]}>1</Text>
-                  <Text style={[styles.td, styles.colRate, {fontWeight: 600}]}>{b.price.toFixed(2)}</Text>
+            </View>
+            <View style={styles.invoiceTitleBox}>
+              <Text style={styles.invoiceTitle}>INVOICE</Text>
+              <Text style={styles.invNumber}>{invoiceNo}</Text>
+              {/* Date range page.tsx থেকে আসে না, তাই শুধু Date দেখানো হলো */}
+              <Text style={styles.invDateRange}>DATE: {issueDate}</Text>
+            </View>
+          </View>
+
+          {/* Info Grid */}
+          <View style={styles.infoSection}>
+            <View style={styles.billTo}>
+              <Text style={styles.sectionLabel}>Billed To</Text>
+              <Text style={styles.billToName}>{companyName}</Text>
+            </View>
+            <View style={styles.metaTable}>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Date of Issue:</Text>
+                <Text style={styles.metaValue}>{issueDate}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Due Date:</Text>
+                <Text style={styles.metaValue}>Upon Receipt</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Table */}
+          <View style={styles.table}>
+            
+            {/* Table Header */}
+            <View style={styles.thRow} fixed>
+              <Text style={[styles.th, styles.colDate]}>Date</Text>
+              <Text style={[styles.th, styles.colType]}>Cleaning Type</Text>
+              <Text style={[styles.th, styles.colQty]}>Qty</Text>
+              <Text style={[styles.th, styles.colRate]}>Rate (AED)</Text>
+            </View>
+
+            {/* Table Body - Grouped Logic */}
+            {Object.entries(groupedBookings).map(([unitName, unitBookings]: any) => (
+              <React.Fragment key={unitName}>
+                <View style={styles.unitRow}>
+                  <Text style={styles.unitName}>{unitName.toUpperCase()}</Text>
                 </View>
-              ))}
-            </React.Fragment>
-          ))}
-        </View>
+                {unitBookings.map((b: any) => (
+                  <React.Fragment key={b.id}>
+                    
+                    {/* Main Booking Row */}
+                    {invoiceMode !== 'inventory_only' && (
+                      <View style={styles.tdRow} wrap={false}>
+                        <Text style={[styles.td, styles.colDate]}>{format(parseISO(b.cleaning_date), "dd-MMM-yyyy")}</Text>
+                        <Text style={[styles.td, styles.colType]}>{b.service_type}</Text>
+                        <Text style={[styles.td, styles.colQty]}>1</Text>
+                        <Text style={[styles.td, styles.colRate, {fontWeight: 600}]}>{(Number(b.price) || 0).toFixed(2)}</Text>
+                      </View>
+                    )}
 
-        {/* 🚨 Bottom Section & Footer (wrap={false} ensures they don't break in half) */}
-        <View wrap={false}>
-          <View style={styles.bottomSection}>
-            <View style={styles.bankInfo}>
-              <Text style={styles.bankTitle}>Payment Information</Text>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>Bank Name:</Text><Text style={styles.bankValue}>{bankDetails.bankName}</Text></View>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>Account Name:</Text><Text style={styles.bankValue}>{bankDetails.accountName}</Text></View>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>Account No:</Text><Text style={styles.bankValue}>{bankDetails.accountNo}</Text></View>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>IBAN:</Text><Text style={styles.bankValue}>{bankDetails.iban}</Text></View>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>Swift Code:</Text><Text style={styles.bankValue}>{bankDetails.swiftCode}</Text></View>
-              <View style={styles.bankRow}><Text style={styles.bankLabel}>Routing No:</Text><Text style={styles.bankValue}>{bankDetails.routingNo}</Text></View>
+                    {/* Extra Inventory Sub-Rows */}
+                    {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extras && b.extras.map((extra: any, eIdx: number) => (
+                      <View style={styles.tdRow} key={`ext-${b.id}-${eIdx}`} wrap={false}>
+                        <Text style={[styles.td, styles.colDate]}>
+                          {invoiceMode === 'inventory_only' ? format(parseISO(b.cleaning_date), "dd-MMM-yyyy") : ''}
+                        </Text>
+                        <Text style={[styles.td, styles.colType, invoiceMode === 'combined' ? { fontSize: 9, color: '#555555' } : {}]}>
+                          {invoiceMode === 'combined' ? `   • Extra Provide: ${extra.item_name}` : extra.item_name}
+                        </Text>
+                        <Text style={[styles.td, styles.colQty]}>{extra.quantity}</Text>
+                        <Text style={[styles.td, styles.colRate, {fontWeight: invoiceMode === 'inventory_only' ? 600 : 500}]}>
+                          {(Number(extra.total_price) || 0).toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* Bottom Section & Footer */}
+          <View wrap={false}>
+            <View style={styles.bottomSection}>
+              <View style={styles.bankInfo}>
+                <Text style={styles.bankTitle}>Payment Information</Text>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>Bank Name:</Text><Text style={styles.bankValue}>{bankDetails?.bankName}</Text></View>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>Account Name:</Text><Text style={styles.bankValue}>{bankDetails?.accountName}</Text></View>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>Account No:</Text><Text style={styles.bankValue}>{bankDetails?.accountNumber}</Text></View>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>IBAN:</Text><Text style={styles.bankValue}>{bankDetails?.iban}</Text></View>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>Swift Code:</Text><Text style={styles.bankValue}>{bankDetails?.swift}</Text></View>
+                <View style={styles.bankRow}><Text style={styles.bankLabel}>Routing No:</Text><Text style={styles.bankValue}>{bankDetails?.routingNo}</Text></View>
+              </View>
+
+              <View style={styles.totalsBox}>
+                <View style={styles.totalLine}>
+                  <Text style={styles.totalLabel}>Subtotal</Text>
+                  <Text style={styles.totalValue}>{(subtotal || 0).toFixed(2)}</Text>
+                </View>
+                <View style={styles.totalLine}>
+                  <Text style={styles.totalLabel}>Tax (0%)</Text>
+                  <Text style={styles.totalValue}>0.00</Text>
+                </View>
+                <View style={styles.grandTotalLine}>
+                  <Text style={styles.grandLabel}>Total (AED)</Text>
+                  <Text style={styles.grandValue}>{(subtotal || 0).toFixed(2)}</Text>
+                </View>
+              </View>
             </View>
 
-            <View style={styles.totalsBox}>
-              <View style={styles.totalLine}>
-                <Text style={styles.totalLabel}>Subtotal</Text>
-                <Text style={styles.totalValue}>{subtotal.toFixed(2)}</Text>
-              </View>
-              <View style={styles.totalLine}>
-                <Text style={styles.totalLabel}>Tax (0%)</Text>
-                <Text style={styles.totalValue}>0.00</Text>
-              </View>
-              <View style={styles.grandTotalLine}>
-                <Text style={styles.grandLabel}>Total (AED)</Text>
-                <Text style={styles.grandValue}>{subtotal.toFixed(2)}</Text>
+            <View style={styles.footer}>
+              <Text style={styles.footerNote}>
+                <Text style={{fontWeight: 700}}>Note:</Text> This is an official invoice for services rendered.
+                Please retain for your records. Thank you for choosing B T M Cleaning Service.
+              </Text>
+              <View style={styles.signatureBox}>
+                <Image src="/stamp_btm.png" style={styles.stampImg} />
+                <View style={styles.sigLine}></View>
+                <Text style={styles.sigText}>Authorized Signatory</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerNote}>
-              <Text style={{fontWeight: 700}}>Note:</Text> This is an official invoice for services rendered. Please retain for your records. Thank you for choosing B T M Cleaning Service.
-            </Text>
-            <View style={styles.signatureBox}>
-              {/* 🚨 Fetching Stamp from public folder */}
-              <Image src="/stamp_btm.png" style={styles.stampImg} />
-              <View style={styles.sigLine}></View>
-              <Text style={styles.sigText}>Authorized Signatory</Text>
-            </View>
-          </View>
         </View>
-
-      </View>
-    </Page>
-  </Document>
-);
+      </Page>
+    </Document>
+  );
+};

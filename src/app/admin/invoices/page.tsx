@@ -3,8 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, FileText, Search, UploadCloud, 
-  History, PlusCircle, Building2, Calendar, Download, Eye, FileDigit 
+  Loader2, FileText, Search, History, PlusCircle, 
+  Building2, Calendar, Download, Eye, FileDigit 
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { pdf } from '@react-pdf/renderer';
@@ -26,6 +26,7 @@ export default function InvoiceManagement() {
   const [selectedCompany, setSelectedCompany] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [invoiceMode, setInvoiceMode] = useState<'combined' | 'cleaning_only' | 'inventory_only'>('combined');
   const [bookings, setBookings] = useState<any[]>([]);
   const [loadingFetch, setLoadingFetch] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -34,376 +35,477 @@ export default function InvoiceManagement() {
   const [bankDetails, setBankDetails] = useState({
     bankName: "EMIRATES NBD",
     accountName: "BISHNU BAHADUR THAPA",
-    accountNo: "125937795501",
+    accountNumber: "125937795501",
     iban: "AE83 0260 0001 2593 7795 501",
-    swiftCode: "EBILAEAD",
-    routingNo: "302620122"
+    swift: "EBILAEAD",
+    routingNo: "302620000"
   });
 
+  const [invoiceNo, setInvoiceNo] = useState("");
+  
+  // 🚨 FIXED: Fully Dynamic Subtotal Calculation (Changes instantly with Dropdown)
+  const subtotal = useMemo(() => {
+    return bookings.reduce((sum, b) => {
+      let bTotal = 0;
+      const extrasTotal = b.extras?.reduce((acc: number, ex: any) => acc + Number(ex.total_price), 0) || 0;
+      
+      if (invoiceMode === 'cleaning_only') {
+        bTotal = Number(b.price);
+      } else if (invoiceMode === 'inventory_only') {
+        bTotal = extrasTotal;
+      } else {
+        bTotal = Number(b.price) + extrasTotal;
+      }
+      return sum + bTotal;
+    }, 0);
+  }, [bookings, invoiceMode]);
+
+  // 🚨 FIXED: Dynamic Total Items Count (Changes instantly with Dropdown)
+  const visibleItemsCount = useMemo(() => {
+    return bookings.filter((b) => {
+      if (invoiceMode === 'cleaning_only') return Number(b.price) > 0 || b.service_type;
+      if (invoiceMode === 'inventory_only') return b.extras && b.extras.length > 0;
+      return true;
+    }).length;
+  }, [bookings, invoiceMode]);
+
   // --- History Tab States ---
-  const [historyFilterCompany, setHistoryFilterCompany] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // 1. Fetch Initial Data (1 API Call for both Companies & History)
-  const fetchInitialData = async () => {
-    setLoadingInitial(true);
-    const [compRes, invRes] = await Promise.all([
-      supabase.from('companies').select('id, name').order('name', { ascending: true }),
-      supabase.from('invoices').select('*').order('created_at', { ascending: false })
-    ]);
+  // 1. Fetch Companies & History on Mount
+  useEffect(() => {
+    const initData = async () => {
+      setLoadingInitial(true);
+      const [compRes, invRes] = await Promise.all([
+        supabase.from('companies').select('id, name').order('name'),
+        supabase.from('invoices').select('*').order('created_at', { ascending: false })
+      ]);
+      
+      if (compRes.data) setCompanies(compRes.data);
+      if (invRes.data) setInvoices(invRes.data);
+      setLoadingInitial(false);
+    };
+    initData();
+  }, [supabase]);
 
-    if (compRes.data) setCompanies(compRes.data);
-    if (invRes.data) setInvoices(invRes.data);
-    setLoadingInitial(false);
-  };
+  // 2. Auto-Generate Invoice Number
+  useEffect(() => {
+    if (selectedCompany && startDate) {
+      const dateObj = new Date(startDate);
+      const year = dateObj.getFullYear().toString().slice(-2);
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+      const newInvNo = `BTM/${year}${month}-${selectedCompany}-${Math.floor(100 + Math.random() * 900)}`;
+      setInvoiceNo(newInvNo);
+    }
+  }, [selectedCompany, startDate]);
 
-  useEffect(() => { fetchInitialData(); }, [supabase]);
-
-  // 2. Fetch Unbilled/Finalized Bookings for Generation
-  const handleFetchData = async () => {
+  // 3. Fetch Bookings for Selected Period
+  const fetchBookingsForInvoice = async () => {
     if (!selectedCompany || !startDate || !endDate) return alert("Please select all fields");
     setLoadingFetch(true);
 
     const { data, error } = await supabase
       .from('bookings')
       .select(`
-        id, cleaning_date, service_type, price,
-        units!inner ( unit_number, building_name, layout, company_id, companies ( name ) )
+        id, booking_ref, cleaning_date, service_type, price,
+        units ( unit_number, building_name ),
+        booking_extra_inventory ( item_name, quantity, unit_price, total_price )
       `)
-      .eq('units.company_id', parseInt(selectedCompany)) // 🚨 FIXED: Convert string to Int for strict relation matching
+      .eq('status', 'finalized')
+      .eq('units.company_id', parseInt(selectedCompany))
       .gte('cleaning_date', startDate)
       .lte('cleaning_date', endDate)
-      .eq('status', 'finalized')
       .order('cleaning_date', { ascending: true });
 
     if (error) {
-      alert(error.message);
-    } else {
-      if (!data || data.length === 0) {
-        alert("No finalized bookings found for this range.");
-      }
-      // 🚨 FIXED: TypeScript-কে স্পষ্টভাবে বলে দেওয়া হচ্ছে যে এটি any[] টাইপের ডাটা
-      const fetchedBookings: any[] = data ? (data as any[]) : [];
-      setBookings(fetchedBookings);
+      console.error(error);
+      alert("Error fetching data");
+    } else if (data) {
+      const validCompanyBookings = data.filter(b => b.units !== null);
+      const processedBookings: any[] = [];
+
+      // 🚨 Fetch all valid bookings and let the useMemo handle the subtotal & filtering seamlessly
+      validCompanyBookings.forEach((b: any) => {
+         const extras = b.booking_extra_inventory || [];
+         if (Number(b.price) > 0 || b.service_type || extras.length > 0) {
+            processedBookings.push({ ...b, extras }); 
+         }
+      });
+
+      setBookings(processedBookings);
     }
     setLoadingFetch(false);
   };
 
-  // 3. Data Processing & Formatting (FIXED UNIT NAMES)
-  const groupedBookings = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    let subtotal = 0;
-
-    bookings.forEach(b => {
-      // 🚨 Safely handle null/undefined values to prevent weird text
-      const buildingName = b.units?.building_name || "Unknown Building";
-      const unitNo = b.units?.unit_number || "N/A";
-      const layoutText = b.units?.layout ? `(${b.units.layout})` : "";
-      
-      const unitKey = `${buildingName} | Unit-${unitNo} ${layoutText}`.trim();
-      
-      if (!groups[unitKey]) groups[unitKey] = [];
-      groups[unitKey].push(b);
-      subtotal += Number(b.price || 0);
-    });
-    
-    return { groups, subtotal };
-  }, [bookings]);
-
-  const companyName = companies.find(c => c.id.toString() === selectedCompany)?.name || "";
-
-  const generateInvoiceNo = () => {
-    const compCode = companyName.substring(0, 4).toUpperCase().replace(/[^A-Z]/g, 'X');
-    
-    // 🚨 ফিক্স: "ddMMM" এর বদলে শুধু "dd" (দিন) নেওয়া হয়েছে
-    const startStr = format(parseISO(startDate), "dd"); 
-    const endStr = format(parseISO(endDate), "dd"); 
-    const random4 = Math.floor(1000 + Math.random() * 9000);
-    
-    // আউটপুট: BTM/DXB-12-25-COMP-8452
-    return `BTM/DXB-${startStr}-${endStr}-${compCode}-${random4}`;
-  };
-
-  const invoiceNo = useMemo(() => bookings.length > 0 ? generateInvoiceNo() : "BTM/DXB-XXXX", [bookings, companyName, startDate, endDate]);
-  const dateRangeStr = useMemo(() => bookings.length > 0 ? `${format(parseISO(startDate), "do MMM")} - ${format(parseISO(endDate), "do MMM yyyy")}` : "", [bookings, startDate, endDate]);
-
-  // 4. Generate PDF, Upload to Cloudinary & Save to Supabase
-  const handleSaveAndGenerate = async () => {
-    if (bookings.length === 0) return;
+  // 4. Generate PDF & Upload to Cloudinary
+  const handleGenerateAndSave = async () => {
+    if (bookings.length === 0) return alert("No bookings fetched to generate invoice.");
+    if (!invoiceNo) return alert("Invoice number is missing.");
     setGenerating(true);
 
     try {
-      // Step A: Generate PDF Blob
-      const doc = <InvoiceDocument 
-        invoiceNo={invoiceNo}
-        dateRange={dateRangeStr}
-        issueDate={format(new Date(), "dd-MMM-yyyy")}
-        companyName={companyName}
-        groupedBookings={groupedBookings.groups}
-        subtotal={groupedBookings.subtotal}
-        bankDetails={bankDetails}
-      />;
+      const compName = companies.find(c => c.id.toString() === selectedCompany)?.name || "Unknown_Company";
       
-      // 🚨 FIXED: null বা [] বাদ দিয়ে সরাসরি doc ভেরিয়েবলটাকে পাস করুন
-      const asPdf = pdf(doc);
-      const pdfBlob = await asPdf.toBlob();
-      
-      const file = new File([pdfBlob], `${invoiceNo}.pdf`, { type: 'application/pdf' });
+      const invoiceData = {
+        invoiceNo,
+        date: new Date().toISOString(),
+        companyName: compName,
+        companyDetails: "Dubai, United Arab Emirates\nTRN: 100000000000000",
+        bookings,
+        subtotal,
+        bankDetails,
+        invoiceMode 
+      };
 
-      // Step B: Get Cloudinary Signature & Details
-      const { signature, timestamp, apiKey, cloudName, folderPath, publicId } = await getInvoiceUploadSignature(companyName, invoiceNo);
-      
+      const blob = await pdf(<InvoiceDocument data={invoiceData} />).toBlob();
+      const file = new File([blob], `${invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+
+      const { signature, timestamp, apiKey, cloudName } = await getInvoiceUploadSignature(compName, invoiceNo);
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", apiKey!);
       formData.append("timestamp", timestamp.toString());
       formData.append("signature", signature);
-      formData.append("folder", folderPath);
-      formData.append("public_id", publicId); // Forces exactly this filename
+      formData.append("folder", `invoices/${compName.replace(/[^a-zA-Z0-9]/g, "_")}`);
+      formData.append("public_id", invoiceNo.replace(/\//g, "-"));
 
-      // Step C: Upload to Cloudinary
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData });
       const uploadData = await uploadRes.json();
+
       if (!uploadData.secure_url) throw new Error("Cloudinary upload failed");
 
-      // Step D: Save to Supabase (Only 'invoices' table)
-      const bookingIds = bookings.map(b => b.id);
       const { error: invError } = await supabase.from('invoices').insert([{
-        invoice_no: invoiceNo,
         company_id: parseInt(selectedCompany),
-        company_name: companyName,
+        company_name: compName,
+        invoice_no: invoiceNo,
         start_date: startDate,
         end_date: endDate,
-        total_amount: groupedBookings.subtotal,
-        pdf_url: uploadData.secure_url,
-        booking_ids: bookingIds 
+        total_amount: subtotal,
+        pdf_url: uploadData.secure_url
       }]);
 
       if (invError) throw invError;
 
-      alert("Invoice Generated and Saved Successfully!");
-      
-      // Auto-download for the admin
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${invoiceNo}.pdf`;
-      link.click();
-      
-      // Reset & Refresh
-      setBookings([]); 
-      fetchInitialData(); 
+      const bookingIds = bookings.map(b => b.id);
+      await supabase.from('bookings').update({ invoice_no: invoiceNo }).in('id', bookingIds);
 
-    } catch (err: any) {
-      alert("Error generating invoice: " + err.message);
+      alert("Invoice Generated & Saved Successfully! 🎉");
+      
+      const { data: newHistory } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      if (newHistory) setInvoices(newHistory);
+      
+      setActiveTab('history');
+
+    } catch (error: any) {
+      alert("Error: " + error.message);
     } finally {
       setGenerating(false);
     }
   };
 
-  // Filter History
-  const filteredHistory = historyFilterCompany 
-    ? invoices.filter(inv => inv.company_id.toString() === historyFilterCompany)
-    : invoices;
+  // Filter & Group History
+  const filteredHistory = useMemo(() => {
+    let result = invoices;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(i => 
+        i.invoice_no?.toLowerCase().includes(q) || 
+        i.company_name?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [invoices, searchQuery]);
 
-  if (loadingInitial) return <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]"><Loader2 className="animate-spin text-blue-600" size={48}/></div>;
+  const groupedHistory = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredHistory.forEach(inv => {
+      const date = format(parseISO(inv.created_at), "yyyy-MM-dd");
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(inv);
+    });
+    const sortedDates = Object.keys(groups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    return { groups, sortedDates };
+  }, [filteredHistory]);
+
+
+  if (loadingInitial) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
+    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans relative">
       
-      {/* 1. PREMIUM HEADER (Black & Dark Navy Blue) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden">
+      {/* HEADER */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-24 px-6 md:px-12 shadow-2xl relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
            <div>
-              <p className="text-blue-300 font-bold uppercase tracking-widest text-xs mb-1">Financial Operations</p>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-                 <FileDigit className="text-blue-500" size={32}/> Invoice Management
-              </h1>
+             <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+               <FileDigit className="text-blue-500" size={36}/> Billing & Invoices
+             </h1>
+             <p className="text-blue-300 font-bold mt-2">Generate automated PDF invoices and manage billing history.</p>
            </div>
            
-           {/* Tab Switcher */}
-           <div className="flex items-center bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full md:w-auto">
-              <button 
-                onClick={() => setActiveTab('generate')}
-                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'generate' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-              >
-                <PlusCircle size={16}/> Create New
-              </button>
-              <button 
-                onClick={() => setActiveTab('history')}
-                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-              >
-                <History size={16}/> History
-              </button>
+           <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 w-full md:w-auto">
+             <button 
+               onClick={() => setActiveTab('generate')}
+               className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 ${activeTab === 'generate' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+             >
+               <PlusCircle size={16}/> Generate New
+             </button>
+             <button 
+               onClick={() => setActiveTab('history')}
+               className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 ${activeTab === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+             >
+               <History size={16}/> View History
+             </button>
            </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
-        <AnimatePresence mode="wait">
-          
-          {/* ==========================================
-              TAB 1: GENERATE INVOICE
-          ========================================== */}
-          {activeTab === 'generate' && (
-            <motion.div key="generate" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* Controls Panel */}
-              <div className="space-y-6">
-                <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-gray-100">
-                  <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2 border-b border-gray-100 pb-4"><Building2 className="text-blue-600"/> Select Parameters</h2>
-                  
-                  <div className="space-y-5">
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Select Client / Company</label>
-                      <select value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900">
-                        <option value="">Choose a company...</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}                      </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Start Date</label>
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none font-bold text-gray-900" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">End Date</label>
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none font-bold text-gray-900" />
-                      </div>
-                    </div>
-                    
-                    <button onClick={handleFetchData} disabled={loadingFetch} className="w-full py-4 bg-gray-900 text-white font-black rounded-xl shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95">
-                      {loadingFetch ? <Loader2 className="animate-spin"/> : <Search size={20}/>} Fetch Completed Works
-                    </button>
-                  </div>
-                </div>
+      <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-12 relative z-20">
+        
+        {/* --- TAB 1: GENERATE NEW --- */}
+        {activeTab === 'generate' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+             
+             {/* Left Column: Form Settings */}
+             <div className="lg:col-span-4 space-y-6">
+               <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-gray-100">
+                 <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2"><Building2 className="text-blue-600"/> Invoice Settings</h2>
+                 
+                 <div className="space-y-4">
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Company</label>
+                     <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900">
+                       <option value="">Select Company...</option>
+                       {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                     </select>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">From Date</label>
+                       <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900"/>
+                     </div>
+                     <div>
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">To Date</label>
+                       <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900"/>
+                     </div>
+                   </div>
 
-                {/* Bank Details Editor (Shows only if data is fetched) */}
-                {bookings.length > 0 && (
-                  <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-gray-100">
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-5 border-b border-gray-100 pb-2">Edit Bank Details</h3>
-                    <div className="space-y-4">
-                      <div><label className="text-[10px] font-bold text-gray-400 uppercase">Bank Name</label><input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                      <div><label className="text-[10px] font-bold text-gray-400 uppercase">Account Name</label><input value={bankDetails.accountName} onChange={e => setBankDetails({...bankDetails, accountName: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div><label className="text-[10px] font-bold text-gray-400 uppercase">Account No</label><input value={bankDetails.accountNo} onChange={e => setBankDetails({...bankDetails, accountNo: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                         <div><label className="text-[10px] font-bold text-gray-400 uppercase">IBAN</label><input value={bankDetails.iban} onChange={e => setBankDetails({...bankDetails, iban: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div><label className="text-[10px] font-bold text-gray-400 uppercase">Swift Code</label><input value={bankDetails.swiftCode} onChange={e => setBankDetails({...bankDetails, swiftCode: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                        <div><label className="text-[10px] font-bold text-gray-400 uppercase">Routing No</label><input value={bankDetails.routingNo} onChange={e => setBankDetails({...bankDetails, routingNo: e.target.value})} className="w-full p-2 border-b-2 border-gray-100 focus:border-blue-500 outline-none font-bold text-gray-900"/></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Invoice Format</label>
+                     <select value={invoiceMode} onChange={e => setInvoiceMode(e.target.value as any)} className="w-full p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-900">
+                       <option value="combined">A: Cleaning + Extra Inventory</option>
+                       <option value="cleaning_only">B: Cleaning Services Only</option>
+                       <option value="inventory_only">C: Extra Inventory Only</option>
+                     </select>
+                   </div>
 
-              {/* Preview & Action Panel */}
-              <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-gray-100 flex flex-col h-full">
-                <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center justify-between border-b border-gray-100 pb-4">
-                   Data Preview 
-                   {bookings.length > 0 && <span className="text-[10px] font-black tracking-widest bg-blue-50 text-blue-700 px-3 py-1 rounded-lg uppercase">ID: {invoiceNo}</span>}
-                </h3>
-                
-                {bookings.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-gray-300 py-20">
-                     <FileText size={64} className="mb-4 opacity-50"/>
-                     <p className="font-bold">Select parameters to preview data</p>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex-1 overflow-y-auto max-h-[400px] border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-4 custom-scrollbar">
-                       {Object.entries(groupedBookings.groups).map(([unitName, unitBookings]: any, idx) => (
-                          <div key={idx} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                             <div className="bg-gray-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 border-b border-gray-200">{unitName}</div>
-                             <div className="p-3 space-y-2">
-                                {unitBookings.map((b: any) => (
-                                   <div key={b.id} className="flex justify-between items-center text-xs text-gray-600 border-b border-gray-50 pb-2">
-                                      <span className="flex items-center gap-2"><Calendar size={12}/> {format(parseISO(b.cleaning_date), "dd MMM")} - {b.service_type}</span>
-                                      <span className="font-bold text-gray-900 bg-gray-50 px-2 py-1 rounded">{b.price} AED</span>
-                                   </div>
-                                ))}
+                   <button 
+                     onClick={fetchBookingsForInvoice} 
+                     disabled={loadingFetch}
+                     className="w-full mt-2 py-4 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-md active:scale-95 flex justify-center items-center gap-2"
+                   >
+                     {loadingFetch ? <Loader2 className="animate-spin"/> : <Search size={18}/>} Fetch Work Data
+                   </button>
+                 </div>
+               </div>
+
+               {/* Bank Details Edit */}
+               <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-gray-100">
+                 <h2 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2">Bank Details <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md uppercase">Editable</span></h2>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="md:col-span-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Bank Name</label>
+                     <input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                   <div className="md:col-span-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Account Name</label>
+                     <input value={bankDetails.accountName} onChange={e => setBankDetails({...bankDetails, accountName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Account Number</label>
+                     <input value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">IBAN</label>
+                     <input value={bankDetails.iban} onChange={e => setBankDetails({...bankDetails, iban: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">SWIFT Code</label>
+                     <input value={bankDetails.swift} onChange={e => setBankDetails({...bankDetails, swift: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Routing No</label>
+                     <input value={bankDetails.routingNo} onChange={e => setBankDetails({...bankDetails, routingNo: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500"/>
+                   </div>
+                 </div>
+               </div>
+             </div>
+
+             {/* Right Column: Preview & Action */}
+             <div className="lg:col-span-8">
+               <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-6 md:p-10 h-full flex flex-col justify-between min-h-[400px]">
+                 
+                 {bookings.length > 0 ? (
+                   <>
+                     <div>
+                       <div className="flex justify-between items-start mb-6 pb-6 border-b border-gray-100">
+                         <div>
+                           <p className="text-xs font-bold text-gray-400">Invoice Draft For</p>
+                           <h3 className="text-xl font-black text-gray-900">{companies.find(c => c.id.toString() === selectedCompany)?.name}</h3>
+                           {invoiceNo && (
+                             <div className="mt-2 inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg">
+                               <FileDigit size={14} className="text-blue-500"/>
+                               <span className="text-xs font-black text-blue-800 tracking-wide">ID: {invoiceNo}</span>
                              </div>
-                          </div>
+                           )}
+                         </div>
+                         <div className="text-right">
+                           <p className="text-xs font-bold text-gray-400">Total Items</p>
+                           {/* 🚨 Dynamic Total Items Count */}
+                           <p className="text-xl font-black text-blue-600">{visibleItemsCount}</p>
+                         </div>
+                       </div>
+                       
+                       <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                         {bookings.map((b, i) => (
+                           <div key={i} className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                             
+                             {/* Main Booking Item */}
+                             {invoiceMode !== 'inventory_only' && (
+                               <div className="flex justify-between items-center p-4">
+                                 <div className="truncate pr-4">
+                                   <p className="font-black text-gray-900 text-sm flex items-center gap-2">
+                                     Unit {b.units?.unit_number} 
+                                     <span className="text-[10px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md uppercase tracking-widest border border-blue-200">
+                                       Ref: {b.booking_ref || b.id}
+                                     </span>
+                                   </p>
+                                   <p className="text-xs font-bold text-gray-500 mt-1">
+                                     {b.service_type} <span className="text-gray-300 mx-1">•</span> {format(parseISO(b.cleaning_date), "dd MMM yyyy")}
+                                   </p>
+                                 </div>
+                                 <p className="font-black text-gray-800 text-sm shrink-0">AED {b.price}</p>
+                               </div>
+                             )}
+
+                             {/* Extra Inventory Sub-Category */}
+                             {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extras?.length > 0 && (
+                               <div className={`p-3 space-y-1.5 ${invoiceMode === 'combined' ? 'bg-indigo-50/50 border-t border-gray-100' : 'p-4'}`}>
+                                 {b.extras.map((ex: any, idx: number) => (
+                                    <div key={idx} className={`flex justify-between items-center ${invoiceMode === 'combined' ? 'pl-4 pr-1' : ''}`}>
+                                      <p className="text-xs font-bold text-indigo-900">
+                                        {invoiceMode === 'combined' && <span className="text-indigo-400 mr-1">↳</span>} 
+                                        Extra Provide: {ex.quantity}x {ex.item_name}
+                                      </p>
+                                      <p className="text-xs font-black text-indigo-700">AED {ex.total_price}</p>
+                                    </div>
+                                 ))}
+                               </div>
+                             )}
+
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+
+                     <div className="mt-8 pt-6 border-t border-gray-100">
+                       <div className="flex justify-between items-center mb-6">
+                         <p className="text-gray-500 font-bold">Total Amount</p>
+                         <p className="text-3xl font-black text-green-600">AED {subtotal.toFixed(2)}</p>
+                       </div>
+                       
+                       <button 
+                         onClick={handleGenerateAndSave}
+                         disabled={generating}
+                         className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                       >
+                         {generating ? <><Loader2 className="animate-spin"/> Processing & Uploading...</> : <><FileText size={20}/> Generate Official PDF Invoice</>}
+                       </button>
+                     </div>
+                   </>
+                 ) : (
+                   <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4 opacity-50">
+                     <FileText size={64} className="mb-2"/>
+                     <p className="text-lg font-black">No Draft Available</p>
+                     <p className="text-sm font-bold">Select settings and fetch data to preview.</p>
+                   </div>
+                 )}
+
+               </div>
+             </div>
+          </motion.div>
+        )}
+
+        {/* --- TAB 2: HISTORY VIEW --- */}
+        {activeTab === 'history' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+             
+             {/* Search Bar */}
+             <div className="mb-8 relative max-w-2xl">
+               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
+               <input 
+                 type="text" 
+                 placeholder="Search by Company Name or Invoice ID..." 
+                 value={searchQuery}
+                 onChange={e => setSearchQuery(e.target.value)}
+                 className="w-full p-4 pl-14 bg-white rounded-[1.5rem] border-2 border-gray-100 outline-none focus:border-blue-500 font-bold text-gray-900 shadow-sm"
+               />
+             </div>
+
+             {/* Vertical Date Grouped List */}
+             <div className="space-y-10">
+               {groupedHistory.sortedDates.length === 0 ? (
+                 <div className="text-center p-20 bg-white rounded-3xl border border-gray-100 text-gray-400 font-bold">No invoices found.</div>
+               ) : (
+                 groupedHistory.sortedDates.map(dateStr => (
+                   <div key={dateStr} className="space-y-4">
+                     <h3 className="text-sm font-black text-gray-500 tracking-widest uppercase mb-2 flex items-center gap-2 pl-2">
+                        <Calendar size={18}/> {format(parseISO(dateStr), "dd MMM yyyy")}
+                     </h3>
+                     
+                     <div className="flex flex-col gap-4">
+                       {groupedHistory.groups[dateStr].map((inv: any) => (
+                         <div key={inv.id} className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                           
+                           <div className="flex-1">
+                             <div className="flex items-center gap-2 mb-2">
+                               <FileText size={18} className="text-blue-600"/>
+                               <span className="font-black text-gray-900 text-lg">{inv.invoice_no}</span>
+                             </div>
+                             <h4 className="text-sm font-bold text-gray-600 leading-tight flex items-center gap-2">
+                               <Building2 size={14} className="text-gray-400"/> {inv.company_name}
+                             </h4>
+                             <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">
+                               Period: {format(parseISO(inv.start_date), 'dd MMM')} - {format(parseISO(inv.end_date), 'dd MMM yyyy')}
+                             </p>
+                           </div>
+
+                           <div className="flex items-center gap-6 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-gray-100">
+                             <div className="text-right">
+                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Billed</p>
+                               <p className="text-xl font-black text-green-600">AED {inv.total_amount}</p>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="p-3.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors shadow-sm"><Eye size={20}/></a>
+                               <a href={inv.pdf_url} download className="p-3.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors shadow-sm"><Download size={20}/></a>
+                             </div>
+                           </div>
+                           
+                         </div>
                        ))}
-                    </div>
+                     </div>
+                   </div>
+                 ))
+               )}
+             </div>
 
-                    <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 flex justify-between items-center shadow-inner">
-                       <span className="font-black text-blue-900 uppercase tracking-widest text-sm">Total Amount:</span>
-                       <span className="text-3xl font-black text-blue-700">{groupedBookings.subtotal.toFixed(2)} AED</span>
-                    </div>
+          </motion.div>
+        )}
 
-                    <button onClick={handleSaveAndGenerate} disabled={generating} className="w-full mt-6 py-5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-green-500/30 hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                      {generating ? <Loader2 className="animate-spin size-6"/> : <UploadCloud className="size-6"/>}
-                      {generating ? "Generating PDF & Saving..." : "Generate PDF & Save"}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-            </motion.div>
-          )}
-
-          {/* ==========================================
-              TAB 2: INVOICE HISTORY
-          ========================================== */}
-          {activeTab === 'history' && (
-            <motion.div key="history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-              
-              {/* History Filter */}
-              <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-gray-100 flex flex-col md:flex-row items-center gap-4">
-                <div className="w-full md:w-1/3">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Filter by Company</label>
-                  <select value={historyFilterCompany} onChange={(e) => setHistoryFilterCompany(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900">
-                    <option value="">All Companies</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}                  </select>
-                </div>
-              </div>
-
-              {/* History Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredHistory.length === 0 ? (
-                  <div className="col-span-full py-20 text-center text-gray-400 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-                    <History size={48} className="mx-auto mb-4 opacity-50"/>
-                    <p className="font-bold text-lg">No past invoices found.</p>
-                  </div>
-                ) : (
-                  filteredHistory.map(inv => (
-                    <div key={inv.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all group relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-blue-500 to-indigo-600"></div>
-                      
-                      <div className="flex justify-between items-start mb-4 pl-2">
-                         <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-black text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-1">
-                            <FileDigit size={12}/> {inv.invoice_no}
-                         </span>
-                         <span className="text-[10px] text-gray-400 font-bold">{format(new Date(inv.created_at), 'dd MMM yyyy')}</span>
-                      </div>
-                      
-                      <h3 className="font-black text-gray-900 text-lg leading-tight mb-2 pl-2 truncate">{inv.company_name}</h3>
-                      
-                      <div className="pl-2 space-y-2 mb-6">
-                         <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5"><Calendar size={14}/> {format(parseISO(inv.start_date), 'dd MMM')} - {format(parseISO(inv.end_date), 'dd MMM yyyy')}</p>
-                         <p className="text-sm font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-lg w-fit mt-2 border border-green-100">AED {inv.total_amount}</p>
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-50 flex gap-2 pl-2">
-                         <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl text-xs font-black transition-colors flex items-center justify-center gap-1.5 uppercase tracking-widest">
-                            <Eye size={14}/> View
-                         </a>
-                         <a href={inv.pdf_url} download className="flex-1 py-3 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-black transition-colors flex items-center justify-center gap-1.5 uppercase tracking-widest shadow-lg">
-                            <Download size={14}/> Download
-                         </a>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-
-        </AnimatePresence>
       </div>
     </div>
   );

@@ -240,7 +240,7 @@ export default function SupervisorProfile() {
                       onChange={handleChange}
                       required
                       className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 transition-all hover:bg-gray-100" 
-                      placeholder="e.g. asbn_super" 
+                      placeholder="e.g. btm_super" 
                     />
                   </div>
                 </div>

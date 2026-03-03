@@ -20,7 +20,7 @@ export default function AgentLoginForm() {
     setLoading(true);
     setError(null);
 
-    const email = `${username.trim().toLowerCase()}@test.com`;
+    const email = `${username.trim().toLowerCase()}@btm.com`;
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

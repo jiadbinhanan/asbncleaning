@@ -4,9 +4,9 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Mail, Phone, Lock, Camera, Save, 
-  ShieldCheck, Loader2, Trash2, KeyRound, Edit2, X, Check
+  ShieldCheck, Loader2, Trash2, KeyRound, Edit2, X, Check, Eye, EyeOff
 } from "lucide-react";
-import { getCloudinarySignature } from "@/app/admin/employees/actions";
+import { getCloudinarySignature, updateEmployeeCredentialsAction } from "@/app/admin/employees/actions";
 
 export default function AdminProfile() {
   const supabase = createClient();
@@ -34,8 +34,10 @@ export default function AdminProfile() {
   const [formData, setFormData] = useState({ ...profile });
 
   // Security Form
-  const [passwords, setPasswords] = useState({ newPassword: "", confirmPassword: "" });
+  const [securityData, setSecurityData] = useState({ newUsername: "", newPassword: "", confirmPassword: "" });
   const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // Image Cropping States
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -52,7 +54,6 @@ export default function AdminProfile() {
     try {
       // Get Auth User directly
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
       if (authError) throw authError;
 
       if (user) {
@@ -176,6 +177,7 @@ export default function AdminProfile() {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = imageUrl;
+      img.crossOrigin = 'Anonymous'; // Handle CORS
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const minDimension = Math.min(img.width, img.height);
@@ -202,29 +204,40 @@ export default function AdminProfile() {
     if (!userId || !profile.avatar_url) return;
     if (!confirm("Remove profile picture?")) return;
     
+    const oldAvatar = profile.avatar_url;
     setProfile({ ...profile, avatar_url: "" });
     setFormData({ ...formData, avatar_url: "" });
-    await supabase.from("profiles").update({ avatar_url: "" }).eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ avatar_url: "" }).eq("id", userId);
+    if(error){
+       alert("Failed to remove picture. Please try again.");
+       setProfile({ ...profile, avatar_url: oldAvatar });
+       setFormData({ ...formData, avatar_url: oldAvatar });
+    }
   };
 
-  // 6. Update Password
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
+  // 6. Security Update
+  const handleSecurityUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwords.newPassword !== passwords.confirmPassword) {
+    
+    if (securityData.newPassword && securityData.newPassword !== securityData.confirmPassword) {
       return alert("Passwords do not match!");
     }
-    if (passwords.newPassword.length < 6) {
-      return alert("Password must be at least 6 characters.");
+
+    if (!securityData.newUsername && !securityData.newPassword) {
+      return alert("Please enter a new User ID or Password to update.");
     }
 
     setPasswordUpdating(true);
-    const { error } = await supabase.auth.updateUser({ password: passwords.newPassword });
     
-    if (error) {
-      alert("Failed to update password: " + error.message);
+    const res = await updateEmployeeCredentialsAction(userId, securityData.newUsername, securityData.newPassword);
+    
+    if (res?.error) {
+      alert("Error: " + res.error);
     } else {
-      alert("Password updated successfully! ✅");
-      setPasswords({ newPassword: "", confirmPassword: "" });
+      alert("Security details updated successfully!");
+      setSecurityData({ newUsername: "", newPassword: "", confirmPassword: "" });
+      // Optionally refetch data or prompt user to reload
+      fetchUserData();
     }
     setPasswordUpdating(false);
   };
@@ -235,13 +248,18 @@ export default function AdminProfile() {
     <div className="min-h-screen pb-20 p-2 md:p-6 max-w-6xl mx-auto">
       
       {/* ---------------- PROFILE HEADER (Cover & Avatar) ---------------- */}
-      <div className="relative mb-20 md:mb-24">
+      <div className="mb-8">
         <div className="h-48 md:h-64 w-full bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 rounded-3xl shadow-lg overflow-hidden relative">
            <div className="absolute inset-0 bg-[url('/file.svg')] opacity-10 bg-center"></div>
         </div>
+      </div>
+      
+      {/* --- Avatar & Info Section --- */}
+      <div className="-mt-32 md:-mt-36 px-4 md:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:gap-6">
 
-        <div className="absolute -bottom-16 md:-bottom-20 left-8 md:left-12 flex items-end gap-6">
-          <div className="relative group">
+          {/* Avatar + Buttons Group */}
+          <div className="relative self-center sm:self-auto shrink-0">
             <div className="w-32 h-32 md:w-40 md:h-40 bg-white p-1.5 rounded-full shadow-2xl">
               <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center overflow-hidden relative">
                 {profile.avatar_url ? (
@@ -268,34 +286,26 @@ export default function AdminProfile() {
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
           </div>
 
-          <div className="mb-4 hidden sm:block">
-            <h1 className="text-3xl font-bold text-gray-900">{profile.full_name || "Admin User"}</h1>
-            <p className="text-blue-600 font-bold tracking-widest text-xs uppercase mt-1 flex items-center gap-1">
+          {/* Info + Remove Button Group */}
+          <div className="py-4 text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{profile.full_name || "Admin User"}</h1>
+            <p className="text-blue-600 font-bold tracking-widest text-xs uppercase mt-1 flex items-center gap-1 justify-center sm:justify-start">
               <ShieldCheck size={14} /> Super Admin
             </p>
+            {profile.avatar_url && (
+                <button 
+                  onClick={handleRemoveAvatar} 
+                  className="mt-3 mx-auto sm:mx-0 text-xs text-red-500 hover:text-red-600 font-bold flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full transition-all"
+                >
+                  <Trash2 size={12} /> Remove Picture
+                </button>
+            )}
           </div>
         </div>
-
-        {/* Remove Avatar Action */}
-        {profile.avatar_url && (
-           <button 
-             onClick={handleRemoveAvatar} 
-             className="absolute -bottom-12 left-44 md:left-56 text-xs text-red-500 hover:text-red-600 font-bold flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full transition-all"
-           >
-             <Trash2 size={12} /> Remove Picture
-           </button>
-        )}
-      </div>
-
-      <div className="mb-8 px-4 sm:hidden">
-         <h1 className="text-2xl font-bold text-gray-900">{profile.full_name || "Admin User"}</h1>
-         <p className="text-blue-600 font-bold tracking-widest text-[10px] uppercase mt-1 flex items-center gap-1">
-           <ShieldCheck size={12} /> Super Admin
-         </p>
       </div>
 
       {/* ---------------- MAIN CONTENT GRID ---------------- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 px-4 md:px-0">
         
         {/* Left Side: Navigation Tabs */}
         <div className="lg:col-span-1 space-y-2">
@@ -353,16 +363,9 @@ export default function AdminProfile() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Username (ID)</label>
-                      {isEditing ? (
-                        <input 
-                          value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.toLowerCase().replace(/\s+/g, '')})}
-                          className="w-full p-4 bg-gray-50 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold transition-all"
-                        />
-                      ) : (
-                        <div className="w-full p-4 bg-gray-50 border border-transparent rounded-xl text-gray-900 font-bold">
-                          @{profile.username || "N/A"}
-                        </div>
-                      )}
+                      <div className="w-full p-4 bg-gray-50 border border-transparent rounded-xl text-gray-900 font-bold">
+                        @{profile.username || "N/A"}
+                      </div>
                     </div>
                   </div>
 
@@ -393,13 +396,8 @@ export default function AdminProfile() {
                     </div>
                   </div>
                   
-                  {/* UUID (Read Only) */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Admin User ID</label>
-                    <div className="w-full p-3 bg-gray-100 rounded-xl text-gray-500 font-mono text-sm break-all">
-                      {userId}
-                    </div>
-                  </div>
+                  {/* UUID (Read Only) I deleted this function*/}
+                  
 
                   {/* Edit Actions */}
                   {isEditing && (
@@ -433,19 +431,40 @@ export default function AdminProfile() {
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                 className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Change Password</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Security Settings</h2>
                 
-                <form onSubmit={handlePasswordUpdate} className="space-y-6 max-w-md">
+                <form onSubmit={handleSecurityUpdate} className="space-y-6 max-w-md">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">New User ID</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Leave blank to keep current ID" 
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold"
+                        value={securityData.newUsername}
+                        onChange={(e) => setSecurityData({ ...securityData, newUsername: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">New Password</label>
                     <div className="relative">
                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                        <input 
-                         type="password" required minLength={6}
-                         value={passwords.newPassword} onChange={e => setPasswords({...passwords, newPassword: e.target.value})}
-                         className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
-                         placeholder="••••••••"
+                         type={showNewPass ? "text" : "password"} 
+                         value={securityData.newPassword} onChange={e => setSecurityData({...securityData, newPassword: e.target.value})}
+                         className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
+                         placeholder="Leave blank to keep current"
                        />
+                       <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <AnimatePresence mode="wait">
+                            <motion.div key={showNewPass ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
+                              {showNewPass ? <EyeOff size={20}/> : <Eye size={20}/>}
+                            </motion.div>
+                          </AnimatePresence>
+                       </button>
                     </div>
                   </div>
 
@@ -454,11 +473,18 @@ export default function AdminProfile() {
                     <div className="relative">
                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                        <input 
-                         type="password" required minLength={6}
-                         value={passwords.confirmPassword} onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})}
-                         className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
-                         placeholder="••••••••"
+                         type={showConfirmPass ? "text" : "password"}
+                         value={securityData.confirmPassword} onChange={e => setSecurityData({...securityData, confirmPassword: e.target.value})}
+                         className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
+                         placeholder="Must match new password"
                        />
+                       <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <AnimatePresence mode="wait">
+                            <motion.div key={showConfirmPass ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
+                              {showConfirmPass ? <EyeOff size={20}/> : <Eye size={20}/>}
+                            </motion.div>
+                          </AnimatePresence>
+                       </button>
                     </div>
                   </div>
 
@@ -468,7 +494,7 @@ export default function AdminProfile() {
                       className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black shadow-lg transition-all disabled:opacity-70"
                     >
                       {passwordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
-                      Update Password
+                      Update Security
                     </button>
                   </div>
                 </form>

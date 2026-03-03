@@ -15,7 +15,7 @@ function SupervisorLoginContent() {
         <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-[100px] opacity-20 animate-pulse delay-700"></div>
 
         <div className="relative z-10 text-center space-y-6 max-w-lg">
-          <h2 className="text-5xl font-extrabold tracking-tight">ASBN Cleaning</h2>
+          <h2 className="text-5xl font-extrabold tracking-tight">BTM Cleaning</h2>
           <p className="text-xl text-white/80 font-light leading-relaxed">
             Monitor & Manage Teams with Supervisor Control.
           </p>

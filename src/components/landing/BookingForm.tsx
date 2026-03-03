@@ -25,7 +25,7 @@ export default function BookingForm() {
     const { companyName, service, type, layout, building, floor, unit, doorCode, date, time } = formData;
     const message = `*New Booking Request* 🧹%0A%0A*Company / Client:* ${companyName}%0A*Service:* ${service}%0A*Type:* ${type}%0A*Layout:* ${layout}%0A*Building:* ${building}%0A*Floor:* ${floor}%0A*Unit:* ${unit}%0A*Door Code:* ${doorCode}%0A*Date:* ${date}%0A*Time:* ${time}`;
     
-    const adminPhone = "+918597872806"; // Change to your actual WhatsApp Number
+    const adminPhone = "+971544374231"; // Change to your actual WhatsApp Number
     window.open(`https://wa.me/${adminPhone}?text=${message}`, "_blank");
   };
 

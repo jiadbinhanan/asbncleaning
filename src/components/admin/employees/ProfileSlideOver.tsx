@@ -276,7 +276,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
               </div>
               <div className="flex items-center gap-4 p-3">
                 <Mail className="text-gray-400" size={20} />
-                <span className="font-medium text-gray-700">{formData.username}@test.com</span>
+                <span className="font-medium text-gray-700">{formData.username}@btm.com</span>
               </div>
             </div>
           </div>
