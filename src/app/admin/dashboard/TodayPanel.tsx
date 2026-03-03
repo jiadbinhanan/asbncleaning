@@ -152,7 +152,7 @@ export default function TodayPanel({ bookings, profilesMap }: TodayPanelProps) {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart layout="vertical" data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" hide />
+                        <XAxis type="category" dataKey="name" hide />
                         <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', fontSize: '10px', padding: '4px 8px' }}/>
                         <Bar dataKey="value" radius={4} barSize={8} />
                       </BarChart>
