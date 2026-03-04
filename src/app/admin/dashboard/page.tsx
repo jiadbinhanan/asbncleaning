@@ -69,11 +69,14 @@ export default function PremiumAdminDashboard() {
 
       const bData = bookingsRes.data || [];
       
-      // 3. Fetch Team Member Profiles for DPs
-      const memberIds = new Set<string>();
-      bData.forEach(b => {
-        if (b.teams?.member_ids) b.teams.member_ids.forEach((id: string) => memberIds.add(id));
-      });
+ // 3. Fetch Team Member Profiles for DPs
+ const memberIds = new Set<string>();
+ bData.forEach((b: any) => {
+   const team = Array.isArray(b.teams) ? b.teams[0] : b.teams;
+   if (team?.member_ids) {
+     team.member_ids.forEach((id: string) => memberIds.add(id));
+   }
+ });
 
       let pMap: any = {};
       if (memberIds.size > 0) {
@@ -134,8 +137,8 @@ export default function PremiumAdminDashboard() {
           </div>
 
           <div className="lg:col-span-4 lg:row-span-3">
-            <LiveTimelineCard workLogs={dashboardData.workLogs} bookings={dashboardData.bookings} />
-          </div>
+          <LiveTimelineCard />
+         </div>
 
           {/* ROW 3: Today Audit (2/12) | Financial Graph (6/12) */}
           <div className="lg:col-span-2">

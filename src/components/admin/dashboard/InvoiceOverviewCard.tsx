@@ -78,8 +78,8 @@ export default function InvoiceOverviewCard({ invoices }: { invoices: any[] }) {
                     {data.chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => [`AED ${value.toLocaleString()}`, 'Revenue']}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }}
+                   formatter={(value: any) => [`AED ${Number(value).toLocaleString()}`, 'Revenue']}
+                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
