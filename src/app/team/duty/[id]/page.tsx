@@ -30,14 +30,15 @@ export default function DutyPage() {
   const [checklist, setChecklist] = useState<any[]>([]);
   const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
   
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [beforePhotos, setBeforePhotos] = useState<File[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Equipment & Inventory States
   const [masterItems, setMasterItems] = useState<any[]>([]);
   const [stdExchanges, setStdExchanges] = useState<any[]>([]);
   const [extExchanges, setExtExchanges] = useState<any[]>([]);
-  const [othExchanges, setOthExchanges] = useState<any[]>([]); // 🚨 NEW: Custom Exchange State
+  const [othExchanges, setOthExchanges] = useState<any[]>([]);
   const [extProvides, setExtProvides] = useState<any[]>([]);
   const [othProvides, setOthProvides] = useState<any[]>([]);
 
@@ -62,7 +63,6 @@ export default function DutyPage() {
       if (bData) {
         setBooking(bData);
         
-        // Checklist Data Parse
         let content = null;
         if (bData.checklist_templates) {
           content = Array.isArray(bData.checklist_templates) 
@@ -96,7 +96,6 @@ export default function DutyPage() {
           }
         }
 
-        // Fetch Equipment Config & Master List (Parallel)
         const [confRes, masterRes] = await Promise.all([
           supabase.from('unit_equipment_config').select('*, equipment_master(item_name)').eq('unit_id', bData.units.id),
           supabase.from('equipment_master').select('*').order('item_name')
@@ -104,7 +103,6 @@ export default function DutyPage() {
 
         if (masterRes.data) setMasterItems(masterRes.data);
         
-        // 🚨 RESTORE FROM LOCAL STORAGE IF EXISTS
         const savedStateStr = localStorage.getItem(`asbn_duty_${bookingId}`);
         if (savedStateStr) {
           const savedState = JSON.parse(savedStateStr);
@@ -121,7 +119,7 @@ export default function DutyPage() {
           }
           
           setExtExchanges(savedState.extExchanges || []);
-          setOthExchanges(savedState.othExchanges || []); // Restore custom exchanges
+          setOthExchanges(savedState.othExchanges || []);
           setExtProvides(savedState.extProvides || []);
           setOthProvides(savedState.othProvides || []);
         } else if (confRes.data) {
@@ -145,7 +143,7 @@ export default function DutyPage() {
         checkedItems,
         stdExchanges,
         extExchanges,
-        othExchanges, // Auto-save custom exchanges
+        othExchanges,
         extProvides,
         othProvides
       };
@@ -168,29 +166,32 @@ export default function DutyPage() {
 
   // --- Handlers ---
   const toggleChecklist = (id: string) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setPhotos(prev => [...prev, ...Array.from(e.target.files!)]);
+  
+  const handleCheckAll = () => {
+    const allChecked: { [key: string]: boolean } = {};
+    checklist.forEach(item => {
+      allChecked[item.id] = true;
+    });
+    setCheckedItems(allChecked);
   };
 
-  const removePhoto = (index: number) => setPhotos(prev => prev.filter((_, i) => i !== index));
+  const removeBeforePhoto = (index: number) => setBeforePhotos(prev => prev.filter((_, i) => i !== index));
+  const removeAfterPhoto = (index: number) => setAfterPhotos(prev => prev.filter((_, i) => i !== index));
 
   const startShift = () => { setIsStarted(true); setStartTime(new Date()); };
 
   const qtyOptions = Array.from({ length: 11 }, (_, i) => i);
 
-  // --- 🚨 Final Submit Logic ---
+  // --- Final Submit Logic ---
   const handleCompleteWork = async () => {
     if (!startTime) return alert("Shift hasn't started!");
 
-    // Check 1: Incomplete Checklist
     const hasUnchecked = checklist.some(task => !checkedItems[task.id]);
     if (hasUnchecked) {
       const proceed = window.confirm("⚠️ You have unchecked items in the cleaning tasks. Are you sure you want to submit without completing them?");
       if (!proceed) return;
     }
 
-    // Check 2: No Equipment Logged (Updated with OthExchanges)
     const noEquipment = stdExchanges.every(e => e.exchanged_qty === 0) 
       && extExchanges.length === 0 && othExchanges.length === 0 && extProvides.length === 0 && othProvides.length === 0;
     if (noEquipment) {
@@ -198,8 +199,7 @@ export default function DutyPage() {
       if (!proceed) return;
     }
 
-    // Check 3: No Photos Uploaded
-    const noPhotos = photos.length === 0;
+    const noPhotos = beforePhotos.length === 0 && afterPhotos.length === 0;
     if (noPhotos) {
       const proceed = window.confirm("⚠️ You haven't uploaded any photo proofs. Are you sure you want to submit without photos?");
       if (!proceed) return;
@@ -209,60 +209,69 @@ export default function DutyPage() {
     setUploadingPhotos(true);
 
     try {
-      // 1. Upload Photos (🚨 FIXED: Match folder with action.ts "work-photos")
-      const uploadedUrls: string[] = [];
-      if (photos.length > 0) {
+      const uploadedBeforeUrls: string[] = [];
+      const uploadedAfterUrls: string[] = [];
+      
+      if (beforePhotos.length > 0 || afterPhotos.length > 0) {
         const { signature, timestamp, apiKey, cloudName } = await getWorkPhotoUploadSignature();
-        for (const file of photos) {
+        const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+
+        const uploadToCloudinary = async (file: File) => {
           const formData = new FormData();
           formData.append("file", file);
           formData.append("api_key", apiKey!);
           formData.append("timestamp", timestamp.toString());
           formData.append("signature", signature);
-          formData.append("folder", "work-photos"); // 🚨 FIXED CLOUDINARY FOLDER
+          formData.append("folder", "work-photos");
 
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData });
+          const res = await fetch(cloudinaryUrl, { method: "POST", body: formData });
           const data = await res.json();
-          if (data.secure_url) uploadedUrls.push(data.secure_url);
+          return data.secure_url;
+        };
+
+        for (const file of beforePhotos) {
+          const url = await uploadToCloudinary(file);
+          if (url) uploadedBeforeUrls.push(url);
+        }
+
+        for (const file of afterPhotos) {
+          const url = await uploadToCloudinary(file);
+          if (url) uploadedAfterUrls.push(url);
         }
       }
+
       setUploadingPhotos(false);
 
-      // 2. Prepare FULL Ordered Checklist Data
-      // 🚨 FIXED: Now saves ALL items (true/false) in template order
       const fullChecklistData: Record<string, boolean> = {};
       checklist.forEach(item => {
         fullChecklistData[item.id] = checkedItems[item.id] || false;
       });
 
-      // 3. Prepare Equipment Data JSON
       const equipmentData = {
         standardExchange: stdExchanges,
         extraExchange: extExchanges,
-        otherExchange: othExchanges, // 🚨 NEW Custom Exchange
+        otherExchange: othExchanges,
         extraProvide: extProvides, 
         otherProvide: othProvides  
       };
 
-      // 4. Insert Work Log
       const { error: logError } = await supabase.from('work_logs').insert([{
         booking_id: parseInt(bookingId),
         team_id: booking.assigned_team_id,
         submitted_by: agentId,
         start_time: startTime.toISOString(),
         end_time: new Date().toISOString(),
-        checklist_data: fullChecklistData, // 🚨 FIXED: Ordered full list
-        photo_urls: uploadedUrls, 
+        checklist_data: fullChecklistData, 
+        before_photos: uploadedBeforeUrls, 
+        photo_urls: uploadedAfterUrls,    
         equipment_logs: equipmentData 
       }]);
 
       if (logError) throw logError;
 
-      // 5. Update Booking Status
       const { error: statusError } = await supabase.from('bookings').update({ status: 'completed' }).eq('id', bookingId);
       if (statusError) throw statusError;
 
-      // Clear Local Storage after successful submission
       localStorage.removeItem(`asbn_duty_${bookingId}`);
 
       alert("Shift Completed Successfully!");
@@ -281,7 +290,6 @@ export default function DutyPage() {
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
       
-      {/* Header */}
       <div className="bg-gray-900 text-white p-6 shadow-md sticky top-0 z-30 flex items-center gap-4">
         <button onClick={() => router.back()} className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition"><ArrowLeft size={20}/></button>
         <div>
@@ -292,7 +300,6 @@ export default function DutyPage() {
 
       <div className="max-w-2xl mx-auto p-4 md:p-6 space-y-6">
         
-        {/* Job Info */}
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col gap-3">
           <div className="flex items-center gap-3 text-sm font-bold text-gray-700"><Building2 className="text-blue-500" size={18}/> {booking.units?.building_name}</div>
           <div className="flex items-center gap-3 text-sm font-bold text-gray-700"><MapPin className="text-blue-500" size={18}/> Dubai, UAE</div>
@@ -300,7 +307,6 @@ export default function DutyPage() {
           <div className="mt-2 text-xs font-black text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg w-fit border border-blue-100 uppercase tracking-widest">{booking.service_type}</div>
         </div>
 
-        {/* Start Shift Button */}
         {!isStarted ? (
           <motion.button 
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}
@@ -318,14 +324,37 @@ export default function DutyPage() {
           </div>
         )}
 
-        {/* WORK FLOW */}
         <AnimatePresence>
           {isStarted && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               
-              {/* --- SECTION 1: CHECKLIST (GROUPED BY SECTION) --- */}
-              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2"><CheckSquare className="text-blue-600"/> Cleaning Tasks</h3>
+              {/* 🚨 1. MOVED: BEFORE PHOTOS SECTION (Right after starting shift) */}
+              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
+                <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2"><Camera className="text-blue-600"/> Before Cleaning Photos</h3>
+                
+                <label className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all aspect-video group">
+                  <UploadCloud className="text-gray-400 group-hover:text-blue-500 mb-2" size={32}/>
+                  <span className="text-xs font-black text-gray-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Add Before Photo</span>
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => { if (e.target.files) setBeforePhotos(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+                </label>
+                
+                {beforePhotos.length > 0 && (
+                  <div className="flex gap-3 overflow-x-auto mt-4 pb-2 custom-scrollbar">
+                    {beforePhotos.map((file, i) => (
+                      <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                        <img src={URL.createObjectURL(file)} alt="Before" className="w-full h-full object-cover" />
+                        <button onClick={() => removeBeforePhoto(i)} className="absolute top-1 right-1 bg-white/90 p-1 rounded-full text-red-500 hover:bg-red-50 shadow-sm"><Trash2 size={12}/></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* --- SECTION 2: CHECKLIST (GROUPED BY SECTION) --- */}
+              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><CheckSquare className="text-blue-600"/> Cleaning Tasks</h3>
+                </div>
                 
                 {checklist.length > 0 ? (
                   <div className="space-y-6">
@@ -352,6 +381,15 @@ export default function DutyPage() {
                         </div>
                       </div>
                     ))}
+                    {/* 🚨 2. MOVED: Check All Button at the bottom of checklist */}
+                    <div className="pt-5 mt-5 border-t border-gray-100 flex justify-end">
+                      <button 
+                         onClick={handleCheckAll} 
+                         className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-black uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm border border-blue-200"
+                      >
+                         <CheckSquare size={18}/> Check All Tasks
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-gray-50 border border-gray-200 border-dashed rounded-2xl p-8 text-center">
@@ -362,8 +400,8 @@ export default function DutyPage() {
                 )}
               </div>
 
-              {/* --- SECTION 2: EQUIPMENT INVENTORY --- */}
-              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 overflow-hidden">
+              {/* --- SECTION 3: EQUIPMENT INVENTORY --- */}
+              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 overflow-hidden mb-6">
                 <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
                   <Box className="text-blue-600" size={24}/>
                   <div>
@@ -376,25 +414,21 @@ export default function DutyPage() {
                 <div className="mb-8">
                   <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg w-fit"><RefreshCcw size={14}/> Standard Exchange</h4>
                   {stdExchanges.length === 0 ? (
-                    <p className="text-xs font-bold text-gray-400">No standard equipment configured for this unit.</p>
+                    <p className="text-xs font-bold text-gray-400">No standard equipment configured.</p>
                   ) : (
                     <div className="space-y-3 pl-2">
                       {stdExchanges.map((item, idx) => (
-                        <div key={item.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                        <div key={item.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                           <div className="flex-1 pr-4">
                             <p className="font-bold text-gray-900 text-sm">{item.item_name}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Expected Qty: {item.expected_qty}</p>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Expected Qty: {item.expected_qty}</p>
                           </div>
-                          <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
-                            <span className="text-[10px] font-black text-blue-600 uppercase">Qty:</span>
+                          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-300 shadow-sm">
+                            <span className="text-xs font-black text-blue-700 uppercase">Qty:</span>
                             <select 
                               value={item.exchanged_qty} 
-                              onChange={(e) => {
-                                const newStd = [...stdExchanges];
-                                newStd[idx].exchanged_qty = parseInt(e.target.value);
-                                setStdExchanges(newStd);
-                              }}
-                              className="font-black text-gray-900 bg-transparent outline-none cursor-pointer"
+                              onChange={(e) => { const newStd = [...stdExchanges]; newStd[idx].exchanged_qty = parseInt(e.target.value); setStdExchanges(newStd); }}
+                              className="font-black text-lg text-gray-900 bg-transparent outline-none cursor-pointer"
                             >
                               {qtyOptions.map(q => <option key={q} value={q}>{q}</option>)}
                             </select>
@@ -408,154 +442,139 @@ export default function DutyPage() {
                 {/* B. Extra Exchange */}
                 <div className="mb-6 border-t border-gray-100 pt-6">
                   <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><RefreshCcw size={14}/> Add Extra Exchange</h4>
-                  <p className="text-[10px] font-bold text-gray-400 mb-4 pl-6 leading-tight">Record unlisted dirty/clean swaps (No extra charge applied)</p>
-                  
                   <div className="space-y-3 pl-2">
                     {extExchanges.map((ex, idx) => (
-                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-amber-50/50 border border-amber-100 rounded-xl">
+                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-amber-50/50 border border-amber-200 rounded-xl">
                         <select 
                           value={ex.equipment_id} 
-                          onChange={(e) => {
-                            const newExt = [...extExchanges];
-                            newExt[idx].equipment_id = e.target.value;
-                            newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || "";
-                            setExtExchanges(newExt);
-                          }}
-                          className="flex-1 p-2 bg-white rounded-lg border border-amber-200 outline-none font-bold text-xs text-gray-800"
+                          onChange={(e) => { const newExt = [...extExchanges]; newExt[idx].equipment_id = e.target.value; newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || ""; setExtExchanges(newExt); }}
+                          className="flex-1 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-sm text-gray-900 shadow-sm"
                         >
                           <option value="">Select Item...</option>
                           {masterItems.map(m => <option key={m.id} value={m.id}>{m.item_name}</option>)}
                         </select>
                         <select 
                           value={ex.qty} onChange={(e) => { const n = [...extExchanges]; n[idx].qty = parseInt(e.target.value); setExtExchanges(n); }}
-                          className="w-16 p-2 bg-white rounded-lg border border-amber-200 outline-none font-black text-center text-sm"
+                          className="w-16 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
                         >
                           {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
-                        <button onClick={() => setExtExchanges(extExchanges.filter(x => x.id !== ex.id))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                        <button onClick={() => setExtExchanges(extExchanges.filter(x => x.id !== ex.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
                       </div>
                     ))}
-                    <button onClick={() => setExtExchanges([...extExchanges, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-amber-600 hover:text-amber-700 flex items-center gap-1.5 py-1 px-3 bg-amber-50 rounded-lg transition-colors">
+                    <button onClick={() => setExtExchanges([...extExchanges, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-amber-700 hover:text-amber-800 flex items-center gap-1.5 py-1.5 px-3 bg-amber-100 rounded-lg transition-colors">
                       <PlusCircle size={14}/> Add Item
                     </button>
                   </div>
                 </div>
 
-                {/* 🚨 C. Custom Extra Exchange (NEW) */}
+                {/* C. Custom Extra Exchange */}
                 <div className="mb-8 pl-2">
-                  <div className="space-y-3 pl-2 border-l-2 border-amber-200/50">
-                    <p className="text-[10px] font-bold text-gray-400 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
+                  <div className="space-y-3 pl-2 border-l-2 border-amber-300/50">
+                    <p className="text-[10px] font-black text-gray-500 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
                     {othExchanges.map((oth, idx) => (
-                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-amber-50/30 border border-amber-100 rounded-xl ml-2">
+                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-amber-50/30 border border-amber-200 rounded-xl ml-2">
                         <input 
-                          type="text" placeholder="Custom item name..."
-                          value={oth.item_name} 
+                          type="text" placeholder="Custom item name..." value={oth.item_name} 
                           onChange={(e) => { const n = [...othExchanges]; n[idx].item_name = e.target.value; setOthExchanges(n); }}
-                          className="flex-1 p-2 bg-white rounded-lg border border-amber-200 outline-none font-bold text-xs text-gray-800"
+                          className="flex-1 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-sm text-gray-900 placeholder-gray-400 shadow-sm"
                         />
                         <select 
                           value={oth.qty} onChange={(e) => { const n = [...othExchanges]; n[idx].qty = parseInt(e.target.value); setOthExchanges(n); }}
-                          className="w-16 p-2 bg-white rounded-lg border border-amber-200 outline-none font-black text-center text-sm"
+                          className="w-16 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
                         >
                           {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
-                        <button onClick={() => setOthExchanges(othExchanges.filter(x => x.id !== oth.id))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                        <button onClick={() => setOthExchanges(othExchanges.filter(x => x.id !== oth.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
                       </div>
                     ))}
-                    <button onClick={() => setOthExchanges([...othExchanges, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-amber-600 hover:text-amber-700 flex items-center gap-1.5 py-1 px-3 bg-amber-50/50 rounded-lg transition-colors ml-2">
+                    <button onClick={() => setOthExchanges([...othExchanges, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-amber-700 hover:text-amber-800 flex items-center gap-1.5 py-1.5 px-3 bg-amber-100 rounded-lg transition-colors ml-2">
                       <PlusCircle size={14}/> Add Custom Exchange
                     </button>
                   </div>
                 </div>
 
-                {/* D. Extra Provide (Billing Trigger) */}
+                {/* D. Extra Provide */}
                 <div className="mb-6 border-t border-gray-100 pt-6">
                   <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2 flex items-center gap-2"><PackagePlus size={14}/> Add Extra Provide <span className="text-[8px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1">Billable</span></h4>
-                  <p className="text-[10px] font-bold text-gray-400 mb-4 pl-6 leading-tight">Record extra clean items provided (e.g. extra bedsheet requested)</p>
-                  
-                  <div className="space-y-3 pl-2">
+                  <div className="space-y-3 pl-2 mt-4">
                     {extProvides.map((ex, idx) => (
-                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-indigo-50/50 border border-indigo-200 rounded-xl">
                         <select 
                           value={ex.equipment_id} 
-                          onChange={(e) => {
-                            const newExt = [...extProvides];
-                            newExt[idx].equipment_id = e.target.value;
-                            newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || "";
-                            setExtProvides(newExt);
-                          }}
-                          className="flex-1 p-2 bg-white rounded-lg border border-indigo-200 outline-none font-bold text-xs text-gray-800"
+                          onChange={(e) => { const newExt = [...extProvides]; newExt[idx].equipment_id = e.target.value; newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || ""; setExtProvides(newExt); }}
+                          className="flex-1 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-sm text-gray-900 shadow-sm"
                         >
                           <option value="">Select Item...</option>
                           {masterItems.map(m => <option key={m.id} value={m.id}>{m.item_name}</option>)}
                         </select>
                         <select 
                           value={ex.qty} onChange={(e) => { const n = [...extProvides]; n[idx].qty = parseInt(e.target.value); setExtProvides(n); }}
-                          className="w-16 p-2 bg-white rounded-lg border border-indigo-200 outline-none font-black text-center text-sm"
+                          className="w-16 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
                         >
                           {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
-                        <button onClick={() => setExtProvides(extProvides.filter(x => x.id !== ex.id))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                        <button onClick={() => setExtProvides(extProvides.filter(x => x.id !== ex.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
                       </div>
                     ))}
-                    <button onClick={() => setExtProvides([...extProvides, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 py-1 px-3 bg-indigo-50 rounded-lg transition-colors">
+                    <button onClick={() => setExtProvides([...extProvides, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-700 hover:text-indigo-800 flex items-center gap-1.5 py-1.5 px-3 bg-indigo-100 rounded-lg transition-colors">
                       <PlusCircle size={14}/> Add Item
                     </button>
                   </div>
                 </div>
 
-                {/* E. Others Extra Provide (Billing Trigger) */}
+                {/* E. Others Extra Provide */}
                 <div className="pl-2">
-                  <div className="space-y-3 pl-2 border-l-2 border-indigo-200/50">
-                    <p className="text-[10px] font-bold text-gray-400 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
+                  <div className="space-y-3 pl-2 border-l-2 border-indigo-300/50">
+                    <p className="text-[10px] font-black text-gray-500 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
                     {othProvides.map((oth, idx) => (
-                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-indigo-50/30 border border-indigo-100 rounded-xl ml-2">
+                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-indigo-50/30 border border-indigo-200 rounded-xl ml-2">
                         <input 
-                          type="text" placeholder="Custom item name..."
-                          value={oth.item_name} 
+                          type="text" placeholder="Custom item name..." value={oth.item_name} 
                           onChange={(e) => { const n = [...othProvides]; n[idx].item_name = e.target.value; setOthProvides(n); }}
-                          className="flex-1 p-2 bg-white rounded-lg border border-indigo-200 outline-none font-bold text-xs text-gray-800"
+                          className="flex-1 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-sm text-gray-900 placeholder-gray-400 shadow-sm"
                         />
                         <select 
                           value={oth.qty} onChange={(e) => { const n = [...othProvides]; n[idx].qty = parseInt(e.target.value); setOthProvides(n); }}
-                          className="w-16 p-2 bg-white rounded-lg border border-indigo-200 outline-none font-black text-center text-sm"
+                          className="w-16 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
                         >
                           {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
-                        <button onClick={() => setOthProvides(othProvides.filter(x => x.id !== oth.id))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                        <button onClick={() => setOthProvides(othProvides.filter(x => x.id !== oth.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
                       </div>
                     ))}
-                    <button onClick={() => setOthProvides([...othProvides, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 py-1 px-3 bg-indigo-50/50 rounded-lg transition-colors ml-2">
+                    <button onClick={() => setOthProvides([...othProvides, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-700 hover:text-indigo-800 flex items-center gap-1.5 py-1.5 px-3 bg-indigo-100 rounded-lg transition-colors ml-2">
                       <PlusCircle size={14}/> Add Custom Provide
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* --- SECTION 3: PHOTOS --- */}
-              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2"><Camera className="text-blue-600"/> Upload Proofs</h3>
-                <p className="text-xs text-gray-500 font-bold mb-6">Take pictures of the cleaned unit to verify the work.</p>
+              {/* --- SECTION 4: AFTER PHOTOS --- */}
+              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
+                <h3 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2"><Camera className="text-emerald-600"/> After Cleaning Photos</h3>
+                <p className="text-xs text-gray-500 font-bold mb-6">Take pictures after the cleaning to verify the work.</p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <label className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all aspect-square group">
-                    <UploadCloud className="text-gray-400 group-hover:text-blue-500 mb-2" size={32}/>
-                    <span className="text-xs font-black text-gray-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Add Photo</span>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                <div>
+                  <label className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all aspect-video group">
+                    <UploadCloud className="text-gray-400 group-hover:text-emerald-500 mb-2" size={32}/>
+                    <span className="text-xs font-black text-gray-500 group-hover:text-emerald-600 uppercase tracking-widest text-center">Add After Photo</span>
+                    <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => { if (e.target.files) setAfterPhotos(prev => [...prev, ...Array.from(e.target.files!)]) }} />
                   </label>
                   
-                  {photos.map((file, i) => (
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} key={i} className="relative aspect-square rounded-2xl overflow-hidden shadow-sm group border border-gray-200">
-                      <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
-                      <button onClick={() => removePhoto(i)} className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:bg-red-50 transition-colors shadow-sm">
-                         <Trash2 size={16}/>
-                      </button>
-                    </motion.div>
-                  ))}
+                  {afterPhotos.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto mt-4 pb-2 custom-scrollbar">
+                      {afterPhotos.map((file, i) => (
+                        <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                          <img src={URL.createObjectURL(file)} alt="After" className="w-full h-full object-cover" />
+                          <button onClick={() => removeAfterPhoto(i)} className="absolute top-1 right-1 bg-white/90 p-1 rounded-full text-red-500 hover:bg-red-50 shadow-sm"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* --- Final Submit Action --- */}
               <div className="pt-4 pb-10">
                 <motion.button 
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}

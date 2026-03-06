@@ -11,8 +11,8 @@ import { format, parseISO } from "date-fns";
 // --- Types ---
 type Booking = {
   id: number;
-  booking_ref: string | null; // Added
-  created_at: string; // Added
+  booking_ref: string | null;
+  created_at: string;
   unit_id: number;
   cleaning_date: string;
   cleaning_time: string;
@@ -103,6 +103,7 @@ export default function BookingManagement() {
   useEffect(() => {
     fetchBookings();
     fetchInitialData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -312,68 +313,71 @@ export default function BookingManagement() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-shadow relative"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${booking.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                    <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${booking.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
                         <Home size={24} />
                       </div>
-                      <div>
+                      <div className="overflow-hidden">
                         {/* Booking Ref Badge */}
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider">
                           {booking.booking_ref || `ID-${booking.id}`}
                         </span>
-                        <h3 className="font-bold text-gray-800 text-lg leading-tight">Unit {booking.units?.unit_number}</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
+                        <h3 className="font-bold text-gray-800 text-lg leading-tight truncate">Unit {booking.units?.unit_number}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5 truncate">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-10">
-                      <div>
+                    {/* 🚨 FINAL FIX: RIGHT SIDE (Perfectly aligned & responsive) */}
+                    <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-4 mt-4 md:mt-0 shrink-0">
+                      
+                      {/* 1. Time */}
+                      <div className="md:w-[80px] shrink-0">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time</p>
                         <p className="text-xs font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
-                          <Clock size={12} className="text-blue-500" /> {booking.cleaning_time}
+                          <Clock size={12} className="text-blue-500 shrink-0" /> <span className="truncate">{booking.cleaning_time}</span>
                         </p>
                       </div>
 
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service & Checklist</p>
-                        <p className="text-sm font-semibold text-gray-900">{booking.service_type}</p>
+                      {/* 2. Service & Checklist */}
+                      <div className="md:w-[130px] shrink-0 overflow-hidden">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{booking.service_type}</p>
                         {booking.checklist_templates ? (
-                          <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                            <ClipboardList size={10} /> {booking.checklist_templates.title}
+                          <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 truncate">
+                            <ClipboardList size={10} className="shrink-0" /> <span className="truncate">{booking.checklist_templates.title}</span>
                           </p>
                         ) : (
-                          <p className="text-[11px] text-orange-500 italic mt-0.5">No checklist assigned</p>
-                        )}
-                        {booking.price > 0 ? (
-                          <p className="text-xs text-green-600 font-bold bg-green-50 inline-block px-1.5 py-0.5 rounded mt-1">AED {booking.price}</p>
-                        ) : (
-                          <p className="text-[11px] text-gray-400 font-medium italic mt-1 flex items-center gap-1">
-                            <AlertCircle size={10} /> Price not set
-                          </p>
+                          <p className="text-[11px] text-orange-500 italic mt-0.5">No checklist</p>
                         )}
                       </div>
 
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Assigned Team</p>
+                      {/* 3. Assigned Team */}
+                      <div className="md:w-[130px] shrink-0 overflow-hidden">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Team</p>
                         {booking.teams ? (
-                          <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800">
-                            <Users size={14} /> {booking.teams.team_name}
+                          <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800 truncate">
+                            <Users size={14} className="shrink-0" /> <span className="truncate">{booking.teams.team_name}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md">
-                            <AlertCircle size={14} /> Unassigned
+                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit truncate">
+                            <AlertCircle size={14} className="shrink-0" /> Unassigned
                           </span>
                         )}
                       </div>
 
-                      <div className="flex flex-col items-start md:items-end gap-2">
-                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {/* 4. Price & Status Column */}
+                      <div className="md:w-[90px] shrink-0 flex flex-col items-start md:items-end gap-2 col-span-2 md:col-span-1">
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                           {booking.status}
                         </span>
-                        {/* Booked at Time */}
-                        <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">
-                          Booked: {format(new Date(booking.created_at), 'hh:mm a')}
-                        </span>
+                        
+                        {booking.price > 0 ? (
+                          <p className="text-xs text-green-600 font-black tracking-wide truncate">AED {booking.price}</p>
+                        ) : (
+                          <p className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1 truncate">
+                            <AlertCircle size={10} className="shrink-0" /> No Price
+                          </p>
+                        )}
                       </div>
                     </div>
 

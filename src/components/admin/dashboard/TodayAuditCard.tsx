@@ -6,10 +6,14 @@ import { ShieldCheck, CheckCircle2, Clock } from 'lucide-react';
 export default function TodayAuditCard({ bookings }: { bookings: any[] }) {
   
   const stats = useMemo(() => {
-    // অডিটের জন্য শুধু completed (pending audit) এবং finalized (audited) বুকিংগুলো নেব
-    const auditable = bookings.filter(b => b.status === 'completed' || b.status === 'finalized');
+    // 🚨 FIXED: এখন active, in_progress, completed এবং finalized—সবগুলোকেই অডিটেবল ধরা হচ্ছে
+    const auditable = bookings.filter(b => ['active', 'in_progress', 'completed', 'finalized'].includes(b.status));
+    
+    // যেগুলো অডিট হয়ে গেছে
     const audited = auditable.filter(b => b.status === 'finalized').length;
-    const pending = auditable.filter(b => b.status === 'completed').length;
+    
+    // যেগুলো এখনো অডিট হয়নি (Active + In Progress + Completed)
+    const pending = auditable.filter(b => ['active', 'in_progress', 'completed'].includes(b.status)).length;
     
     // অডিট হওয়া বুকিংয়ের টোটাল প্রাইস
     const auditedRevenue = auditable.filter(b => b.status === 'finalized').reduce((sum, b) => {
@@ -68,23 +72,24 @@ export default function TodayAuditCard({ bookings }: { bookings: any[] }) {
       </div>
 
       {/* Stats Breakdown */}
-      <div className="flex justify-between items-center mt-6 mb-4 px-2 relative z-10">
-        <div className="text-center">
-          <p className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><CheckCircle2 size={10} className="text-emerald-500"/> Done</p>
-          <p className="text-sm font-black text-gray-800">{stats.audited}</p>
-        </div>
-        <div className="text-center border-l border-gray-100 pl-4">
-          <p className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><Clock size={10} className="text-amber-500"/> Left</p>
-          <p className="text-sm font-black text-gray-800">{stats.pending}</p>
-        </div>
+      <div className="flex-1 flex flex-col justify-end mt-4 relative z-10">
+         <div className="border-t border-gray-100 pt-3 mt-2">
+             <div className="flex justify-between items-center text-xs mb-2">
+                 <span className="font-bold text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="text-emerald-500" size={14}/> Audited</span>
+                 <span className="font-black text-gray-800">{stats.audited}</span>
+             </div>
+             <div className="flex justify-between items-center text-xs mb-2">
+                 <span className="font-bold text-gray-500 flex items-center gap-1.5"><Clock className="text-amber-500" size={14}/> Left</span>
+                 <span className="font-black text-gray-800">{stats.pending}</span>
+             </div>
+              <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">Approved Revenue</p>
+                 <p className="text-center font-black text-lg text-emerald-600 mt-1">
+                   AED {stats.auditedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                 </p>
+             </div>
+         </div>
       </div>
-
-      {/* Total Audited Value */}
-      <div className="mt-auto bg-emerald-50/50 border border-emerald-100 p-3 rounded-2xl text-center relative z-10">
-        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Total Audited Price</p>
-        <p className="text-xl font-black text-emerald-700 leading-none">AED {stats.auditedRevenue.toLocaleString()}</p>
-      </div>
-
     </div>
   );
 }

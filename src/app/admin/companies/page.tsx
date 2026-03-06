@@ -4,11 +4,11 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // 🚨 FIXED: PDF autotable import
+import autoTable from 'jspdf-autotable';
 import { 
   Building2, Plus, Search, Trash2, 
   Home, Key, Layers, ArrowRight, Loader2, 
-  List, Grid, FileText, Table
+  List, Grid, FileText, Table, Edit // 🚨 NEW: Added Edit
 } from 'lucide-react';
 
 // --- Types ---
@@ -46,6 +46,13 @@ export default function CompanyManagement() {
   // Forms
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newUnit, setNewUnit] = useState({ unit_number: '', building_name: '', layout: '', door_code: '' });
+  
+  // 🚨 NEW: Edit States
+  const [isEditCompanyOpen, setIsEditCompanyOpen] = useState(false);
+  const [editCompanyName, setEditCompanyName] = useState('');
+  const [isEditUnitOpen, setIsEditUnitOpen] = useState(false);
+  const [editUnitData, setEditUnitData] = useState({ id: 0, unit_number: '', building_name: '', layout: '', door_code: '' });
+
 
   // --- NEW: List View & Export States ---
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -154,18 +161,25 @@ export default function CompanyManagement() {
     }
   };
 
-  // 3. Add Unit
+  // 3. Add Unit (🚨 UPDATED WITH 'Not Set' LOGIC)
   const handleAddUnit = async () => {
     if (!selectedCompany || !newUnit.unit_number || isSaving) return;
     setIsSaving(true);
-    const { data } = await supabase.from('units').insert([{ company_id: selectedCompany.id, ...newUnit }]).select();
+    
+    // Replace empty values with "Not Set"
+    const sanitizedUnit = {
+      unit_number: newUnit.unit_number,
+      building_name: newUnit.building_name || 'Not Set',
+      layout: newUnit.layout || 'Not Set',
+      door_code: newUnit.door_code || 'Not Set'
+    };
+
+    const { data } = await supabase.from('units').insert([{ company_id: selectedCompany.id, ...sanitizedUnit }]).select();
+    
     if (data) {
         const newUnitData = data[0];
-        // Update Local Cache efficiently
         const updatedAllData = allData.map(comp => 
-          comp.id === selectedCompany.id 
-            ? { ...comp, units: [newUnitData, ...(comp.units || [])] } 
-            : comp
+          comp.id === selectedCompany.id ? { ...comp, units: [newUnitData, ...(comp.units || [])] } : comp
         );
         setAllData(updatedAllData);
         setIsAddUnitOpen(false);
@@ -179,15 +193,55 @@ export default function CompanyManagement() {
     if(!confirm('Delete this unit?')) return;
     const { error } = await supabase.from('units').delete().eq('id', id);
     if (!error) {
-       // Update Local Cache
        const updatedAllData = allData.map(comp => 
-          comp.id === selectedCompany?.id 
-            ? { ...comp, units: comp.units.filter((u:any) => u.id !== id) } 
-            : comp
+          comp.id === selectedCompany?.id ? { ...comp, units: comp.units.filter((u:any) => u.id !== id) } : comp
         );
-        setAllData(updatedAllData);
+       setAllData(updatedAllData);
     }
   };
+
+  // 🚨 5. Edit Company Name
+  const handleEditCompany = async () => {
+    if (!selectedCompany || !editCompanyName || isSaving) return;
+    setIsSaving(true);
+    
+    const { error } = await supabase.from('companies').update({ name: editCompanyName }).eq('id', selectedCompany.id);
+    if (!error) {
+      // Local cache update
+      setCompanies(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, name: editCompanyName } : c));
+      setAllData(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, name: editCompanyName } : c));
+      setSelectedCompany({ ...selectedCompany, name: editCompanyName });
+      setIsEditCompanyOpen(false);
+    }
+    setIsSaving(false);
+  };
+
+  // 🚨 6. Edit Unit Data
+  const handleEditUnit = async () => {
+    if (!selectedCompany || !editUnitData.unit_number || isSaving) return;
+    setIsSaving(true);
+    
+    const sanitizedUnit = {
+      unit_number: editUnitData.unit_number,
+      building_name: editUnitData.building_name || 'Not Set',
+      layout: editUnitData.layout || 'Not Set',
+      door_code: editUnitData.door_code || 'Not Set'
+    };
+
+    const { error } = await supabase.from('units').update(sanitizedUnit).eq('id', editUnitData.id);
+    if (!error) {
+      // Local cache update
+      const updatedAllData = allData.map(comp => 
+        comp.id === selectedCompany.id 
+          ? { ...comp, units: comp.units.map((u:any) => u.id === editUnitData.id ? { ...u, ...sanitizedUnit } : u) } 
+          : comp
+      );
+      setAllData(updatedAllData);
+      setIsEditUnitOpen(false);
+    }
+    setIsSaving(false);
+  };
+
 
   return (
     <>
@@ -317,11 +371,12 @@ export default function CompanyManagement() {
                                             : 'bg-white text-gray-600 border-gray-100 hover:border-blue-100 hover:bg-blue-50'
                                         }`}
                                     >
-                                        <div className="flex items-center gap-3 truncate pr-4">
+                                        <div className="flex items-center gap-3 pr-2 w-full overflow-hidden">
                                           <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${selectedCompany?.id === company.id ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}`}><Building2 size={20}/></div>
-                                          <div className="truncate">
-                                            <h3 className={`font-black truncate ${selectedCompany?.id === company.id ? 'text-white' : 'text-gray-900'}`}>{company.name}</h3>
-                                            <p className={`text-[10px] uppercase tracking-widest font-bold mt-0.5 ${selectedCompany?.id === company.id ? 'text-blue-100' : 'text-gray-400'}`}>Client ID: #{company.id}</p>
+                                          <div className="flex-1 min-w-0">
+                                            {/* 🚨 REMOVED TRUNCATE, ADDED BREAK-WORDS */}
+                                            <h3 className={`font-black break-words whitespace-normal leading-tight ${selectedCompany?.id === company.id ? 'text-white' : 'text-gray-900'}`}>{company.name}</h3>
+                                            <p className={`text-[10px] uppercase tracking-widest font-bold mt-1 ${selectedCompany?.id === company.id ? 'text-blue-100' : 'text-gray-400'}`}>Client ID: #{company.id}</p>
                                           </div>
                                         </div>
                                         
@@ -352,7 +407,13 @@ export default function CompanyManagement() {
                             <div className='p-6 md:p-8 border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50 shrink-0'>
                               <div>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Managing Units For</p>
-                                  <h2 className='text-2xl font-black text-gray-900'>{selectedCompany.name}</h2>
+                                  {/* 🚨 ADDED EDIT BUTTON HERE */}
+                                  <div className="flex items-center gap-3">
+                                    <h2 className='text-2xl font-black text-gray-900'>{selectedCompany.name}</h2>
+                                    <button onClick={() => { setEditCompanyName(selectedCompany.name); setIsEditCompanyOpen(true); }} className="text-gray-400 hover:text-blue-600 transition-colors p-1" title="Edit Client Name">
+                                       <Edit size={18} />
+                                    </button>
+                                  </div>
                                   <p className='text-sm font-bold text-gray-500 mt-1 flex items-center gap-2'>
                                   <Layers size={14} className="text-blue-500"/> Total Units: {units.length}
                                   </p>
@@ -386,13 +447,23 @@ export default function CompanyManagement() {
                                         >
                                           <div className="flex justify-between items-start mb-4">
                                             <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Home size={20}/></div>
-                                            <button 
-                                                onClick={() => handleDeleteUnit(unit.id)}
-                                                className='text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-colors hover:bg-red-50 p-2 rounded-full'
-                                                title='Delete Unit'
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {/* 🚨 ADDED EDIT UNIT BUTTON */}
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => { setEditUnitData(unit); setIsEditUnitOpen(true); }}
+                                                    className='text-gray-300 hover:text-blue-500 transition-colors hover:bg-blue-50 p-2 rounded-full'
+                                                    title='Edit Unit'
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteUnit(unit.id)}
+                                                    className='text-gray-300 hover:text-red-500 transition-colors hover:bg-red-50 p-2 rounded-full'
+                                                    title='Delete Unit'
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                           </div>
 
                                           <h4 className='font-black text-gray-900 text-xl mb-1'>Unit {unit.unit_number}</h4>
@@ -533,10 +604,13 @@ export default function CompanyManagement() {
                      onChange={(e) => setNewUnit({...newUnit, layout: e.target.value})}
                    >
                      <option value=''>Select Layout</option>
-                     <option value='Studio'>Studio</option>
                      <option value='1-BR Apartment'>1-BR Apartment</option>
                      <option value='2-BR Apartment'>2-BR Apartment</option>
+                     <option value='2-BR + Bunker'>2-BR + Bunker</option> {/* 🚨 NEW */}
                      <option value='3-BR Apartment'>3-BR Apartment</option>
+                     <option value='4-BR Apartment'>4-BR Apartment</option> {/* 🚨 NEW */}
+                     <option value='5-BR Apartment'>5-BR Apartment</option> {/* 🚨 NEW */}
+                     <option value='Studio'>Studio</option>
                      <option value='Villa'>Villa</option>
                      <option value='Office'>Office</option>
                    </select>
@@ -554,6 +628,124 @@ export default function CompanyManagement() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* 🚨 3. Edit Company Modal */}
+      <AnimatePresence>
+        {isEditCompanyOpen && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !isSaving && setIsEditCompanyOpen(false)}
+              className='absolute inset-0 bg-gray-900/60 backdrop-blur-sm'
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className='relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6 md:p-8'
+            >
+              <h2 className='text-2xl font-black text-gray-900 mb-2'>Edit Client Name</h2>
+              <p className="text-sm font-bold text-gray-500 mb-6">Update the registered name for this client.</p>
+              
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Company Name</label>
+                <input 
+                  autoFocus
+                  className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold'
+                  value={editCompanyName}
+                  onChange={(e) => setEditCompanyName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleEditCompany()}
+                />
+              </div>
+              
+              <div className='flex gap-3 mt-8'>
+                <button onClick={() => setIsEditCompanyOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
+                <button onClick={handleEditCompany} className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
+                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
+                  Update Client
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 🚨 4. Edit Unit Modal */}
+      <AnimatePresence>
+        {isEditUnitOpen && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !isSaving && setIsEditUnitOpen(false)}
+              className='absolute inset-0 bg-gray-900/60 backdrop-blur-sm'
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className='relative bg-white w-full max-w-lg rounded-[2rem] shadow-2xl p-6 md:p-8'
+            >
+              <h2 className='text-2xl font-black text-gray-900 mb-2'>Edit Unit Details</h2>
+              <p className='text-gray-500 text-sm mb-6 font-bold'>Updating unit for <span className="text-blue-600">{selectedCompany?.name}</span></p>
+              
+              <div className='space-y-4'>
+                <div className='grid grid-cols-2 gap-4'>
+                   <div>
+                     <label className='text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5'>Unit No</label>
+                     <input 
+                       className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold'
+                       value={editUnitData.unit_number}
+                       onChange={(e) => setEditUnitData({...editUnitData, unit_number: e.target.value})}
+                     />
+                   </div>
+                   <div>
+                     <label className='text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5'>Door Code</label>
+                     <input 
+                       className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold'
+                       value={editUnitData.door_code === 'Not Set' ? '' : editUnitData.door_code}
+                       onChange={(e) => setEditUnitData({...editUnitData, door_code: e.target.value})}
+                     />
+                   </div>
+                </div>
+
+                <div>
+                   <label className='text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5'>Building Name</label>
+                   <input 
+                     className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold'
+                     value={editUnitData.building_name === 'Not Set' ? '' : editUnitData.building_name}
+                     onChange={(e) => setEditUnitData({...editUnitData, building_name: e.target.value})}
+                   />
+                 </div>
+
+                <div>
+                   <label className='text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5'>Layout</label>
+                   <select 
+                     className='w-full p-4 bg-gray-50 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold'
+                     value={editUnitData.layout === 'Not Set' ? '' : editUnitData.layout}
+                     onChange={(e) => setEditUnitData({...editUnitData, layout: e.target.value})}
+                   >
+                     <option value=''>Select Layout</option>
+                     <option value='1-BR Apartment'>1-BR Apartment</option>
+                     <option value='2-BR Apartment'>2-BR Apartment</option>
+                     <option value='2-BR + Bunker'>2-BR + Bunker</option> {/* 🚨 NEW */}
+                     <option value='3-BR Apartment'>3-BR Apartment</option>
+                     <option value='4-BR Apartment'>4-BR Apartment</option> {/* 🚨 NEW */}
+                     <option value='5-BR Apartment'>5-BR Apartment</option> {/* 🚨 NEW */}
+                     <option value='Studio'>Studio</option>
+                     <option value='Villa'>Villa</option>
+                     <option value='Office'>Office</option>
+                   </select>
+                </div>
+              </div>
+
+              <div className='flex gap-3 mt-8'>
+                <button onClick={() => setIsEditUnitOpen(false)} className='flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
+                <button onClick={handleEditUnit} className='flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
+                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
+                  Update Unit
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </>
   );
 }

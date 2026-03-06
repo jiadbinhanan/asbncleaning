@@ -16,7 +16,8 @@ type WorkLog = {
   start_time: string;
   end_time: string;
   checklist_data: Record<string, boolean>;
-  photo_urls: string[];
+  before_photos?: string[]; // 🚨 NEW: Added for Before Photos
+  photo_urls: string[];     // 🚨 EXISTING (Acts as After Photos)
   equipment_logs?: any;
   agent?: { full_name: string, avatar_url: string };
 };
@@ -73,7 +74,7 @@ export default function ReviewsPage() {
           units ( id, unit_number, building_name, layout, door_code, companies ( name ) ),
           teams ( id, team_name, member_ids ),
           work_logs (
-            id, start_time, end_time, checklist_data, photo_urls, equipment_logs,
+            id, start_time, end_time, checklist_data, before_photos, photo_urls, equipment_logs,
             agent:profiles!work_logs_submitted_by_fkey ( full_name, avatar_url )
           )
         `)
@@ -582,24 +583,46 @@ export default function ReviewsPage() {
                         </div>
                       )}
 
-                      {/* Photos Evidence */}
-                      <div>
-                        <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2"><ImageIcon size={20} className="text-purple-500"/> Photographic Evidence</h3>
-                        <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200">
-                          {workLog.photo_urls && workLog.photo_urls.length > 0 ? (
-                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                               {workLog.photo_urls.map((url, i) => (
-                                 <a key={i} href={url} target="_blank" rel="noreferrer" className="block relative aspect-square rounded-2xl overflow-hidden border-4 border-white shadow-md hover:shadow-xl transition-all group">
-                                   <img src={url} alt="Proof" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                      <span className="bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg transform translate-y-2 group-hover:translate-y-0">View Full</span>
-                                   </div>
-                                 </a>
-                               ))}
-                             </div>
-                          ) : (
-                             <p className="text-gray-500 font-bold p-4 text-center border-2 border-dashed border-gray-300 rounded-xl">No photo evidence uploaded by the team.</p>
-                          )}
+                      {/* --- 3. Work Evidence (Before & After) --- */}
+                      <div className="mb-10">
+                        <h3 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                          <ImageIcon className="text-blue-500" size={20}/> Work Proofs
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Before Photos */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Before Cleaning</p>
+                            {selectedBooking.work_logs[0].before_photos && selectedBooking.work_logs[0].before_photos.length > 0 ? (
+                              <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                                {selectedBooking.work_logs[0].before_photos.map((url: string, i: number) => (
+                                  <a key={i} href={url} target="_blank" rel="noreferrer" className="w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-500 transition-colors block relative group">
+                                     <img src={url} alt="Before Proof" className="w-full h-full object-cover" />
+                                     <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">View</div>
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-center text-gray-400 font-bold text-xs">No Before photos uploaded.</div>
+                            )}
+                          </div>
+
+                          {/* After Photos */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">After Cleaning</p>
+                            {selectedBooking.work_logs[0].photo_urls && selectedBooking.work_logs[0].photo_urls.length > 0 ? (
+                              <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                                {selectedBooking.work_logs[0].photo_urls.map((url: string, i: number) => (
+                                  <a key={i} href={url} target="_blank" rel="noreferrer" className="w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-500 transition-colors block relative group">
+                                     <img src={url} alt="After Proof" className="w-full h-full object-cover" />
+                                     <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">View</div>
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-center text-gray-400 font-bold text-xs">No After photos uploaded.</div>
+                            )}
+                          </div>
                         </div>
                       </div>
 

@@ -42,7 +42,7 @@ export default function WorkRecords() {
     fetchInitialData();
   }, [supabase]);
 
-  // 2. Fetch Records based on Filters (From TSX 5)
+  // 2. Fetch Records based on Filters
   const fetchRecords = async () => {
     setLoading(true);
     let query = supabase
@@ -52,7 +52,9 @@ export default function WorkRecords() {
         teams ( team_name, member_ids ),
         units ( unit_number, building_name, layout, companies ( name ) ),
         work_logs (
-          id, start_time, end_time, checklist_data, photo_urls, equipment_logs, cost,
+          id, start_time, end_time, checklist_data, 
+          before_photos, photo_urls, 
+          equipment_logs, cost,
           agent:profiles!work_logs_submitted_by_fkey ( full_name, avatar_url )
         ),
         booking_extra_inventory (
@@ -76,9 +78,9 @@ export default function WorkRecords() {
 
   useEffect(() => {
     fetchRecords();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, filterStatus, supabase]);
 
-  // 🚨 SMART EXTRA INVENTORY EXTRACTOR
   const getExtraInventory = (booking: any) => {
     if (booking.booking_extra_inventory && booking.booking_extra_inventory.length > 0) {
       return booking.booking_extra_inventory.map((inv: any) => ({
@@ -134,7 +136,7 @@ export default function WorkRecords() {
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const currentItems = filteredBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // 4. Group by Date & Sort (TSX 5 logic, TSX 3 layout needs)
+  // 4. Group by Date & Sort
   const groupedBookings = useMemo(() => {
     const groups: Record<string, any[]> = {};
     currentItems.forEach(b => {
@@ -194,7 +196,6 @@ export default function WorkRecords() {
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans relative overflow-hidden">
       
-      {/* --- PREMIUM HEADER (TSX 3 Style) --- */}
       <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -216,7 +217,6 @@ export default function WorkRecords() {
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
         
-        {/* --- FILTER PANEL (TSX 3 Style + Extra Checkbox from TSX 5) --- */}
         <AnimatePresence>
           {showFilters && (
             <motion.div 
@@ -258,7 +258,6 @@ export default function WorkRecords() {
           )}
         </AnimatePresence>
 
-        {/* --- VERTICAL TIMELINE FEED (TSX 3 Style) --- */}
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={48}/></div>
         ) : groupedBookings.sortedDates.length === 0 ? (
@@ -272,14 +271,12 @@ export default function WorkRecords() {
             {groupedBookings.sortedDates.map(dateStr => (
               <div key={dateStr} className="space-y-5">
                 
-                {/* Date Header */}
                 <div className="flex items-center gap-3 pl-2">
                   <div className="p-2 bg-blue-100 text-blue-700 rounded-lg"><Calendar size={18} strokeWidth={2.5}/></div>
                   <h2 className="text-lg font-black text-gray-800 tracking-tight">{format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}</h2>
                   <div className="h-px bg-gray-300 flex-1 ml-4"></div>
                 </div>
 
-                {/* Bookings Timeline */}
                 <div className="relative border-l-2 border-gray-200 ml-4 md:ml-6 space-y-6 pb-4">
                   {groupedBookings.groups[dateStr].map((booking) => {
                     const workLog = booking.work_logs?.[0];
@@ -294,10 +291,8 @@ export default function WorkRecords() {
                         key={booking.id} 
                         className="relative pl-8 md:pl-10"
                       >
-                        {/* Timeline Dot */}
                         <div className="absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#F4F7FA] shadow-sm"></div>
 
-                        {/* CARD DESIGN (TSX 3 Style + Extra Provide block) */}
                         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all">
                           
                           <div className="flex justify-between items-start mb-4 border-b border-gray-50 pb-4">
@@ -327,7 +322,6 @@ export default function WorkRecords() {
                             </div>
                           </div>
 
-                          {/* 🚨 EXTRA PROVIDE SUB-CARD (From TSX 5) */}
                           {extras.length > 0 && (
                             <div className="mb-4 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl">
                               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-1"><PackagePlus size={12}/> Extra Provide Billed</p>
@@ -344,7 +338,6 @@ export default function WorkRecords() {
 
                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                             
-                            {/* Avatar Group */}
                             <div>
                               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Users size={12}/> {booking.teams?.team_name}</p>
                               <div className="flex items-center">
@@ -361,7 +354,6 @@ export default function WorkRecords() {
                               </div>
                             </div>
 
-                            {/* Stats Badges */}
                             {workLog ? (
                               <div className="flex gap-2 w-full md:w-auto">
                                 <div className="flex-1 md:flex-none px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2">
@@ -370,7 +362,7 @@ export default function WorkRecords() {
                                 </div>
                                 <div className="flex-1 md:flex-none px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2">
                                     <Camera size={16} className="text-blue-500"/>
-                                    <div><p className="text-[9px] font-bold text-gray-400 uppercase">Photos</p><p className="text-xs font-black text-gray-900">{workLog.photo_urls?.length || 0}</p></div>
+                                    <div><p className="text-[9px] font-bold text-gray-400 uppercase">Photos</p><p className="text-xs font-black text-gray-900">{(workLog.before_photos?.length || 0) + (workLog.photo_urls?.length || 0)}</p></div>
                                 </div>
                               </div>
                             ) : (
@@ -394,7 +386,6 @@ export default function WorkRecords() {
           </div>
         )}
 
-        {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 mt-10 pt-6 border-t border-gray-200 pb-10">
             <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-5 py-2.5 bg-white shadow-sm border border-gray-200 text-gray-700 font-bold rounded-xl disabled:opacity-50 transition-all hover:bg-gray-50">Prev Page</button>
@@ -405,7 +396,6 @@ export default function WorkRecords() {
 
       </div>
 
-      {/* --- SLIDE-UP MODAL (BOTTOM SHEET from TSX 3, Content from TSX 5) --- */}
       <AnimatePresence>
         {selectedBooking && (
           <>
@@ -433,7 +423,6 @@ export default function WorkRecords() {
 
               <div className="flex-1 overflow-y-auto p-6 md:px-12 space-y-8 custom-scrollbar pb-20">
                 
-                {/* Detailed Booking Overview Section */}
                 <div className="bg-gray-50 border border-gray-200 rounded-3xl p-6 grid grid-cols-1 md:grid-cols-3 gap-6 shadow-sm">
                   <div className="space-y-1.5">
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-1"><Building2 size={12}/> Property Details</p>
@@ -481,8 +470,7 @@ export default function WorkRecords() {
 
                     return (
                       <>
-                        {/* Section A: Timeline & Cost */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                            <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
                               <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={14}/> Live Time Tracking</p>
                               <div className="space-y-2">
@@ -495,37 +483,49 @@ export default function WorkRecords() {
                                  </div>
                               </div>
                            </div>
+                        </div>
 
-                           <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 flex flex-col justify-center">
-                              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2"><CircleDollarSign size={14}/> Extra Material Costs</p>
-                              {workLog.cost > 0 ? (
-                                <div className="flex items-center gap-3">
-                                   <span className="text-3xl font-black text-amber-600">AED {workLog.cost}</span>
-                                   <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded">Material Purchase</span>
+                        {/* --- 2. Work Proofs (Before & After) --- */}
+                        <div>
+                          <h4 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2"><Camera size={16}/> Work Evidence</h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Before Photos */}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Before Cleaning</p>
+                              {workLog.before_photos && workLog.before_photos.length > 0 ? (
+                                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                                  {workLog.before_photos.map((url: string, i: number) => (
+                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="w-28 h-28 shrink-0 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-500 transition-colors block relative group">
+                                       <img src={url} alt="Before Proof" className="w-full h-full object-cover" />
+                                       <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">View</div>
+                                    </a>
+                                  ))}
                                 </div>
                               ) : (
-                                <p className="text-sm font-bold text-amber-700/60 mt-2">No extra purchases recorded by the supervisor.</p>
+                                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-center text-gray-400 font-bold text-xs">No Before photos uploaded.</div>
                               )}
-                           </div>
-                        </div>
-
-                        {/* Section B: Photo Evidence */}
-                        <div>
-                          <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2"><Camera size={18} className="text-blue-500"/> Photographic Evidence ({workLog.photo_urls?.length || 0})</h3>
-                          {workLog.photo_urls && workLog.photo_urls.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {workLog.photo_urls.map((url: string, i: number) => (
-                                <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow group relative">
-                                  <img src={url} alt={`Work proof ${i+1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                </a>
-                              ))}
                             </div>
-                          ) : (
-                            <div className="p-8 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-center text-gray-400 font-bold">No photos uploaded for this job.</div>
-                          )}
+
+                            {/* After Photos */}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">After Cleaning</p>
+                              {workLog.photo_urls && workLog.photo_urls.length > 0 ? (
+                                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                                  {workLog.photo_urls.map((url: string, i: number) => (
+                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="w-28 h-28 shrink-0 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-500 transition-colors block relative group">
+                                       <img src={url} alt="After Proof" className="w-full h-full object-cover" />
+                                       <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">View</div>
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 border-dashed text-center text-gray-400 font-bold text-xs">No After photos uploaded.</div>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        {/* EQUIPMENT EXCHANGE */}
                         {hasExchanges && (
                           <div>
                             <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2"><RefreshCcw size={18} className="text-amber-500"/> Equipment Exchange Log</h3>
@@ -558,7 +558,6 @@ export default function WorkRecords() {
                           </div>
                         )}
 
-                        {/* EXTRA PROVIDE (BILLED / PENDING) */}
                         {extraInventory.length > 0 && (
                           <div>
                             <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2"><PackagePlus size={18} className="text-indigo-500"/> Extra Equipment Billed</h3>
@@ -588,7 +587,6 @@ export default function WorkRecords() {
                           </div>
                         )}
 
-                        {/* Section C: Checklist Verification */}
                         <div>
                           <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2"><CheckSquare size={18} className="text-blue-500"/> Detailed Checklist Verification</h3>
                           {Object.keys(checklistGroups).length > 0 ? (
