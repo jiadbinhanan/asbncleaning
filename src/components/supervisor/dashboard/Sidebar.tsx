@@ -46,7 +46,10 @@ export default function SupervisorSidebar({
 
       {/* ---------------- SIDEBAR CONTAINER ---------------- */}
       <aside
-        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out
+        onClick={() => {
+          if (window.innerWidth >= 768) setIsDesktopCollapsed(!isDesktopCollapsed);
+        }}
+        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 flex flex-col transition-all duration-300 ease-in-out cursor-pointer
           ${
             isMobileOpen ? 'translate-x-0' : '-translate-x-full'
           }
@@ -56,7 +59,10 @@ export default function SupervisorSidebar({
         `}
       >
         {/* Header: Logo & Toggle Buttons */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
+        <div 
+          className="h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
               S
@@ -76,7 +82,10 @@ export default function SupervisorSidebar({
 
           {/* Collapse Button (Desktop Only) */}
           <button
-            onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDesktopCollapsed(!isDesktopCollapsed);
+            }}
             className="hidden md:flex w-6 h-6 bg-gray-50 border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-orange-600 absolute -right-3 top-7 shadow-sm"
           >
             {isDesktopCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -84,14 +93,17 @@ export default function SupervisorSidebar({
         </div>
 
         {/* Menu Items */}
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar py-6 px-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link
                 key={item.name}
                 href={item.path}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMobileOpen(false);
+                }}
                 className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
                   ${isActive
                     ? 'bg-orange-50 text-orange-600'
@@ -118,16 +130,19 @@ export default function SupervisorSidebar({
         </div>
 
         {/* Footer Logout */}
-        <div className="p-4 border-t border-gray-100">
+        <div 
+          className="p-4 border-t border-gray-100 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
               const { createClient } = await import('@/utils/supabase/client');
               const supabase = createClient();
               await supabase.auth.signOut();
               window.location.href = '/supervisor/login';
             }}
-            className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}
-          >
+            className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}>
             <LogOut size={20} className="flex-shrink-0" />
             <span className={`font-semibold ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>Logout</span>
           </button>

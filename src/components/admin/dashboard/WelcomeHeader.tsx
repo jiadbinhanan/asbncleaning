@@ -14,84 +14,89 @@ export default function WelcomeHeader({ adminProfile, dateFrom, setDateFrom, dat
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
   const firstName = adminProfile?.full_name?.split(' ')[0] || 'Executive';
+  const avatarUrl = adminProfile?.avatar_url;
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }} 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative w-full rounded-[2.5rem] shadow-lg overflow-hidden min-h-[220px] flex flex-col md:flex-row items-center border border-white/60"
+      className="relative w-full rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between p-5 md:p-6 gap-6 md:gap-0 border border-white/20"
     >
       {/* --- LIVE MOVING GRADIENT BACKGROUND --- */}
-      {/* We use a custom inline style for background animation to keep it tailwind compatible */}
-      <div 
-        className="absolute inset-0 z-0 opacity-80"
+      <motion.div
+        className="absolute inset-0 z-0 opacity-90"
         style={{
-          background: 'linear-gradient(120deg, #F0FDF4, #D1FAE5, #ECFDF5, #F0FDF4)',
-          backgroundSize: '300% 300%',
-          animation: 'gradientMove 10s ease infinite',
+          background: 'linear-gradient(-45deg, #4f46e5, #9333ea, #2563eb, #c026d3)',
+          backgroundSize: '400% 400%',
         }}
-      >
-        <style jsx>{`
-          @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
-      </div>
+        animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+        transition={{ duration: 15, ease: "linear", repeat: Infinity }}
+      />
+      
+      {/* Premium Glass Overlay */}
+      <div className="absolute inset-0 z-0 bg-black/10 backdrop-blur-[2px]"></div>
 
-      {/* --- RIGHT SIDE BLENDED DP --- */}
-      <div className="absolute right-0 top-0 bottom-0 w-full md:w-[45%] pointer-events-none select-none z-10">
-        {/* The Masking Blend: Fades from transparent (left) to the image (right) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F0FDF4] via-[#F0FDF4]/60 to-transparent z-20" />
+      {/* --- LEFT SECTION: PROFILE & GREETING --- */}
+      <div className="relative z-10 flex items-center gap-5 w-full md:w-auto">
         
-        {adminProfile?.avatar_url ? (
-          <img 
-            src={adminProfile.avatar_url} 
-            alt="Admin" 
-            className="w-full h-full object-cover object-top opacity-80"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-end pr-10 opacity-30">
-            <UserCircle size={180} strokeWidth={0.5} className="text-emerald-700" />
+        {/* Decorated Avatar / DP */}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-tr from-amber-300 via-fuchsia-400 to-cyan-400 rounded-full blur-[8px] opacity-70 animate-pulse"></div>
+          <div className="relative h-14 w-14 rounded-full p-[2.5px] bg-gradient-to-tr from-amber-300 via-fuchsia-400 to-cyan-400 shadow-lg">
+            <div className="h-full w-full bg-slate-900 rounded-full flex items-center justify-center overflow-hidden border-2 border-transparent">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <UserCircle size={32} className="text-white/80" />
+              )}
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Breathing Greeting Message */}
+        <motion.div 
+          animate={{ opacity: [0.85, 1, 0.85], scale: [1, 1.02, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <p className="text-white/90 text-[11px] font-bold tracking-widest uppercase mb-0.5 flex items-center gap-1.5 drop-shadow-sm">
+            {greeting} <Sparkles size={12} className="text-amber-300"/>
+          </p>
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight drop-shadow-md">
+            {firstName}
+          </h1>
+        </motion.div>
       </div>
 
-      {/* --- LEFT SIDE CONTENT (Z-30 for interactions) --- */}
-      <div className="relative z-30 p-8 md:p-12 w-full md:w-2/3 h-full flex flex-col justify-center">
+      {/* --- RIGHT SECTION: DATE FILTER --- */}
+      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white/10 backdrop-blur-md p-2 md:p-2.5 rounded-2xl border border-white/20 shadow-inner w-full md:w-auto">
         
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100 shadow-sm w-fit mb-4">
-          <Sparkles size={14} className="text-emerald-500"/> Premium Workspace
+        <div className="flex items-center gap-2 pl-2 pr-3 md:border-r border-white/20">
+          <div className="p-1.5 bg-white/20 text-white rounded-lg shadow-sm">
+            <CalendarIcon size={16}/>
+          </div>
+          <span className="font-extrabold text-white text-[11px] tracking-widest uppercase">Filter</span>
         </div>
         
-        <h1 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight leading-[1.1]">
-          {greeting}, <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500 drop-shadow-sm">
-            {firstName}
-          </span>
-        </h1>
-        
-        <p className="text-sm md:text-base font-bold text-gray-600 mt-4 max-w-md leading-relaxed">
-          Monitor your daily operations, track financial growth, and analyze team performance all in one place.
-        </p>
-
-        {/* --- INLINE DATE FILTER --- */}
-        <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/50 shadow-sm w-fit">
-          <div className="flex items-center gap-2 pl-2 pr-4 border-r border-gray-200/50">
-            <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg"><CalendarIcon size={16}/></div>
-            <span className="font-black text-gray-800 text-sm">Overview Range</span>
+        <div className="flex items-center gap-2 px-1 w-full justify-between sm:justify-start">
+          <div className="relative group flex-1 sm:flex-none">
+            <input 
+              type="date" 
+              value={dateFrom} 
+              onChange={e => setDateFrom(e.target.value)} 
+              className="w-full sm:w-auto px-3 py-2 bg-black/20 hover:bg-black/30 text-white rounded-xl outline-none font-bold text-xs cursor-pointer transition-colors border border-white/10" 
+              style={{ colorScheme: 'dark' }} // Makes the calendar icon look good on dark bg
+            />
           </div>
-          
-          <div className="flex items-center gap-2 px-2">
-            <div className="relative group">
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="p-2 bg-transparent hover:bg-white/50 rounded-xl outline-none font-black text-xs text-gray-700 cursor-pointer transition-colors" />
-            </div>
-            <span className="text-gray-400 font-bold text-xs px-2">TO</span>
-            <div className="relative group">
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="p-2 bg-transparent hover:bg-white/50 rounded-xl outline-none font-black text-xs text-gray-700 cursor-pointer transition-colors" />
-            </div>
+          <span className="text-white/60 font-black text-[10px] px-1">TO</span>
+          <div className="relative group flex-1 sm:flex-none">
+            <input 
+              type="date" 
+              value={dateTo} 
+              onChange={e => setDateTo(e.target.value)} 
+              className="w-full sm:w-auto px-3 py-2 bg-black/20 hover:bg-black/30 text-white rounded-xl outline-none font-bold text-xs cursor-pointer transition-colors border border-white/10"
+              style={{ colorScheme: 'dark' }} 
+            />
           </div>
         </div>
 

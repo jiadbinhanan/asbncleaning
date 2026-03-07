@@ -18,6 +18,7 @@ type Booking = {
   status: string;
   price: number;
   checklist_template_id: number | null;
+  assigned_team_id: number | null; // 🚨 NEW: Added this column
   units: {
     unit_number: string;
     building_name: string;
@@ -35,7 +36,7 @@ export default function SupervisorBookings() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [checklists, setChecklists] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]); // 🚨 NEW: Team state
+  const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -62,22 +63,23 @@ export default function SupervisorBookings() {
 
     const [bookingsRes, companiesRes, unitsRes, checklistsRes, teamsRes] = await Promise.all([
       supabase.from('bookings').select(`
-        id, unit_id, cleaning_date, cleaning_time, service_type, status, price, checklist_template_id,
+        id, unit_id, cleaning_date, cleaning_time, service_type, status, price, checklist_template_id, assigned_team_id,
         units ( unit_number, building_name, companies ( id, name ) ),
-        teams ( id, team_name ),
+        teams:assigned_team_id ( team_name ),
         checklist_templates ( title )
       `).order('cleaning_date', { ascending: false }).order('cleaning_time', { ascending: true }),
       supabase.from('companies').select('id, name').order('name'),
       supabase.from('units').select('id, company_id, unit_number, building_name'),
       supabase.from('checklist_templates').select('id, title'),
-      supabase.from('teams').select('id, team_name').eq('status', 'active') // 🚨 NEW: Fetch active teams
+      // 🚨 FIXED: Reverted back to 'status' = 'active' EXACTLY like the Admin page
+      supabase.from('teams').select('id, team_name').eq('status', 'active') 
     ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data as any);
     if (companiesRes.data) setCompanies(companiesRes.data);
     if (unitsRes.data) setUnits(unitsRes.data);
     if (checklistsRes.data) setChecklists(checklistsRes.data);
-    if (teamsRes.data) setTeams(teamsRes.data);
+    if (teamsRes.data) setTeams(teamsRes.data); // এবার পারফেক্টলি টিমগুলো লোড হবে!
     
     setLoading(false);
   };
@@ -86,6 +88,17 @@ export default function SupervisorBookings() {
 
   // Handle Input Change
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const getTeamAssignmentAlert = (teamId: number, date: string, currentBookingId?: number | null) => {
+    if (!date || !teamId) return "";
+    const isBusy = bookings.some(b => 
+      String(b.assigned_team_id) === String(teamId) && 
+      b.cleaning_date === date && 
+      (currentBookingId ? String(b.id) !== String(currentBookingId) : true) &&
+      ['pending', 'active', 'in_progress'].includes(String(b.status).toLowerCase().trim())
+    );
+    return isBusy ? " (Assigned with another booking)" : "";
+  };
 
   // Open Modal for New
   const openNewModal = () => {
@@ -108,7 +121,7 @@ export default function SupervisorBookings() {
       service_type: booking.service_type,
       price: booking.price.toString(),
       checklist_template_id: booking.checklist_template_id?.toString() || "",
-      team_id: booking.teams?.id?.toString() || "" // 🚨 Extract team ID
+      team_id: booking.assigned_team_id?.toString() || "" // 🚨 FIXED: Use assigned_team_id directly
     });
     setEditMode(true);
     setIsModalOpen(true);
@@ -318,12 +331,16 @@ export default function SupervisorBookings() {
                   </div>
                 </div>
 
-                {/* 🚨 NEW: Team Assignment */}
+                {/* 🚨 NEW: Team Assignment with Alert */}
                 <div className="pt-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Users size={14}/> Assign Team</label>
                   <select name="team_id" value={formData.team_id} onChange={handleChange} className="w-full p-4 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-black text-blue-900 transition-all cursor-pointer">
                     <option value="">Unassigned (Pending)</option>
-                    {teams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
+                    {teams.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.team_name}{getTeamAssignmentAlert(t.id, formData.cleaning_date, formData.id)}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -341,7 +358,6 @@ export default function SupervisorBookings() {
                     {saving ? <><Loader2 className="animate-spin" size={20}/> Saving Record...</> : <><CheckCircle2 size={20}/> {editMode ? "Update Booking Record" : "Save Booking Record"}</>}
                   </button>
                 </div>
-
               </form>
             </motion.div>
           </div>

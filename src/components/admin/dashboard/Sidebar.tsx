@@ -52,7 +52,10 @@ export default function Sidebar({
 
       {/* ---------------- SIDEBAR CONTAINER ---------------- */}
       <aside
-        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out
+        onClick={() => {
+          if (window.innerWidth >= 768) setIsDesktopCollapsed(!isDesktopCollapsed);
+        }}
+        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-100 z-50 flex flex-col transition-all duration-300 ease-in-out cursor-pointer
           ${/* Mobile Logic: Slide in/out */ ''}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           
@@ -63,7 +66,10 @@ export default function Sidebar({
         `}
       >
         {/* Header: Logo & Toggle Buttons */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
+        <div 
+          className="h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
               BTM
@@ -84,7 +90,10 @@ export default function Sidebar({
 
           {/* Collapse Button (Desktop Only) */}
           <button 
-            onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDesktopCollapsed(!isDesktopCollapsed);
+            }}
             className="hidden md:flex w-6 h-6 bg-gray-50 border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-blue-600 absolute -right-3 top-7 shadow-sm"
           >
             {isDesktopCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -92,11 +101,18 @@ export default function Sidebar({
         </div>
 
         {/* Menu Items */}
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar py-6 px-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
-              <Link key={item.name} href={item.path} onClick={() => setIsMobileOpen(false)}>
+              <Link 
+                key={item.name} 
+                href={item.path} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMobileOpen(false);
+                }}
+              >
                 <div
                   className={`flex items-center gap-4 p-3 rounded-xl transition-all cursor-pointer group relative
                     ${isActive 
@@ -125,9 +141,13 @@ export default function Sidebar({
         </div>
 
         {/* Footer Logout */}
-        <div className="p-4 border-t border-gray-100">
+        <div 
+          className="p-4 border-t border-gray-100 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
               const { createClient } = await import('@/utils/supabase/client');
               const supabase = createClient();
               await supabase.auth.signOut();

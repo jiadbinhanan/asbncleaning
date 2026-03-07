@@ -22,13 +22,16 @@ type Booking = {
   assigned_team_id: number | null;
   checklist_template_id: number | null;
   units: {
+    id: number;           // 🚨 NEW
+    company_id: number;   // 🚨 NEW
     unit_number: string;
     building_name: string;
-    companies: { name: string }
+    companies: { id: number, name: string } // 🚨 NEW
   };
   teams?: { team_name: string };
   checklist_templates?: { title: string };
 };
+
 
 export default function BookingManagement() {
   const supabase = createClient();
@@ -67,7 +70,30 @@ export default function BookingManagement() {
 
   // Edit States
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editData, setEditData] = useState<{id: number, price: string, assigned_team_id: string, checklist_template_id: string} | null>(null);
+  const [isEditCustomService, setIsEditCustomService] = useState(false); // 🚨 NEW
+  const [editData, setEditData] = useState<{
+    id: number,
+    company_id: string,
+    unit_id: string,
+    cleaning_date: string,
+    cleaning_time: string,
+    service_type: string,
+    price: string,
+    assigned_team_id: string,
+    checklist_template_id: string
+  } | null>(null);
+
+  // 🚨 NEW: Load Units when Edit Company is selected
+  useEffect(() => {
+    if (isEditOpen && editData?.company_id) {
+      const fetchUnits = async () => {
+        const { data } = await supabase.from("units").select("*").eq("company_id", editData.company_id);
+        if (data) setUnits(data);
+      };
+      fetchUnits();
+    }
+  }, [editData?.company_id, isEditOpen, supabase]);
+
 
   const fetchInitialData = async () => {
     const { data: compData } = await supabase.from("companies").select("*");
@@ -86,18 +112,31 @@ export default function BookingManagement() {
       .select(`
         id, booking_ref, created_at, unit_id, cleaning_date, cleaning_time, service_type, status, price, assigned_team_id, checklist_template_id,
         units ( 
+          id,
+          company_id,
           unit_number,
           building_name,
-          companies ( name )
+          companies ( id, name )
         ),
         teams:assigned_team_id ( team_name ),
         checklist_templates ( title )
       `)
       .order("cleaning_date", { ascending: false });
-    
     if (data) setBookings(data as any);
     setLoading(false);
   };
+
+  // 🚨 NEW: Function to check if a team is already assigned on a specific date
+  const getTeamAssignmentAlert = (teamId: number, date: string, currentBookingId?: number) => {
+    const isBusy = bookings.some(b => 
+      b.assigned_team_id === teamId && 
+      b.cleaning_date === date && 
+      b.id !== currentBookingId &&
+      ['pending', 'active', 'in_progress'].includes(b.status)
+    );
+    return isBusy ? " (Assigned with another booking)" : "";
+  };
+
 
   // 1. Initial Data Fetch
   useEffect(() => {
@@ -153,29 +192,26 @@ export default function BookingManagement() {
   const handleUpdateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editData) return;
-    const prevBookings = [...bookings];
-    
-    setBookings(bookings.map(b => b.id === editData.id ? { 
-      ...b, 
-      price: parseFloat(editData.price) || 0, 
-      assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
-      checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
-    } : b));
+
     setIsEditOpen(false);
 
     const { error } = await supabase.from("bookings").update({
+      unit_id: parseInt(editData.unit_id),
+      cleaning_date: editData.cleaning_date,
+      cleaning_time: editData.cleaning_time,
+      service_type: editData.service_type,
       price: parseFloat(editData.price) || 0,
-      assigned_team_id: editData.assigned_team_id || null,
-      checklist_template_id: editData.checklist_template_id || null
+      assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
+      checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
     }).eq("id", editData.id);
 
     if (error) {
-      alert("Failed to update booking");
-      setBookings(prevBookings);
+      alert("Failed to update booking: " + error.message);
     } else {
       fetchBookings(); 
     }
   };
+
 
   // 5. Delete Booking
   const handleDeleteBooking = async (id: number) => {
@@ -393,9 +429,16 @@ export default function BookingManagement() {
                         <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
                           <button 
                             onClick={() => {
+                              const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
+                              setIsEditCustomService(isCustom);
                               setEditData({ 
                                 id: booking.id, 
-                                price: booking.price?.toString() || "", 
+                                company_id: booking.units?.company_id?.toString() || "",
+                                unit_id: booking.unit_id?.toString() || "",
+                                cleaning_date: booking.cleaning_date || "",
+                                cleaning_time: booking.cleaning_time || "",
+                                service_type: booking.service_type || "",
+                                price: booking.price?.toString() || "",
                                 assigned_team_id: booking.assigned_team_id?.toString() || "",
                                 checklist_template_id: booking.checklist_template_id?.toString() || "" 
                               });
@@ -405,6 +448,7 @@ export default function BookingManagement() {
                             className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
                             <Edit2 size={16} /> Edit Details
                           </button>
+
                           <button 
                             onClick={() => handleDeleteBooking(booking.id)}
                             className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
@@ -502,11 +546,20 @@ export default function BookingManagement() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign Team (Later)</label>
-                    <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}>
+                    <select 
+                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" 
+                      onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}
+                      value={formData.assigned_team_id}
+                    >
                       <option value="">Unassigned</option>
-                      {activeTeams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
+                      {activeTeams.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.team_name}{getTeamAssignmentAlert(t.id, formData.cleaning_date)}
+                        </option>
+                      ))}
                     </select>
                   </div>
+
                 </div>
 
                 <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all">Confirm Booking</button>
@@ -516,40 +569,92 @@ export default function BookingManagement() {
         )}
       </AnimatePresence>
 
-      {/* --- EDIT BOOKING MODAL (Original structure preserved) --- */}
+      {/* --- EDIT BOOKING MODAL (Full Details Edit) --- */}
       <AnimatePresence>
         {isEditOpen && editData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsEditOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-sm rounded-3xl shadow-2xl z-50 overflow-hidden">
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-lg font-bold text-gray-900">Update Booking</h2>
-                <button onClick={() => setIsEditOpen(false)}><X className="text-gray-500" size={20}/></button>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 className="text-xl font-bold text-gray-900">Update Booking Details</h2>
+                <button onClick={() => setIsEditOpen(false)}><X className="text-gray-500" /></button>
               </div>
 
-              <form onSubmit={handleUpdateBooking} className="p-5 space-y-5">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Update Price (AED)</label>
-                  <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" 
-                    value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign / Change Team</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.assigned_team_id} onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
-                    <option value="">Unassigned</option>
-                    {activeTeams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Checklist Template</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
-                    <option value="">Select Checklist</option>
-                    {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                  </select>
+              <form onSubmit={handleUpdateBooking} className="p-6 space-y-5 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
+                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.company_id} onChange={(e) => setEditData({...editData, company_id: e.target.value, unit_id: ""})}>
+                      <option value="">Select Company</option>
+                      {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
+                    <select required disabled={!editData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium" value={editData.unit_id} onChange={(e) => setEditData({...editData, unit_id: e.target.value})}>
+                      <option value="">Select Unit</option>
+                      {units.filter(u => u.company_id.toString() === editData.company_id).map(u => <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>)}
+                    </select>
+                  </div>
                 </div>
 
-                <button type="submit" className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl mt-2 shadow-lg hover:bg-blue-700 transition-all">Save Changes</button>
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.cleaning_date} onChange={(e) => setEditData({...editData, cleaning_date: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</label>
+                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.cleaning_time} onChange={(e) => setEditData({...editData, cleaning_time: e.target.value})} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Service Type</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={isEditCustomService ? "Other" : editData.service_type} onChange={(e) => {
+                      if (e.target.value === "Other") { setIsEditCustomService(true); setEditData({...editData, service_type: ""}); } 
+                      else { setIsEditCustomService(false); setEditData({...editData, service_type: e.target.value}); }
+                    }}>
+                    <option value="Check-out Cleaning">Check-out Cleaning</option>
+                    <option value="Deep Cleaning">Deep Cleaning</option>
+                    <option value="General Cleaning">General Cleaning</option>
+                    <option value="Sofa Bed setup">Sofa Bed setup</option>
+                    <option value="Other">Other (Please specify)</option>
+                  </select>
+                  {isEditCustomService && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
+                      <input type="text" required={isEditCustomService} placeholder="Enter service name..." className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.service_type} onChange={(e) => setEditData({...editData, service_type: e.target.value})} />
+                    </motion.div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
+                    <option value="">Select a Checklist (Optional)</option>
+                    {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                   </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Price (AED)</label>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign / Change Team</label>
+                    <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.assigned_team_id} onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
+                      <option value="">Unassigned</option>
+                      {activeTeams.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.team_name}{getTeamAssignmentAlert(t.id, editData.cleaning_date, editData.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-blue-700 transition-all">Save Changes</button>
               </form>
             </motion.div>
           </div>
