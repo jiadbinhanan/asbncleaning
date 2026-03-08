@@ -47,12 +47,14 @@ export default function EquipmentSetup() {
       setLoading(true);
       const [cRes, uRes, mRes] = await Promise.all([
         supabase.from('companies').select('id, name').order('name'),
-        supabase.from('units').select('id, unit_number, building_name, company_id').order('unit_number'),
+        // 🚨 FIXED: Added 'layout' to the select query
+        supabase.from('units').select('id, unit_number, building_name, company_id, layout').order('unit_number'),
         supabase.from('equipment_master').select('*').order('item_name')
       ]);
       if (cRes.data) setCompanies(cRes.data);
       if (uRes.data) setUnits(uRes.data);
       if (mRes.data) setMasterItems(mRes.data);
+  
       setLoading(false);
     };
     fetchData();
@@ -267,7 +269,9 @@ export default function EquipmentSetup() {
                           >
                             <option value="">Choose Unit...</option>
                             {units.filter(u => u.company_id.toString() === selectedCompany).map(u => (
-                              <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>
+                              <option key={u.id} value={u.id}>
+                                {u.unit_number} {u.layout ? `(${u.layout.replace(/ Apartment/gi, '').trim()})` : ''} - {u.building_name}
+                              </option>
                             ))}
                           </select>
                         </div>
@@ -312,7 +316,9 @@ export default function EquipmentSetup() {
                       <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
                         <div>
                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Active Setup for:</p>
-                           <h3 className="text-xl font-black">Unit {units.find(u => u.id.toString() === selectedUnit)?.unit_number}</h3>
+                           <h3 className="text-xl font-black">
+                             Unit {units.find(u => u.id.toString() === selectedUnit)?.unit_number} {units.find(u => u.id.toString() === selectedUnit)?.layout ? `(${units.find(u => u.id.toString() === selectedUnit)?.layout?.replace(/ Apartment/gi, '').trim()})` : ''}
+                           </h3>
                         </div>
                         <Building2 className="text-blue-500 opacity-30" size={40}/>
                       </div>
