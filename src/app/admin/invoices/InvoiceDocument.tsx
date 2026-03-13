@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   grandValue: { fontSize: 14, fontWeight: 700, color: colors.charcoal },
 
   // Footer
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 20 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 30 },
   footerNote: { width: '60%', fontSize: 9, color: colors.grayText, lineHeight: 1.5 },
   signatureBox: { width: '30%', alignItems: 'flex-end', position: 'relative' },
   stampImg: { height: 70, position: 'absolute', bottom: 15, right: 10, opacity: 0.9 },
@@ -105,8 +105,9 @@ const styles = StyleSheet.create({
 });
 
 export const InvoiceDocument = ({ data }: any) => {
-  // ১. page.tsx থেকে পাঠানো 'data' অবজেক্ট থেকে সব ইনফরমেশন বের করে নেওয়া হলো
-  const { invoiceNo, date, companyName, bookings, subtotal, bankDetails, invoiceMode } = data || {};
+  const { invoiceNo, date, companyName, bookings, subtotal, 
+          discountPercent, discountValue, finalTotal,
+          bankDetails, invoiceMode } = data || {};
 
   // ২. ফ্ল্যাট bookings array-কে আপনার ডিজাইনের জন্য ইউনিট অনুযায়ী গ্রুপ করা হলো
   const groupedBookings = bookings?.reduce((acc: any, b: any) => {
@@ -237,13 +238,24 @@ export const InvoiceDocument = ({ data }: any) => {
                   <Text style={styles.totalLabel}>Subtotal</Text>
                   <Text style={styles.totalValue}>{(subtotal || 0).toFixed(2)}</Text>
                 </View>
+
+                {discountPercent > 0 && (
+                  <View style={styles.totalLine}>
+                    <Text style={styles.totalLabel}>Discount ({discountPercent}%)</Text>
+                    <Text style={[styles.totalValue, { color: '#E07B39' }]}>
+                      - {(discountValue || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                )}
+
                 <View style={styles.totalLine}>
                   <Text style={styles.totalLabel}>Tax (0%)</Text>
                   <Text style={styles.totalValue}>0.00</Text>
                 </View>
+
                 <View style={styles.grandTotalLine}>
                   <Text style={styles.grandLabel}>Total (AED)</Text>
-                  <Text style={styles.grandValue}>{(subtotal || 0).toFixed(2)}</Text>
+                  <Text style={styles.grandValue}>{(finalTotal ?? subtotal ?? 0).toFixed(2)}</Text>
                 </View>
               </View>
             </View>
@@ -256,7 +268,7 @@ export const InvoiceDocument = ({ data }: any) => {
               <View style={styles.signatureBox}>
                 <Image src="/stamp_btm.png" style={styles.stampImg} />
                 <View style={styles.sigLine}></View>
-                <Text style={styles.sigText}>Authorized Signatory</Text>
+                <Text style={styles.sigText}>Authorized Stamp</Text>
               </View>
             </View>
           </View>

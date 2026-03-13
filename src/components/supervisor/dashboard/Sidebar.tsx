@@ -1,7 +1,7 @@
 'use client';
 import {
   LayoutDashboard, Users, CalendarCheck,
-  User, LogOut, X, ChevronLeft, ChevronRight, ClipboardList, TrendingUp, Zap, ListTodo, Calendar
+  User, LogOut, X, ChevronLeft, ChevronRight, ClipboardCheck, TrendingUp, Zap, ListTodo, Calendar, WashingMachine
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,8 +17,10 @@ interface SidebarProps {
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/supervisor/dashboard' },
   { name: 'Activations', icon: Zap, path: '/supervisor/activations' },
+  { name: 'QC Portal', icon: ClipboardCheck, path: '/team/qc-portal?source=supervisor' },
   { name: 'Review & Pricing', icon: ListTodo, path: '/supervisor/reviews' },
   { name: 'My Teams', icon: Users, path: '/supervisor/teams' },
+  { name: 'Laundry', icon: WashingMachine, path: '/supervisor/laundry' },
   { name: 'Bookings', icon: Calendar, path: '/supervisor/bookings' },
   { name: 'Profile', icon: User, path: '/supervisor/profile' },
 ];

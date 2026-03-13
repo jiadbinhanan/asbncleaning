@@ -2,7 +2,7 @@
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
   FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, 
-  ClipboardList, FileDigit, FileCheck, Package
+  ClipboardList, FileDigit, FileCheck, Package, ClipboardCheck, WashingMachine
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,12 +18,15 @@ interface SidebarProps {
 const menuItems = [
   { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
   { name: 'Work Records', icon: FileCheck, path: '/admin/work-records' },
+  { name: 'QC Report', icon: ClipboardCheck, path: '/team/qc-portal?source=admin' },
+  { name: 'Laundry Records', icon: WashingMachine, path: '/admin/laundry' },
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
   { name: 'Invoices', icon: FileDigit, path: '/admin/invoices' },
   { name: 'Companies', icon: Building2, path: '/admin/companies' },
   { name: 'Employees', icon: Contact, path: '/admin/employees' },
   { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
+  { name: 'Stock Management', icon: Package, path: '/admin/inventory' },
   { name: 'Equipment Setup', icon: Package, path: '/admin/equipment' },
   { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
   { name: 'Profile', icon: User, path: '/admin/profile' },
@@ -153,8 +156,7 @@ export default function Sidebar({
               await supabase.auth.signOut();
               window.location.href = '/admin/login';
             }}
-            className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}
-          >
+            className={`flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all w-full ${isDesktopCollapsed ? 'md:justify-center' : ''}`}>
             <LogOut size={20} className="flex-shrink-0" />
             <span className={`font-semibold ${isDesktopCollapsed ? 'md:hidden' : 'block'}`}>Logout</span>
           </button>

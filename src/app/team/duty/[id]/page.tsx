@@ -1,14 +1,15 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   PlayCircle, CheckCircle2, Clock, MapPin, 
   Camera, UploadCloud, ArrowLeft, Loader2, Info, Building2, ShieldCheck,
-  RefreshCcw, PackagePlus, PlusCircle, Trash2, Box, PenTool, CheckSquare
+  Trash2, CheckSquare
 } from "lucide-react";
 import { getWorkPhotoUploadSignature } from "./actions";
+import EquipmentTracker from "./EquipmentTracker";
 
 export default function DutyPage() {
   const params = useParams();
@@ -34,29 +35,24 @@ export default function DutyPage() {
   const [afterPhotos, setAfterPhotos] = useState<File[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
-  // Equipment & Inventory States
-  const [masterItems, setMasterItems] = useState<any[]>([]);
-  const [stdExchanges, setStdExchanges] = useState<any[]>([]);
-  const [extExchanges, setExtExchanges] = useState<any[]>([]);
-  const [othExchanges, setOthExchanges] = useState<any[]>([]);
-  const [extProvides, setExtProvides] = useState<any[]>([]);
-  const [othProvides, setOthProvides] = useState<any[]>([]);
+  // Equipment Logs from Child Component
+  const [equipmentLogData, setEquipmentLogData] = useState<any[]>([]);
+
+  const handleEquipmentDataChange = useCallback((data: any[]) => {
+    setEquipmentLogData(data);
+  }, []); // empty deps — function reference কখনো বদলাবে না
+
 
   // --- 1. Fetching Logic & LocalStorage Restore ---
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) setAgentId(session.user.id);
 
       const { data: bData } = await supabase
         .from('bookings')
-        .select(`
-          *,
-          units!inner ( id, unit_number, building_name, companies(name) ),
-          checklist_templates ( content )
-        `)
+        .select(`*, units!inner ( id, unit_number, building_name, companies(name) ), checklist_templates ( content )`)
         .eq('id', bookingId)
         .single();
 
@@ -65,68 +61,36 @@ export default function DutyPage() {
         
         let content = null;
         if (bData.checklist_templates) {
-          content = Array.isArray(bData.checklist_templates) 
-            ? bData.checklist_templates[0]?.content 
-            : bData.checklist_templates.content;
+          content = Array.isArray(bData.checklist_templates) ? bData.checklist_templates[0]?.content : bData.checklist_templates.content;
         }
 
         if (content) {
           try {
             const parsed = typeof content === 'string' ? JSON.parse(content) : content;
             const flatList: any[] = [];
-            
             if (Array.isArray(parsed)) {
               parsed.forEach((sectionItem: any) => {
                 const secName = sectionItem.title || sectionItem.section || 'General';
                 const tasks = sectionItem.tasks || [];
-                
                 if (Array.isArray(tasks)) {
                   tasks.forEach((taskItem: any) => {
                     const taskLabel = typeof taskItem === 'string' ? taskItem : (taskItem.text || taskItem.label || '');
-                    if (taskLabel) {
-                      flatList.push({ id: `${secName} - ${taskLabel}`, label: taskLabel, section: secName });
-                    }
+                    if (taskLabel) flatList.push({ id: `${secName} - ${taskLabel}`, label: taskLabel, section: secName });
                   });
                 }
               });
             }
             setChecklist(flatList);
-          } catch(e) {
-            console.error("Checklist parse error:", e);
-          }
+          } catch(e) { console.error("Checklist parse error:", e); }
         }
 
-        const [confRes, masterRes] = await Promise.all([
-          supabase.from('unit_equipment_config').select('*, equipment_master(item_name)').eq('unit_id', bData.units.id),
-          supabase.from('equipment_master').select('*').order('item_name')
-        ]);
-
-        if (masterRes.data) setMasterItems(masterRes.data);
-        
+        // Restore Local Storage
         const savedStateStr = localStorage.getItem(`asbn_duty_${bookingId}`);
         if (savedStateStr) {
           const savedState = JSON.parse(savedStateStr);
           setIsStarted(savedState.isStarted || false);
           if (savedState.startTime) setStartTime(new Date(savedState.startTime));
           setCheckedItems(savedState.checkedItems || {});
-          
-          if (savedState.stdExchanges?.length > 0) setStdExchanges(savedState.stdExchanges);
-          else if (confRes.data) {
-             setStdExchanges(confRes.data.map(c => ({
-                id: c.id, equipment_id: c.equipment_id, item_name: c.equipment_master?.item_name,
-                expected_qty: c.standard_qty, exchanged_qty: 0
-             })));
-          }
-          
-          setExtExchanges(savedState.extExchanges || []);
-          setOthExchanges(savedState.othExchanges || []);
-          setExtProvides(savedState.extProvides || []);
-          setOthProvides(savedState.othProvides || []);
-        } else if (confRes.data) {
-          setStdExchanges(confRes.data.map(c => ({
-            id: c.id, equipment_id: c.equipment_id, item_name: c.equipment_master?.item_name,
-            expected_qty: c.standard_qty, exchanged_qty: 0
-          })));
         }
       }
       setLoading(false);
@@ -137,50 +101,30 @@ export default function DutyPage() {
   // --- 2. Auto-Save to LocalStorage ---
   useEffect(() => {
     if (isStarted) {
-      const stateToSave = {
-        isStarted,
-        startTime: startTime?.toISOString(),
-        checkedItems,
-        stdExchanges,
-        extExchanges,
-        othExchanges,
-        extProvides,
-        othProvides
-      };
-      localStorage.setItem(`asbn_duty_${bookingId}`, JSON.stringify(stateToSave));
+      localStorage.setItem(`asbn_duty_${bookingId}`, JSON.stringify({ isStarted, startTime: startTime?.toISOString(), checkedItems }));
     }
-  }, [isStarted, startTime, checkedItems, stdExchanges, extExchanges, othExchanges, extProvides, othProvides, bookingId]);
+  }, [isStarted, startTime, checkedItems, bookingId]);
 
   // --- 3. Prevent Accidental Refresh Warning ---
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isStarted) {
-        e.preventDefault();
-        e.returnValue = ''; 
-      }
+      if (isStarted) { e.preventDefault(); e.returnValue = ''; }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isStarted]);
 
-
   // --- Handlers ---
   const toggleChecklist = (id: string) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
-  
   const handleCheckAll = () => {
     const allChecked: { [key: string]: boolean } = {};
-    checklist.forEach(item => {
-      allChecked[item.id] = true;
-    });
+    checklist.forEach(item => { allChecked[item.id] = true; });
     setCheckedItems(allChecked);
   };
 
   const removeBeforePhoto = (index: number) => setBeforePhotos(prev => prev.filter((_, i) => i !== index));
   const removeAfterPhoto = (index: number) => setAfterPhotos(prev => prev.filter((_, i) => i !== index));
-
   const startShift = () => { setIsStarted(true); setStartTime(new Date()); };
-
-  const qtyOptions = Array.from({ length: 11 }, (_, i) => i);
 
   // --- Final Submit Logic ---
   const handleCompleteWork = async () => {
@@ -189,13 +133,6 @@ export default function DutyPage() {
     const hasUnchecked = checklist.some(task => !checkedItems[task.id]);
     if (hasUnchecked) {
       const proceed = window.confirm("⚠️ You have unchecked items in the cleaning tasks. Are you sure you want to submit without completing them?");
-      if (!proceed) return;
-    }
-
-    const noEquipment = stdExchanges.every(e => e.exchanged_qty === 0) 
-      && extExchanges.length === 0 && othExchanges.length === 0 && extProvides.length === 0 && othProvides.length === 0;
-    if (noEquipment) {
-      const proceed = window.confirm("⚠️ You haven't logged any equipment exchange or extra items. Are you sure you want to submit?");
       if (!proceed) return;
     }
 
@@ -223,7 +160,6 @@ export default function DutyPage() {
           formData.append("timestamp", timestamp.toString());
           formData.append("signature", signature);
           formData.append("folder", "work-photos");
-
           const res = await fetch(cloudinaryUrl, { method: "POST", body: formData });
           const data = await res.json();
           return data.secure_url;
@@ -242,40 +178,122 @@ export default function DutyPage() {
 
       setUploadingPhotos(false);
 
-      const fullChecklistData: Record<string, boolean> = {};
-      checklist.forEach(item => {
-        fullChecklistData[item.id] = checkedItems[item.id] || false;
-      });
-
-      const equipmentData = {
-        standardExchange: stdExchanges,
-        extraExchange: extExchanges,
-        otherExchange: othExchanges,
-        extraProvide: extProvides, 
-        otherProvide: othProvides  
-      };
-
+      // 1. Insert Work Log (No checklist JSON saved anymore, only photos and times)
       const { error: logError } = await supabase.from('work_logs').insert([{
         booking_id: parseInt(bookingId),
         team_id: booking.assigned_team_id,
         submitted_by: agentId,
         start_time: startTime.toISOString(),
         end_time: new Date().toISOString(),
-        checklist_data: fullChecklistData, 
         before_photos: uploadedBeforeUrls, 
-        photo_urls: uploadedAfterUrls,    
-        equipment_logs: equipmentData 
+        photo_urls: uploadedAfterUrls
       }]);
-
       if (logError) throw logError;
 
+        // 🚨 1. PROCESS ALL CALCULATIONS BASED ON NEW LOGIC
+        const processedEquipment = equipmentLogData.map(item => {
+          let standard = item.standard_provide;
+          let extra = 0;
+          let finalProv = 0;
+          let short = 0;
+          let newBal = 0;
+
+          if (item.item_type === 'returnable') {
+            // Returnable Logic
+            extra = item.extra_provide; // UI sets exact extra amount
+            finalProv = standard + extra;
+            short = Math.max(0, item.target_collect - item.collected);
+            newBal = finalProv; // Next shift target is what was provided today
+          } 
+          else if (item.item_type === 'refillable') {
+            // Refillable (Dispensers) Logic
+            let intact = item.collected;
+            let placedNew = item.extra_provide; // UI input for new bottles placed
+            
+            // Extra = Placed New - Required to reach standard
+            let requiredForStandard = Math.max(0, standard - intact);
+            extra = Math.max(0, placedNew - requiredForStandard);
+            
+            finalProv = placedNew;
+            short = Math.max(0, item.target_collect - intact); // Missing containers
+            newBal = intact + placedNew; // Physical count inside unit
+          } 
+          else if (item.item_type === 'consumable') {
+            // 🚨 Consumable Logic (Updated to calculate leftover vs standard)
+            let intact = item.collected; // e.g., 2 bottles left from previous guest
+            let placedNew = item.extra_provide; // e.g., 4 new bottles placed by cleaner
+            
+            // Required to reach standard limit
+            let requiredForStandard = Math.max(0, standard - intact); 
+            
+            // Anything placed beyond 'requiredForStandard' is billable extra
+            extra = Math.max(0, placedNew - requiredForStandard); 
+            
+            finalProv = placedNew;
+            short = 0; // Consumables are consumed, not stolen, so no shortage recorded
+            newBal = intact + placedNew; // Room now has the total sum
+          }
+
+          return {
+            ...item,
+            calc_standard: standard,
+            calc_extra: extra,
+            calc_finalProv: finalProv,
+            calc_short: short,
+            calc_newBal: newBal
+          };
+        });
+
+        // 2. Prepare Inventory Logs for Database
+        const inventoryLogs = processedEquipment.map(item => ({
+          booking_id: parseInt(bookingId),
+          unit_id: booking.units.id,
+          equipment_id: item.equipment_id,
+          standard_qty: item.calc_standard,
+          extra_provided_qty: item.calc_extra,
+          final_provided_qty: item.calc_finalProv,
+          target_collect_qty: item.target_collect,
+          collected_qty: item.collected,
+          shortage_qty: item.calc_short,
+          qc_status: item.item_type === 'returnable' ? 'pending' : 'not_applicable' 
+        }));
+
+        // 3. Prepare Unit Balance Updates
+        const balanceUpdates = processedEquipment.map(item => ({
+          unit_id: booking.units.id,
+          equipment_id: item.equipment_id,
+          current_in_unit_qty: item.calc_newBal,
+          last_updated_at: new Date().toISOString()
+        }));
+
+        // ✅ booking_inventory_logs insert
+        if (inventoryLogs.length > 0) {
+          const { error: invError } = await supabase
+            .from('booking_inventory_logs')
+            .insert(inventoryLogs);
+          if (invError) throw invError;
+        }
+
+        // ✅ unit_inventory_balances upsert
+        if (balanceUpdates.length > 0) {
+          const { error: balError } = await supabase
+            .from('unit_inventory_balances')
+            .upsert(balanceUpdates, { onConflict: 'unit_id,equipment_id' });
+          if (balError) throw balError;
+        }
+
+
+      // 3. Mark Booking Completed
       const { error: statusError } = await supabase.from('bookings').update({ status: 'completed' }).eq('id', bookingId);
       if (statusError) throw statusError;
 
+      // Clean up Local Storage
       localStorage.removeItem(`asbn_duty_${bookingId}`);
+      localStorage.removeItem(`asbn_eq_${bookingId}`);
 
-      alert("Shift Completed Successfully!");
-      router.push("/team/dashboard");
+      alert("Shift Completed Successfully! Redirecting to Quality Control...");
+      // ড্যাশবোর্ডের বদলে সরাসরি এই বুকিংয়ের QC পেজে পাঠিয়ে দেব
+      router.push(`/team/qc/${bookingId}`);
 
     } catch (error: any) {
       alert("Error submitting log: " + error.message);
@@ -328,10 +346,8 @@ export default function DutyPage() {
           {isStarted && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               
-              {/* 🚨 1. MOVED: BEFORE PHOTOS SECTION (Right after starting shift) */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
                 <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2"><Camera className="text-blue-600"/> Before Cleaning Photos</h3>
-                
                 <label className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all aspect-video group">
                   <UploadCloud className="text-gray-400 group-hover:text-blue-500 mb-2" size={32}/>
                   <span className="text-xs font-black text-gray-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Add Before Photo</span>
@@ -350,12 +366,11 @@ export default function DutyPage() {
                 )}
               </div>
 
-              {/* --- SECTION 2: CHECKLIST (GROUPED BY SECTION) --- */}
+              {/* CHECKLIST (Visual Only) */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
                 <div className="mb-6">
                   <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><CheckSquare className="text-blue-600"/> Cleaning Tasks</h3>
                 </div>
-                
                 {checklist.length > 0 ? (
                   <div className="space-y-6">
                     {Object.entries(
@@ -366,13 +381,11 @@ export default function DutyPage() {
                       }, {})
                     ).map(([section, tasks]: any) => (
                       <div key={section}>
-                        <h4 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3 bg-gray-100 px-3 py-1.5 rounded-lg w-fit border border-gray-200">
-                          {section}
-                        </h4>
+                        <h4 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3 bg-gray-100 px-3 py-1.5 rounded-lg w-fit border border-gray-200">{section}</h4>
                         <div className="space-y-3">
                           {tasks.map((task: any) => (
                             <div key={task.id} onClick={() => toggleChecklist(task.id)} className={`flex items-start gap-3 p-4 rounded-2xl cursor-pointer border transition-all ${checkedItems[task.id] ? 'bg-green-50 border-green-200 shadow-sm' : 'bg-gray-50 border-gray-100 hover:border-gray-300'}`}>
-                              <div className={`mt-0.5 rounded-full p-0.5 flex-shrink-0 transition-colors ${checkedItems[task.id] ? 'bg-green-500 text-white' : 'bg-gray-200 text-transparent'}`}><CheckCircle2 size={18}/></div>
+                              <div className={`mt-0.5 rounded-full p-0.5 shrink-0 transition-colors ${checkedItems[task.id] ? 'bg-green-500 text-white' : 'bg-gray-200 text-transparent'}`}><CheckCircle2 size={18}/></div>
                               <div className="flex-1">
                                 <p className={`text-sm font-bold ${checkedItems[task.id] ? 'text-green-900' : 'text-gray-600'}`}>{task.label}</p>
                               </div>
@@ -381,12 +394,8 @@ export default function DutyPage() {
                         </div>
                       </div>
                     ))}
-                    {/* 🚨 2. MOVED: Check All Button at the bottom of checklist */}
                     <div className="pt-5 mt-5 border-t border-gray-100 flex justify-end">
-                      <button 
-                         onClick={handleCheckAll} 
-                         className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-black uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm border border-blue-200"
-                      >
+                      <button onClick={handleCheckAll} className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-black uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm border border-blue-200">
                          <CheckSquare size={18}/> Check All Tasks
                       </button>
                     </div>
@@ -395,166 +404,22 @@ export default function DutyPage() {
                   <div className="bg-gray-50 border border-gray-200 border-dashed rounded-2xl p-8 text-center">
                     <CheckSquare size={32} className="mx-auto text-gray-300 mb-3"/>
                     <h3 className="text-gray-900 font-black text-lg">No Checklist Found</h3>
-                    <p className="text-gray-500 font-bold text-sm mt-1">There is no checklist assigned to this booking.</p>
                   </div>
                 )}
               </div>
 
-              {/* --- SECTION 3: EQUIPMENT INVENTORY --- */}
+              {/* 🚨 EQUIPMENT TRACKER (NEW COMPONENT) 🚨 */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                  <Box className="text-blue-600" size={24}/>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 leading-tight">Equipment Tracking</h3>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manage Linens & Supplies</p>
-                  </div>
-                </div>
-
-                {/* A. Standard Exchange */}
-                <div className="mb-8">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg w-fit"><RefreshCcw size={14}/> Standard Exchange</h4>
-                  {stdExchanges.length === 0 ? (
-                    <p className="text-xs font-bold text-gray-400">No standard equipment configured.</p>
-                  ) : (
-                    <div className="space-y-3 pl-2">
-                      {stdExchanges.map((item, idx) => (
-                        <div key={item.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <div className="flex-1 pr-4">
-                            <p className="font-bold text-gray-900 text-sm">{item.item_name}</p>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Expected Qty: {item.expected_qty}</p>
-                          </div>
-                          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-300 shadow-sm">
-                            <span className="text-xs font-black text-blue-700 uppercase">Qty:</span>
-                            <select 
-                              value={item.exchanged_qty} 
-                              onChange={(e) => { const newStd = [...stdExchanges]; newStd[idx].exchanged_qty = parseInt(e.target.value); setStdExchanges(newStd); }}
-                              className="font-black text-lg text-gray-900 bg-transparent outline-none cursor-pointer"
-                            >
-                              {qtyOptions.map(q => <option key={q} value={q}>{q}</option>)}
-                            </select>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* B. Extra Exchange */}
-                <div className="mb-6 border-t border-gray-100 pt-6">
-                  <h4 className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><RefreshCcw size={14}/> Add Extra Exchange</h4>
-                  <div className="space-y-3 pl-2">
-                    {extExchanges.map((ex, idx) => (
-                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-amber-50/50 border border-amber-200 rounded-xl">
-                        <select 
-                          value={ex.equipment_id} 
-                          onChange={(e) => { const newExt = [...extExchanges]; newExt[idx].equipment_id = e.target.value; newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || ""; setExtExchanges(newExt); }}
-                          className="flex-1 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-sm text-gray-900 shadow-sm"
-                        >
-                          <option value="">Select Item...</option>
-                          {masterItems.map(m => <option key={m.id} value={m.id}>{m.item_name}</option>)}
-                        </select>
-                        <select 
-                          value={ex.qty} onChange={(e) => { const n = [...extExchanges]; n[idx].qty = parseInt(e.target.value); setExtExchanges(n); }}
-                          className="w-16 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
-                        >
-                          {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
-                        </select>
-                        <button onClick={() => setExtExchanges(extExchanges.filter(x => x.id !== ex.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                    <button onClick={() => setExtExchanges([...extExchanges, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-amber-700 hover:text-amber-800 flex items-center gap-1.5 py-1.5 px-3 bg-amber-100 rounded-lg transition-colors">
-                      <PlusCircle size={14}/> Add Item
-                    </button>
-                  </div>
-                </div>
-
-                {/* C. Custom Extra Exchange */}
-                <div className="mb-8 pl-2">
-                  <div className="space-y-3 pl-2 border-l-2 border-amber-300/50">
-                    <p className="text-[10px] font-black text-gray-500 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
-                    {othExchanges.map((oth, idx) => (
-                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-amber-50/30 border border-amber-200 rounded-xl ml-2">
-                        <input 
-                          type="text" placeholder="Custom item name..." value={oth.item_name} 
-                          onChange={(e) => { const n = [...othExchanges]; n[idx].item_name = e.target.value; setOthExchanges(n); }}
-                          className="flex-1 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-sm text-gray-900 placeholder-gray-400 shadow-sm"
-                        />
-                        <select 
-                          value={oth.qty} onChange={(e) => { const n = [...othExchanges]; n[idx].qty = parseInt(e.target.value); setOthExchanges(n); }}
-                          className="w-16 p-2.5 bg-white rounded-lg border border-amber-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
-                        >
-                          {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
-                        </select>
-                        <button onClick={() => setOthExchanges(othExchanges.filter(x => x.id !== oth.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                    <button onClick={() => setOthExchanges([...othExchanges, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-amber-700 hover:text-amber-800 flex items-center gap-1.5 py-1.5 px-3 bg-amber-100 rounded-lg transition-colors ml-2">
-                      <PlusCircle size={14}/> Add Custom Exchange
-                    </button>
-                  </div>
-                </div>
-
-                {/* D. Extra Provide */}
-                <div className="mb-6 border-t border-gray-100 pt-6">
-                  <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2 flex items-center gap-2"><PackagePlus size={14}/> Add Extra Provide <span className="text-[8px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1">Billable</span></h4>
-                  <div className="space-y-3 pl-2 mt-4">
-                    {extProvides.map((ex, idx) => (
-                      <div key={ex.id} className="flex items-center gap-3 p-2 bg-indigo-50/50 border border-indigo-200 rounded-xl">
-                        <select 
-                          value={ex.equipment_id} 
-                          onChange={(e) => { const newExt = [...extProvides]; newExt[idx].equipment_id = e.target.value; newExt[idx].item_name = masterItems.find(m => m.id.toString() === e.target.value)?.item_name || ""; setExtProvides(newExt); }}
-                          className="flex-1 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-sm text-gray-900 shadow-sm"
-                        >
-                          <option value="">Select Item...</option>
-                          {masterItems.map(m => <option key={m.id} value={m.id}>{m.item_name}</option>)}
-                        </select>
-                        <select 
-                          value={ex.qty} onChange={(e) => { const n = [...extProvides]; n[idx].qty = parseInt(e.target.value); setExtProvides(n); }}
-                          className="w-16 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
-                        >
-                          {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
-                        </select>
-                        <button onClick={() => setExtProvides(extProvides.filter(x => x.id !== ex.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                    <button onClick={() => setExtProvides([...extProvides, { id: Math.random().toString(), equipment_id: "", item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-700 hover:text-indigo-800 flex items-center gap-1.5 py-1.5 px-3 bg-indigo-100 rounded-lg transition-colors">
-                      <PlusCircle size={14}/> Add Item
-                    </button>
-                  </div>
-                </div>
-
-                {/* E. Others Extra Provide */}
-                <div className="pl-2">
-                  <div className="space-y-3 pl-2 border-l-2 border-indigo-300/50">
-                    <p className="text-[10px] font-black text-gray-500 mb-2 pl-2 leading-tight flex items-center gap-1"><PenTool size={10}/> Type manually if item is not in the list</p>
-                    {othProvides.map((oth, idx) => (
-                      <div key={oth.id} className="flex items-center gap-3 p-2 bg-indigo-50/30 border border-indigo-200 rounded-xl ml-2">
-                        <input 
-                          type="text" placeholder="Custom item name..." value={oth.item_name} 
-                          onChange={(e) => { const n = [...othProvides]; n[idx].item_name = e.target.value; setOthProvides(n); }}
-                          className="flex-1 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-sm text-gray-900 placeholder-gray-400 shadow-sm"
-                        />
-                        <select 
-                          value={oth.qty} onChange={(e) => { const n = [...othProvides]; n[idx].qty = parseInt(e.target.value); setOthProvides(n); }}
-                          className="w-16 p-2.5 bg-white rounded-lg border border-indigo-300 outline-none font-black text-center text-base text-gray-900 shadow-sm"
-                        >
-                          {qtyOptions.slice(1).map(q => <option key={q} value={q}>{q}</option>)}
-                        </select>
-                        <button onClick={() => setOthProvides(othProvides.filter(x => x.id !== oth.id))} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                    <button onClick={() => setOthProvides([...othProvides, { id: Math.random().toString(), item_name: "", qty: 1 }])} className="text-xs font-black text-indigo-700 hover:text-indigo-800 flex items-center gap-1.5 py-1.5 px-3 bg-indigo-100 rounded-lg transition-colors ml-2">
-                      <PlusCircle size={14}/> Add Custom Provide
-                    </button>
-                  </div>
-                </div>
+                 <EquipmentTracker 
+                    bookingId={bookingId} 
+                    unitId={booking.units?.id} 
+                    onDataChange={handleEquipmentDataChange} 
+                 />
               </div>
 
-              {/* --- SECTION 4: AFTER PHOTOS --- */}
+              {/* AFTER PHOTOS */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
                 <h3 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2"><Camera className="text-emerald-600"/> After Cleaning Photos</h3>
-                <p className="text-xs text-gray-500 font-bold mb-6">Take pictures after the cleaning to verify the work.</p>
-                
                 <div>
                   <label className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all aspect-video group">
                     <UploadCloud className="text-gray-400 group-hover:text-emerald-500 mb-2" size={32}/>
@@ -583,14 +448,11 @@ export default function DutyPage() {
                   className="w-full py-5 bg-gradient-to-r from-gray-900 to-black text-white font-black rounded-2xl text-lg shadow-xl shadow-gray-900/20 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
-                    <> <Loader2 className="animate-spin" size={24}/> {uploadingPhotos ? "Uploading Media..." : "Finalizing..."} </>
+                    <> <Loader2 className="animate-spin" size={24}/> {uploadingPhotos ? "Uploading Media..." : "Finalizing Log & Inventory..."} </>
                   ) : (
                     <> <ShieldCheck size={24}/> Complete & Submit Log </>
                   )}
                 </motion.button>
-                <p className="text-center text-[10px] text-gray-400 mt-4 font-black uppercase tracking-widest flex items-center justify-center gap-1.5">
-                  <Info size={12}/> Ensure everything is accurate before submission
-                </p>
               </div>
 
             </motion.div>
