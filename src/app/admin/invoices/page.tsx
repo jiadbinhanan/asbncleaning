@@ -103,7 +103,11 @@ export default function InvoiceManagement() {
 
     // Filter by selected company
     const companyId = parseInt(selectedCompany);
-    const valid = (data || []).filter(b => b.units?.company_id === companyId);
+    const valid = (data || []).filter((b: any) => {
+      // Supabase array দিলে প্রথম ইনডেক্স নেবে, আর object দিলে সরাসরি নেবে
+      const currentUnit = Array.isArray(b.units) ? b.units[0] : b.units;
+      return currentUnit?.company_id === companyId;
+    });
 
     // Process extras from booking_inventory_logs (new system)
     const processed = valid.map((b: any) => {
