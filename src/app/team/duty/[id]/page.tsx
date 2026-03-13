@@ -178,19 +178,7 @@ export default function DutyPage() {
 
       setUploadingPhotos(false);
 
-      // 1. Insert Work Log (No checklist JSON saved anymore, only photos and times)
-      const { error: logError } = await supabase.from('work_logs').insert([{
-        booking_id: parseInt(bookingId),
-        team_id: booking.assigned_team_id,
-        submitted_by: agentId,
-        start_time: startTime.toISOString(),
-        end_time: new Date().toISOString(),
-        before_photos: uploadedBeforeUrls, 
-        photo_urls: uploadedAfterUrls
-      }]);
-      if (logError) throw logError;
-
-        // 🚨 1. PROCESS ALL CALCULATIONS BASED ON NEW LOGIC
+      // 1. PROCESS ALL CALCULATIONS BASED ON NEW LOGIC
         const processedEquipment = equipmentLogData.map(item => {
           let standard = item.standard_provide;
           let extra = 0;
@@ -199,39 +187,28 @@ export default function DutyPage() {
           let newBal = 0;
 
           if (item.item_type === 'returnable') {
-            // Returnable Logic
-            extra = item.extra_provide; // UI sets exact extra amount
+            extra = item.extra_provide; 
             finalProv = standard + extra;
             short = Math.max(0, item.target_collect - item.collected);
-            newBal = finalProv; // Next shift target is what was provided today
+            newBal = finalProv; 
           } 
           else if (item.item_type === 'refillable') {
-            // Refillable (Dispensers) Logic
             let intact = item.collected;
-            let placedNew = item.extra_provide; // UI input for new bottles placed
-            
-            // Extra = Placed New - Required to reach standard
+            let placedNew = item.extra_provide; 
             let requiredForStandard = Math.max(0, standard - intact);
             extra = Math.max(0, placedNew - requiredForStandard);
-            
             finalProv = placedNew;
-            short = Math.max(0, item.target_collect - intact); // Missing containers
-            newBal = intact + placedNew; // Physical count inside unit
+            short = Math.max(0, item.target_collect - intact); 
+            newBal = intact + placedNew; 
           } 
           else if (item.item_type === 'consumable') {
-            // 🚨 Consumable Logic (Updated to calculate leftover vs standard)
-            let intact = item.collected; // e.g., 2 bottles left from previous guest
-            let placedNew = item.extra_provide; // e.g., 4 new bottles placed by cleaner
-            
-            // Required to reach standard limit
+            let intact = item.collected; 
+            let placedNew = item.extra_provide; 
             let requiredForStandard = Math.max(0, standard - intact); 
-            
-            // Anything placed beyond 'requiredForStandard' is billable extra
             extra = Math.max(0, placedNew - requiredForStandard); 
-            
             finalProv = placedNew;
-            short = 0; // Consumables are consumed, not stolen, so no shortage recorded
-            newBal = intact + placedNew; // Room now has the total sum
+            short = 0; 
+            newBal = intact + placedNew; 
           }
 
           return {
@@ -255,7 +232,8 @@ export default function DutyPage() {
           target_collect_qty: item.target_collect,
           collected_qty: item.collected,
           shortage_qty: item.calc_short,
-          qc_status: item.item_type === 'returnable' ? 'pending' : 'not_applicable' 
+          // 🚨 FIX 1: Changed 'not_applicable' to 'completed' so non-returnables completely bypass QC!
+          qc_status: item.item_type === 'returnable' ? 'pending' : 'completed' 
         }));
 
         // 3. Prepare Unit Balance Updates
@@ -266,24 +244,78 @@ export default function DutyPage() {
           last_updated_at: new Date().toISOString()
         }));
 
-        // ✅ booking_inventory_logs insert
-        if (inventoryLogs.length > 0) {
-          const { error: invError } = await supabase
-            .from('booking_inventory_logs')
-            .insert(inventoryLogs);
-          if (invError) throw invError;
+        // 🚨 FIX 2: THE MISSING LEDGER & MASTER STOCK UPDATE LOGIC
+        const itemsProvided = processedEquipment.filter(item => item.calc_finalProv > 0);
+        const ledgerEntries: any[] = [];
+        const stockUpdatePromises: any[] = [];
+
+        if (itemsProvided.length > 0) {
+          // Fetch current stock from Master to calculate correct balance_after
+          const { data: masterStockData } = await supabase
+            .from('equipment_master')
+            .select('id, current_stock')
+            .in('id', itemsProvided.map(i => i.equipment_id));
+
+          if (masterStockData) {
+            itemsProvided.forEach(item => {
+              const masterItem = masterStockData.find(m => m.id === item.equipment_id);
+              const oldStock = masterItem?.current_stock || 0;
+              const newStock = oldStock - item.calc_finalProv;
+
+              // Insert into Ledger as 'out' transaction
+              ledgerEntries.push({
+                equipment_id: item.equipment_id,
+                transaction_type: 'out',
+                quantity: item.calc_finalProv,
+                reference_type: 'supplied_to_unit',
+                unit_id: booking.units.id,
+                booking_id: parseInt(bookingId),
+                balance_after: newStock,
+                remarks: `Agent placed ${item.calc_finalProv} items in Unit ${booking.units.unit_number}`
+              });
+
+              // Update main stock in Master Table
+              stockUpdatePromises.push(
+                supabase.from('equipment_master')
+                  .update({ current_stock: newStock })
+                  .eq('id', item.equipment_id)
+              );
+            });
+          }
         }
 
-        // ✅ unit_inventory_balances upsert
-        if (balanceUpdates.length > 0) {
-          const { error: balError } = await supabase
-            .from('unit_inventory_balances')
-            .upsert(balanceUpdates, { onConflict: 'unit_id,equipment_id' });
-          if (balError) throw balError;
+        // ==========================================
+        // DATABASE EXECUTION BLOCK
+        // ==========================================
+
+        // A. Insert Work log
+        const { error: logError } = await supabase.from('work_logs').insert([{
+          booking_id: parseInt(bookingId),
+          team_id: booking.assigned_team_id,
+          start_time: startTime?.toISOString(),
+          end_time: new Date().toISOString(),
+          photo_urls: uploadedAfterUrls,
+          before_photos: uploadedBeforeUrls,
+          submitted_by: agentId
+        }]);
+        if (logError) throw logError;
+
+        // B. Insert Inventory Logs
+        const { error: invError } = await supabase.from('booking_inventory_logs').insert(inventoryLogs);
+        if (invError) throw invError;
+
+        // C. Upsert Unit Balances
+        const { error: balError } = await supabase.from('unit_inventory_balances').upsert(balanceUpdates, { onConflict: 'unit_id, equipment_id' });
+        if (balError) throw balError;
+
+        // D. Execute Ledger Entries & Master Stock Updates (The new fix)
+        if (ledgerEntries.length > 0) {
+          const { error: ledgerError } = await supabase.from('inventory_transaction_logs').insert(ledgerEntries);
+          if (ledgerError) throw ledgerError;
+          await Promise.all(stockUpdatePromises);
         }
 
-
-      // 3. Mark Booking Completed
+      // Update booking status
       const { error: statusError } = await supabase.from('bookings').update({ status: 'completed' }).eq('id', bookingId);
       if (statusError) throw statusError;
 
