@@ -178,115 +178,140 @@ export default function DutyPage() {
 
       setUploadingPhotos(false);
 
-      // 1. PROCESS ALL CALCULATIONS BASED ON NEW LOGIC
-        const processedEquipment = equipmentLogData.map(item => {
-          let standard = item.standard_provide;
-          let extra = 0;
-          let finalProv = 0;
-          let short = 0;
-          let newBal = 0;
+      // 1. PROCESS ALL CALCULATIONS
+      const processedEquipment = equipmentLogData.map(item => {
+        const standard = item.standard_provide;
+        // base_provide = agent selected base qty (default = standard)
+        const base     = item.base_provide ?? standard;
+        const extra    = item.extra_provide;   // extra above base → billed
+        let finalProv  = 0, short = 0, newBal = 0;
+        let returnedToStock = 0, keptInRoom = 0;
 
-          if (item.item_type === 'returnable') {
-            extra = item.extra_provide; 
-            finalProv = standard + extra;
-            short = Math.max(0, item.target_collect - item.collected);
-            newBal = finalProv; 
-          } 
-          else if (item.item_type === 'refillable') {
-            let intact = item.collected;
-            let placedNew = item.extra_provide; 
-            let requiredForStandard = Math.max(0, standard - intact);
-            extra = Math.max(0, placedNew - requiredForStandard);
-            finalProv = placedNew;
-            short = Math.max(0, item.target_collect - intact); 
-            newBal = intact + placedNew; 
-          } 
-          else if (item.item_type === 'consumable') {
-            let intact = item.collected; 
-            let placedNew = item.extra_provide; 
-            let requiredForStandard = Math.max(0, standard - intact); 
-            extra = Math.max(0, placedNew - requiredForStandard); 
-            finalProv = placedNew;
-            short = 0; 
-            newBal = intact + placedNew; 
-          }
-
-          return {
-            ...item,
-            calc_standard: standard,
-            calc_extra: extra,
-            calc_finalProv: finalProv,
-            calc_short: short,
-            calc_newBal: newBal
-          };
-        });
-
-        // 2. Prepare Inventory Logs for Database
-        const inventoryLogs = processedEquipment.map(item => ({
-          booking_id: parseInt(bookingId),
-          unit_id: booking.units.id,
-          equipment_id: item.equipment_id,
-          standard_qty: item.calc_standard,
-          extra_provided_qty: item.calc_extra,
-          final_provided_qty: item.calc_finalProv,
-          target_collect_qty: item.target_collect,
-          collected_qty: item.collected,
-          shortage_qty: item.calc_short,
-          // 🚨 FIX 1: Changed 'not_applicable' to 'completed' so non-returnables completely bypass QC!
-          qc_status: item.item_type === 'returnable' ? 'pending' : 'completed' 
-        }));
-
-        // 3. Prepare Unit Balance Updates
-        const balanceUpdates = processedEquipment.map(item => ({
-          unit_id: booking.units.id,
-          equipment_id: item.equipment_id,
-          current_in_unit_qty: item.calc_newBal,
-          last_updated_at: new Date().toISOString()
-        }));
-
-        // 🚨 FIX 2: THE MISSING LEDGER & MASTER STOCK UPDATE LOGIC
-        const itemsProvided = processedEquipment.filter(item => item.calc_finalProv > 0);
-        const ledgerEntries: any[] = [];
-        const stockUpdatePromises: any[] = [];
-
-        if (itemsProvided.length > 0) {
-          // Fetch current stock from Master to calculate correct balance_after
-          const { data: masterStockData } = await supabase
-            .from('equipment_master')
-            .select('id, current_stock')
-            .in('id', itemsProvided.map(i => i.equipment_id));
-
-          if (masterStockData) {
-            itemsProvided.forEach(item => {
-              const masterItem = masterStockData.find(m => m.id === item.equipment_id);
-              const oldStock = masterItem?.current_stock || 0;
-              const newStock = oldStock - item.calc_finalProv;
-
-              // Insert into Ledger as 'out' transaction
-              ledgerEntries.push({
-                equipment_id: item.equipment_id,
-                transaction_type: 'out',
-                quantity: item.calc_finalProv,
-                reference_type: 'supplied_to_unit',
-                unit_id: booking.units.id,
-                booking_id: parseInt(bookingId),
-                balance_after: newStock,
-                remarks: `Agent placed ${item.calc_finalProv} items in Unit ${booking.units.unit_number}`
-              });
-
-              // Update main stock in Master Table
-              stockUpdatePromises.push(
-                supabase.from('equipment_master')
-                  .update({ current_stock: newStock })
-                  .eq('id', item.equipment_id)
-              );
-            });
-          }
+        if (item.item_type === 'returnable') {
+          // Collect dirty → provide fresh (base + extra)
+          finalProv       = base + extra;
+          short           = Math.max(0, item.target_collect - item.collected);
+          newBal          = finalProv;
+          returnedToStock = 0;
+          keptInRoom      = 0;
+        }
+        else if (item.item_type === 'refillable') {
+          // Collect usable dispensers back to stock, place fresh base + extra
+          finalProv       = base + extra;
+          short           = Math.max(0, item.target_collect - item.collected);
+          newBal          = finalProv;              // fresh bottles only in room
+          returnedToStock = item.collected;         // usable ones back to warehouse
+          keptInRoom      = 0;
+        }
+        else if (item.item_type === 'consumable') {
+          // No collection — just place base + extra
+          finalProv       = base + extra;
+          short           = 0;
+          newBal          = finalProv;
+          returnedToStock = item.collected;  // ← this line is added
+          keptInRoom      = 0;
         }
 
-        // ==========================================
-        // DATABASE EXECUTION BLOCK
-        // ==========================================
+        return {
+          ...item,
+          calc_standard:        standard,
+          calc_base:            base,
+          calc_extra:           extra,
+          calc_finalProv:       finalProv,
+          calc_short:           short,
+          calc_newBal:          newBal,
+          calc_returnedToStock: returnedToStock,
+          calc_keptInRoom:      keptInRoom,
+        };
+      });
+
+      // 2. Inventory Logs for DB
+      const inventoryLogs = processedEquipment.map(item => ({
+        booking_id:           parseInt(bookingId),
+        unit_id:              booking.units.id,
+        equipment_id:         item.equipment_id,
+        standard_qty:         item.calc_standard,
+        extra_provided_qty:   item.calc_extra,          // extra above base (billed)
+        final_provided_qty:   item.calc_finalProv,      // base + extra
+        target_collect_qty:   item.target_collect,
+        collected_qty:        item.collected,
+        shortage_qty:         item.calc_short,
+        returned_to_stock_qty: item.calc_returnedToStock,
+        kept_in_room_qty:     item.calc_keptInRoom,
+        qc_status: item.item_type === 'returnable' ? 'pending' : 'completed',
+      }));
+
+      // 3. Unit Balance Updates
+      const balanceUpdates = processedEquipment.map(item => ({
+        unit_id:            booking.units.id,
+        equipment_id:       item.equipment_id,
+        current_in_unit_qty: item.calc_newBal,
+        last_updated_at:    new Date().toISOString(),
+      }));
+
+      // 4. Ledger + Stock (in-memory map to avoid race conditions)
+      const itemsProvided = processedEquipment.filter(i => i.calc_finalProv > 0);
+      const itemsReturned = processedEquipment.filter(
+        i => i.calc_returnedToStock > 0
+      );
+      const ledgerEntries: any[]      = [];
+      const stockUpdatePromises: any[] = [];
+
+      if (itemsProvided.length > 0 || itemsReturned.length > 0) {
+        const allIds = [
+          ...itemsProvided.map(i => i.equipment_id),
+          ...itemsReturned.map(i => i.equipment_id),
+        ];
+        const { data: masterStockData } = await supabase
+          .from('equipment_master')
+          .select('id, current_stock')
+          .in('id', allIds);
+
+        const stockMap: Record<number, number> = {};
+        masterStockData?.forEach((m: any) => { stockMap[m.id] = m.current_stock; });
+
+        // OUT — supplied to unit
+        itemsProvided.forEach(item => {
+          const newStock = (stockMap[item.equipment_id] || 0) - item.calc_finalProv;
+          stockMap[item.equipment_id] = newStock;
+          ledgerEntries.push({
+            equipment_id:    item.equipment_id,
+            transaction_type: 'out',
+            quantity:        item.calc_finalProv,
+            reference_type:  'supplied_to_unit',
+            unit_id:         booking.units.id,
+            booking_id:      parseInt(bookingId),
+            balance_after:   newStock,
+            remarks: `Supplied ${item.calc_finalProv}x ${item.item_name} to Unit ${booking.units.unit_number} - ${booking.units.building_name} (${booking.units.companies?.name?.trim() || 'Unknown'}) | Ref: ${booking.booking_ref}`,
+          });
+          stockUpdatePromises.push(
+            supabase.from('equipment_master').update({ current_stock: newStock }).eq('id', item.equipment_id)
+          );
+        });
+
+        // IN — refillable usable items returned to stock
+        itemsReturned.forEach(item => {
+          const newStock = (stockMap[item.equipment_id] || 0) + item.calc_returnedToStock;
+          stockMap[item.equipment_id] = newStock;
+          ledgerEntries.push({
+            equipment_id:    item.equipment_id,
+            transaction_type: 'in',
+            quantity:        item.calc_returnedToStock,
+            reference_type:  'usable_returned_from_unit',
+            unit_id:         booking.units.id,
+            booking_id:      parseInt(bookingId),
+            balance_after:   newStock,
+            remarks: `Returned ${item.calc_returnedToStock}x usable ${item.item_name} from Unit ${booking.units.unit_number} (${booking.units.companies?.name?.trim() || 'Unknown'}) | Ref: ${booking.booking_ref}`,
+          });
+          stockUpdatePromises.push(
+            supabase.from('equipment_master').update({ current_stock: newStock }).eq('id', item.equipment_id)
+          );
+        });
+      }
+
+      // ==========================================
+      // DATABASE EXECUTION BLOCK
+      // ==========================================
 
         // A. Insert Work log
         const { error: logError } = await supabase.from('work_logs').insert([{

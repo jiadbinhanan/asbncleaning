@@ -21,7 +21,7 @@ export default function TeamQCPage() {
     const fetchData = async () => {
       // Fetch Booking Details & Pending QC Items in parallel
       const [bookingRes, logsRes] = await Promise.all([
-        supabase.from('bookings').select('id, units(unit_number)').eq('id', bookingId).single(),
+        supabase.from('bookings').select('id, units(id, unit_number)').eq('id', bookingId).single(),
         supabase.from('booking_inventory_logs')
                 .select('id, equipment_id, collected_qty, qc_status, equipment_master(item_name, current_stock)')
                 .eq('booking_id', bookingId)
