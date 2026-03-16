@@ -46,7 +46,7 @@ export default function SupervisorReviewPage() {
             agent:profiles!work_logs_submitted_by_fkey ( full_name, avatar_url )
           ),
           booking_inventory_logs (
-            id, equipment_id, standard_qty, extra_provided_qty, final_provided_qty,
+            id, equipment_id, base_provide_qty, extra_provided_qty, final_provided_qty,
             target_collect_qty, collected_qty, shortage_qty, qc_status,
             supervisor_price, remarks,
             equipment_master ( item_name, item_type )
@@ -55,7 +55,7 @@ export default function SupervisorReviewPage() {
         .in("status", ["completed", "finalized"])
         .order("cleaning_date", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
-      supabase.from("unit_equipment_config").select("unit_id, equipment_id, extra_unit_price"),
+      supabase.from("unit_equipment_config").select("unit_id, equipment_id, standard_qty, extra_unit_price"),
       supabase.from("checklist_templates").select("id, title, content"),
     ]);
 
@@ -280,42 +280,45 @@ export default function SupervisorReviewPage() {
                       >
                         {/* Left info */}
                         <div className="flex-1 min-w-0">
-                          {/* Status + Booking Ref row */}
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {isCompleted ? (
-                              <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 animate-pulse">
-                                <Clock size={11}/> Needs Review
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1">
-                                <CheckCircle size={11}/> Finalized
-                              </span>
-                            )}
-                            {booking.booking_ref && (
-                              <span className="flex items-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
-                                <Hash size={10}/> {booking.booking_ref}
-                              </span>
-                            )}
-                            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
-                              {booking.cleaning_time}
-                            </span>
-                            {hasExtra && (
-                              <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1">
-                                <PackagePlus size={10}/> Extra Items
-                              </span>
-                            )}
-                          </div>
+                          {/* Status + Booking Ref row — flex-wrap আগে থেকেই আছে, ঠিক আছে */}
+<div className="flex flex-wrap items-center gap-2 mb-3">
+  {isCompleted ? (
+    <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 animate-pulse shrink-0">
+      <Clock size={11}/> Needs Review
+    </span>
+  ) : (
+    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 shrink-0">
+      <CheckCircle size={11}/> Finalized
+    </span>
+  )}
+  {booking.booking_ref && (
+    <span className="flex items-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 shrink-0 max-w-full overflow-hidden text-ellipsis">
+      <Hash size={10} className="shrink-0"/> 
+      <span className="truncate">{booking.booking_ref}</span>
+    </span>
+  )}
+  <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg shrink-0">
+    {booking.cleaning_time}
+  </span>
+  {hasExtra && (
+    <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1 shrink-0">
+      <PackagePlus size={10}/> Extra Items
+    </span>
+  )}
+</div>
 
-                          {/* Company + Unit */}
-                          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-1 truncate">
-                            <Building2 size={17} className="text-blue-500 shrink-0"/>
-                            {booking.units?.companies?.name || "N/A"}
-                            <span className="text-gray-400 font-medium text-base">· Unit {booking.units?.unit_number}</span>
-                          </h3>
-                          <p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mb-3">
-                            <MapPin size={13}/> {booking.units?.building_name} · {booking.service_type}
-                          </p>
-
+{/* Company + Unit */}
+<h3 className="text-lg font-black text-gray-900 mb-0.5 flex items-center gap-2 min-w-0 overflow-hidden">
+  <Building2 size={17} className="text-blue-500 shrink-0"/>
+  <span className="truncate">{booking.units?.companies?.name || "N/A"}</span>
+</h3>
+<p className="text-sm font-bold text-gray-600 mb-1">
+  Unit {booking.units?.unit_number}
+</p>
+<p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mb-3 min-w-0 overflow-hidden">
+  <MapPin size={13} className="shrink-0"/>
+  <span className="truncate">{booking.units?.building_name} · {booking.service_type}</span>
+</p>
                           {/* Team + Members */}
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="text-xs font-black text-gray-600 flex items-center gap-1.5">

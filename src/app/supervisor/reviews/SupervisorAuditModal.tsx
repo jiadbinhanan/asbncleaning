@@ -6,8 +6,8 @@ import {
   X, Clock, Camera, FileCheck, CircleDollarSign, CheckSquare,
   PackagePlus, CheckCircle2, AlertCircle, Building2, Calendar,
   Users, UserCircle, ShieldCheck, Tag, Layers, Shirt, Droplets,
-  Sparkles, AlertTriangle, Hash, Edit3, Loader2,
-  ChevronDown, Receipt, Save, BookOpen, RefreshCcw,
+  AlertTriangle, Hash, Edit3, Loader2,
+  ChevronDown, Receipt, Save, BookOpen,
   Coffee, ArrowRight, HelpCircle, ChevronRight, Boxes
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO } from "date-fns";
@@ -23,7 +23,16 @@ const getDuration = (start: string, end: string) => {
 };
 type Tab = "details" | "inventory" | "checklist" | "finalize";
 
-// ─── Photo Grid ───────────────────────────────────────────────────────────────
+// ─── Colour system ────────────────────────────────────────────────────────────
+// 🟠 COLLECT  → orange/amber tones  (what was collected / returned to stock)
+// 🔵 STANDARD → sky/blue tones      (unit config standard per room)
+// 🟣 BASE     → indigo tones         (actual base placed this shift)
+// 🟣 EXTRA    → purple tones         (above standard, billed)
+// 🟢 OK/TOTAL → emerald tones        (good status / total result)
+// 🔴 ISSUE    → red/amber tones      (shortage / missing / below std)
+// ⬛ NEUTRAL  → gray tones            (target/prev balance — informational)
+
+// ─── Photo Grid ──────────────────────────────────────────────────────────────
 function PhotoGrid({ photos, label }: { photos: string[]; label: string }) {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? photos : photos.slice(0, 4);
@@ -76,12 +85,12 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
       title: "🟠 Returnable — Linens & Towels",
       color: "bg-orange-50 border-orange-200",
       points: [
-        "'Was in Room' (Target) = qty left in room from the previous shift",
-        "'Collected' = dirty linens picked up this shift",
-        "'Base Provided' = standard fresh qty placed (pre-filled by agent)",
-        "'Extra' = additional qty above standard (charged to guest)",
-        "Shortage = collected less than target → items are missing",
-        "QC = status of laundry quality check after collection",
+        "'Was in Room' = qty from previous shift (neutral, informational)",
+        "'Collected' = dirty linens picked up — orange colour",
+        "'Standard' = unit config standard qty — sky/blue colour",
+        "'Base Placed' = actual base fresh qty placed by agent — indigo colour",
+        "'Extra' = above standard, charged to guest — purple colour",
+        "Shortage = items missing — shown in red",
       ]
     },
     {
@@ -89,12 +98,12 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
       title: "🔵 Refillable — Dispensers",
       color: "bg-blue-50 border-blue-200",
       points: [
-        "'Was in Room' = dispensers placed in previous shift",
-        "'Collected → Stock' = usable dispensers taken back to warehouse",
-        "'Base Placed (Fresh)' = new dispensers placed this shift (standard qty, pre-filled)",
-        "'Extra' = additional dispensers above standard (charged to guest)",
-        "Room always gets fully fresh dispensers — nothing is kept from previous shift",
-        "Missing = collected less than what was expected",
+        "'Was in Room' = dispensers from previous shift",
+        "'Collected → Stock' = usable ones returned to warehouse — orange colour",
+        "'Standard' = unit config standard qty — sky/blue colour",
+        "'Base Placed (Fresh)' = fresh dispensers placed — indigo colour",
+        "'Extra' = additional above standard — purple colour",
+        "Missing = fewer collected than expected — shown in amber",
       ]
     },
     {
@@ -102,11 +111,11 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
       title: "🟢 Consumable — Amenities",
       color: "bg-emerald-50 border-emerald-200",
       points: [
-        "Unused amenities are collected back to warehouse stock",
-        "'Collected → Stock' = leftover items from previous visit returned to warehouse",
-        "'Base Placed' = standard qty placed fresh this visit (pre-filled)",
-        "'Extra' = additional qty above standard if guest requested more (charged)",
-        "'Total in Room' = Base + Extra = everything placed this visit",
+        "'Collected → Stock' = unused items returned to warehouse — orange colour",
+        "'Standard' = unit config standard qty — sky/blue colour",
+        "'Base Placed' = fresh qty placed this visit — indigo colour",
+        "'Extra' = additional above standard — purple colour",
+        "'Total Placed' = base + extra = all placed — emerald if fully stocked",
       ]
     },
     {
@@ -115,8 +124,8 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
       color: "bg-green-50 border-green-200",
       points: [
         "Set supervisor price & remarks for extra items in the Inventory tab first",
-        "In Finalize tab, enter the cleaning price only — extras are added separately in invoice",
-        "'Submit Audit' sets status to finalized and enables invoice generation",
+        "In Finalize tab, enter the cleaning price only",
+        "Extra items are added separately in the invoice",
         "Invoice Total = Cleaning Price + Extra Items Total",
       ]
     },
@@ -138,29 +147,22 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
           </div>
           <span className="ml-auto text-xs font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">{step + 1} / {steps.length}</span>
         </div>
-
         <div className={`p-5 rounded-2xl border ${s.color} mb-5`}>
-          <div className="flex items-center gap-3 mb-4">
-            {s.icon}
-            <h4 className="font-black text-gray-900">{s.title}</h4>
-          </div>
+          <div className="flex items-center gap-3 mb-4">{s.icon}<h4 className="font-black text-gray-900">{s.title}</h4></div>
           <ul className="space-y-2.5">
             {s.points.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm font-bold text-gray-700">
-                <ChevronRight size={14} className="mt-0.5 shrink-0 text-gray-400" />
-                {p}
+                <ChevronRight size={14} className="mt-0.5 shrink-0 text-gray-400" />{p}
               </li>
             ))}
           </ul>
         </div>
-
         <div className="flex items-center gap-2 mb-5 justify-center">
           {steps.map((_, i) => (
             <button key={i} onClick={() => setStep(i)}
               className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-200'}`} />
           ))}
         </div>
-
         <div className="flex gap-3">
           {step > 0 && <button onClick={() => setStep(s => s - 1)} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-black text-sm transition-all">← Previous</button>}
           {step < steps.length - 1
@@ -173,13 +175,14 @@ function WorkflowGuide({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Stat column helper ───────────────────────────────────────────────────────
-function StatCol({ label, sublabel, value, color, bg }: {
-  label: string; sublabel: string; value: string | number; color: string; bg: string;
+// ─── Stat Cell ────────────────────────────────────────────────────────────────
+function StatCell({ label, sublabel, value, textColor, bgColor }: {
+  label: string; sublabel: string; value: string | number;
+  textColor: string; bgColor: string;
 }) {
   return (
-    <div className={`py-3 px-2 text-center ${bg}`}>
-      <p className={`text-base font-black ${color}`}>{value}</p>
+    <div className={`py-3 px-2 text-center ${bgColor}`}>
+      <p className={`text-base font-black ${textColor}`}>{value}</p>
       <p className="text-[9px] font-black text-gray-500 uppercase tracking-wide mt-0.5">{label}</p>
       <p className="text-[8px] text-gray-400 font-bold">{sublabel}</p>
     </div>
@@ -187,14 +190,16 @@ function StatCol({ label, sublabel, value, color, bg }: {
 }
 
 // ─── RETURNABLE Row ───────────────────────────────────────────────────────────
-function ReturnableRow({ item }: { item: any }) {
+// Columns: Was in Room (neutral) | Collected 🟠 | Standard 🔵 | Base Placed 🔷 | Extra 🟣 | QC
+function ReturnableRow({ item, standardQty }: { item: any; standardQty: number }) {
   const shortage  = item.shortage_qty || 0;
   const extra     = item.extra_provided_qty || 0;
-  const base      = item.final_provided_qty - extra;   // base = total - extra
+  const base      = item.base_provide_qty || 0;           // from booking_inventory_logs
   const collectOk = item.collected_qty >= item.target_collect_qty;
+
   return (
     <div className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 bg-orange-50/70 border-b border-orange-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-orange-50/60 border-b border-orange-100">
         <div className="flex items-center gap-2">
           <Shirt size={14} className="text-orange-500 shrink-0" />
           <span className="font-black text-gray-900 text-sm">{item.equipment_master?.item_name}</span>
@@ -209,20 +214,27 @@ function ReturnableRow({ item }: { item: any }) {
       </div>
 
       <div className="grid grid-cols-3 md:grid-cols-6 divide-x divide-gray-100">
-        <StatCol label="Was in Room"   sublabel="Target Collect"  value={item.target_collect_qty}   color="text-gray-700"   bg="" />
-        <StatCol label="Collected"     sublabel="Dirty Picked Up" value={item.collected_qty}         color={collectOk ? "text-emerald-600" : "text-amber-600"} bg={collectOk ? "bg-emerald-50/40" : "bg-amber-50/40"} />
-        <StatCol label="Standard"      sublabel="Per Room"        value={item.standard_qty}          color="text-gray-600"   bg="" />
-        <StatCol label="Base Provided" sublabel="Fresh Placed"    value={base}                       color="text-indigo-700" bg="bg-indigo-50/40" />
-        <StatCol label="Extra"         sublabel="Above Standard"  value={extra > 0 ? `+${extra}` : "—"} color={extra > 0 ? "text-purple-600" : "text-gray-300"} bg={extra > 0 ? "bg-purple-50/40" : ""} />
-        <StatCol label="QC"            sublabel={item.qc_status === "completed" ? "Done" : item.qc_status === "pending" ? "Pending" : "N/A"} value={item.qc_status === "completed" ? "✓" : item.qc_status === "pending" ? "⏳" : "—"} color={item.qc_status === "completed" ? "text-emerald-600" : item.qc_status === "pending" ? "text-amber-500" : "text-gray-300"} bg="" />
+        {/* 🔲 neutral — prev balance */}
+        <StatCell label="Was in Room"   sublabel="Target Collect"  value={item.target_collect_qty}           textColor="text-gray-600"    bgColor="" />
+        {/* 🟠 collect */}
+        <StatCell label="Collected"     sublabel="Dirty Picked Up" value={item.collected_qty}                textColor={collectOk ? "text-orange-700" : "text-amber-600"} bgColor={collectOk ? "bg-orange-50/60" : "bg-amber-50/60"} />
+        {/* 🔵 standard from config */}
+        <StatCell label="Standard"      sublabel="Unit Config"     value={standardQty}                       textColor="text-sky-700"     bgColor="bg-sky-50/60" />
+        {/* 🔷 base placed (indigo) */}
+        <StatCell label="Base Placed"   sublabel="Agent Provided"  value={base}                              textColor="text-indigo-700"  bgColor="bg-indigo-50/60" />
+        {/* 🟣 extra (purple) */}
+        <StatCell label="Extra"         sublabel="Above Std"       value={extra > 0 ? `+${extra}` : "—"}    textColor={extra > 0 ? "text-purple-600" : "text-gray-300"} bgColor={extra > 0 ? "bg-purple-50/60" : ""} />
+        {/* QC status */}
+        <StatCell label="QC"            sublabel={item.qc_status === "completed" ? "Done" : "Pending"}
+          value={item.qc_status === "completed" ? "✓" : "⏳"}
+          textColor={item.qc_status === "completed" ? "text-emerald-600" : "text-amber-500"}
+          bgColor="" />
       </div>
 
       <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-500">
-        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-black">{item.collected_qty} dirty collected</span>
-        <ArrowRight size={11} className="text-gray-400" />
-        <span className="text-gray-400">QC → Laundry</span>
-        <span className="mx-1 text-gray-300">|</span>
-        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-black">{item.final_provided_qty} fresh provided (Base {base} + Extra {extra})</span>
+        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-black">{item.collected_qty} dirty → QC → Laundry</span>
+        <ArrowRight size={10} className="text-gray-400" />
+        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-black">{base + extra} fresh (Base {base} + Extra {extra})</span>
         {shortage > 0 && <span className="ml-auto bg-red-100 text-red-600 px-2 py-0.5 rounded font-black">⚠️ {shortage} missing</span>}
       </div>
     </div>
@@ -230,15 +242,16 @@ function ReturnableRow({ item }: { item: any }) {
 }
 
 // ─── REFILLABLE Row ───────────────────────────────────────────────────────────
-// New system: agent collects usable dispensers back to stock, places all-fresh base+extra
-function RefillableRow({ item }: { item: any }) {
-  const collectedToStock = item.collected_qty;           // went back to warehouse
+// Columns: Was in Room (neutral) | Collected→Stock 🟠 | Standard 🔵 | Base Placed 🔷 | Extra 🟣
+function RefillableRow({ item, standardQty }: { item: any; standardQty: number }) {
+  const collectedToStock = item.collected_qty;
   const extra            = item.extra_provided_qty || 0;
-  const base             = item.final_provided_qty - extra; // base (standard) fresh placed
+  const base             = item.base_provide_qty || 0;    // from booking_inventory_logs
   const missing          = Math.max(0, item.target_collect_qty - collectedToStock);
+
   return (
     <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 bg-blue-50/70 border-b border-blue-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-blue-50/60 border-b border-blue-100">
         <div className="flex items-center gap-2">
           <Droplets size={14} className="text-blue-500 shrink-0" />
           <span className="font-black text-gray-900 text-sm">{item.equipment_master?.item_name}</span>
@@ -253,36 +266,40 @@ function RefillableRow({ item }: { item: any }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-100">
-        <StatCol label="Was in Room"        sublabel="Prev Balance"      value={item.target_collect_qty}   color="text-gray-700"   bg="" />
-        <StatCol label="Collected → Stock"  sublabel="Returned Usable"   value={collectedToStock}          color={missing === 0 ? "text-teal-600" : "text-amber-600"} bg={missing === 0 ? "bg-teal-50/40" : "bg-amber-50/40"} />
-        <StatCol label="Standard"           sublabel="Per Room"           value={item.standard_qty}         color="text-gray-600"   bg="" />
-        <StatCol label="Base Placed (Fresh)" sublabel="New in Room"       value={base}                      color="text-indigo-700" bg="bg-indigo-50/40" />
-        <StatCol label="Extra"              sublabel="Above Standard"     value={extra > 0 ? `+${extra}` : "—"} color={extra > 0 ? "text-purple-600" : "text-gray-300"} bg={extra > 0 ? "bg-purple-50/40" : ""} />
+        {/* 🔲 neutral */}
+        <StatCell label="Was in Room"        sublabel="Prev Balance"    value={item.target_collect_qty}           textColor="text-gray-600"   bgColor="" />
+        {/* 🟠 collect */}
+        <StatCell label="Collected → Stock"  sublabel="Usable Returned" value={collectedToStock}                  textColor={missing === 0 ? "text-orange-700" : "text-amber-600"} bgColor={missing === 0 ? "bg-orange-50/60" : "bg-amber-50/60"} />
+        {/* 🔵 standard from config */}
+        <StatCell label="Standard"           sublabel="Unit Config"     value={standardQty}                       textColor="text-sky-700"    bgColor="bg-sky-50/60" />
+        {/* 🔷 base placed */}
+        <StatCell label="Base Placed Fresh"  sublabel="Agent Provided"  value={base}                              textColor="text-indigo-700" bgColor="bg-indigo-50/60" />
+        {/* 🟣 extra */}
+        <StatCell label="Extra"              sublabel="Above Std"       value={extra > 0 ? `+${extra}` : "—"}    textColor={extra > 0 ? "text-purple-600" : "text-gray-300"} bgColor={extra > 0 ? "bg-purple-50/60" : ""} />
       </div>
 
       <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-500">
-        <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-black">{collectedToStock} returned to stock</span>
+        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-black">{collectedToStock} → stock</span>
         <span className="mx-1 text-gray-300">|</span>
-        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-black">{item.final_provided_qty} fresh in room (Base {base} + Extra {extra})</span>
+        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-black">{base + extra} fresh in room (Base {base} + Extra {extra})</span>
         {missing > 0 && <span className="ml-auto bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-black">⚠️ {missing} not recovered</span>}
-        {extra > 0 && <span className="ml-auto text-purple-600 font-black">+{extra} extra billed</span>}
       </div>
     </div>
   );
 }
 
 // ─── CONSUMABLE Row ───────────────────────────────────────────────────────────
-// New system: unused items collected back to stock, fresh base+extra placed each visit
-function ConsumableRow({ item }: { item: any }) {
-  const collectedToStock = item.collected_qty;           // unused → back to warehouse
+// Columns: Collected→Stock 🟠 | Standard 🔵 | Base Placed 🔷 | Extra 🟣 | Total Placed 🟢
+function ConsumableRow({ item, standardQty }: { item: any; standardQty: number }) {
+  const collectedToStock = item.collected_qty;
   const extra            = item.extra_provided_qty || 0;
-  const base             = item.final_provided_qty - extra;
+  const base             = item.base_provide_qty || 0;    // from booking_inventory_logs
   const totalPlaced      = item.final_provided_qty;
-  const fullyStocked     = totalPlaced >= item.standard_qty;
+  const fullyStocked     = totalPlaced >= standardQty;
 
   return (
     <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 bg-emerald-50/70 border-b border-emerald-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-emerald-50/60 border-b border-emerald-100">
         <div className="flex items-center gap-2">
           <Coffee size={14} className="text-emerald-500 shrink-0" />
           <span className="font-black text-gray-900 text-sm">{item.equipment_master?.item_name}</span>
@@ -296,32 +313,59 @@ function ConsumableRow({ item }: { item: any }) {
         </div>
       </div>
 
-      {/* 5 cols: Standard | Collected→Stock | Base Placed | Extra | Total Placed */}
       <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-100">
-        <StatCol label="Standard"          sublabel="Per Room"          value={item.standard_qty}                color="text-gray-700"   bg="" />
-        <StatCol label="Collected → Stock" sublabel="Unused Returned"   value={collectedToStock}                 color={collectedToStock > 0 ? "text-teal-600" : "text-gray-300"} bg={collectedToStock > 0 ? "bg-teal-50/40" : ""} />
-        <StatCol label="Base Placed"       sublabel="Fresh This Visit"  value={base}                             color="text-emerald-700" bg="bg-emerald-50/40" />
-        <StatCol label="Extra"             sublabel="Guest Request"     value={extra > 0 ? `+${extra}` : "—"}   color={extra > 0 ? "text-purple-600" : "text-gray-300"} bg={extra > 0 ? "bg-purple-50/40" : ""} />
-        <StatCol label="Total Placed"      sublabel="In Room Now"       value={totalPlaced}                      color={fullyStocked ? "text-emerald-700" : "text-amber-600"} bg={fullyStocked ? "bg-emerald-50/40" : "bg-amber-50/40"} />
+        {/* 🟠 collect */}
+        <StatCell label="Collected → Stock" sublabel="Unused Returned"  value={collectedToStock > 0 ? collectedToStock : "—"} textColor={collectedToStock > 0 ? "text-orange-700" : "text-gray-300"} bgColor={collectedToStock > 0 ? "bg-orange-50/60" : ""} />
+        {/* 🔵 standard from config */}
+        <StatCell label="Standard"          sublabel="Unit Config"      value={standardQty}                        textColor="text-sky-700"    bgColor="bg-sky-50/60" />
+        {/* 🔷 base placed */}
+        <StatCell label="Base Placed"       sublabel="Agent Provided"   value={base}                               textColor="text-indigo-700" bgColor="bg-indigo-50/60" />
+        {/* 🟣 extra */}
+        <StatCell label="Extra"             sublabel="Guest Request"    value={extra > 0 ? `+${extra}` : "—"}     textColor={extra > 0 ? "text-purple-600" : "text-gray-300"} bgColor={extra > 0 ? "bg-purple-50/60" : ""} />
+        {/* 🟢 total */}
+        <StatCell label="Total Placed"      sublabel="In Room Now"      value={totalPlaced}                        textColor={fullyStocked ? "text-emerald-700" : "text-amber-600"} bgColor={fullyStocked ? "bg-emerald-50/60" : "bg-amber-50/60"} />
       </div>
 
       <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-500">
         {collectedToStock > 0
-          ? <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-black">{collectedToStock} unused → stock</span>
+          ? <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-black">{collectedToStock} unused → stock</span>
           : <span className="bg-gray-100 text-gray-400 px-2 py-0.5 rounded font-black">None collected</span>
         }
         <span className="mx-1 text-gray-300">|</span>
         <span className={`px-2 py-0.5 rounded font-black ${fullyStocked ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
           {totalPlaced} placed (Base {base} + Extra {extra})
         </span>
-        {!fullyStocked && <span className="ml-auto bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-black">⚠️ {item.standard_qty - totalPlaced} below standard</span>}
-        {extra > 0 && <span className="ml-auto text-purple-600 font-black">+{extra} extra billed</span>}
+        {!fullyStocked && <span className="ml-auto bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-black">⚠️ {standardQty - totalPlaced} below standard</span>}
       </div>
     </div>
   );
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
+// ─── Colour Legend ────────────────────────────────────────────────────────────
+function ColourLegend() {
+  const items = [
+    { bg: "bg-orange-100", text: "text-orange-700", label: "Collected / Returned to Stock" },
+    { bg: "bg-sky-100",    text: "text-sky-700",    label: "Standard (Unit Config)" },
+    { bg: "bg-indigo-100", text: "text-indigo-700", label: "Base Placed (Agent)" },
+    { bg: "bg-purple-100", text: "text-purple-700", label: "Extra (Billed)" },
+    { bg: "bg-emerald-100",text: "text-emerald-700",label: "OK / Fully Stocked" },
+    { bg: "bg-red-100",    text: "text-red-600",    label: "Shortage / Issue" },
+  ];
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Colour Guide</p>
+      <div className="flex flex-wrap gap-2">
+        {items.map((s, i) => (
+          <span key={i} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black ${s.bg} ${s.text} border-transparent`}>
+            <span className={`w-2 h-2 rounded-full ${s.bg.replace('/60','')}`} />{s.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
 function SectionHeader({ icon, title, subtitle, count, color }: any) {
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${color}`}>
@@ -340,10 +384,10 @@ export default function SupervisorAuditModal({
   booking, profiles, unitConfigs, checklistTemplates, onClose, onFinalized
 }: any) {
   const supabase = createClient();
-  const [activeTab, setActiveTab]     = useState<Tab>("details");
+  const [activeTab, setActiveTab]       = useState<Tab>("details");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showGuide, setShowGuide]     = useState(false);
-  const [priceInput, setPriceInput]   = useState(booking.price ? String(booking.price) : "");
+  const [showGuide, setShowGuide]       = useState(false);
+  const [priceInput, setPriceInput]     = useState(booking.price ? String(booking.price) : "");
 
   const [inventoryEdits, setInventoryEdits] = useState<Record<string, { supervisor_price: string; remarks: string }>>(() => {
     const init: Record<string, { supervisor_price: string; remarks: string }> = {};
@@ -369,6 +413,14 @@ export default function SupervisorAuditModal({
   const refillables = inventoryLogs.filter(i => i.equipment_master?.item_type === "refillable");
   const consumables = inventoryLogs.filter(i => i.equipment_master?.item_type === "consumable");
 
+  // Helper: get standard_qty from unit_equipment_config for a given equipment_id
+  const getStdQty = (equipmentId: number): number => {
+    const config = unitConfigs.find(
+      (c: any) => c.unit_id === booking.unit_id && c.equipment_id === equipmentId
+    );
+    return Number(config?.standard_qty || 0);
+  };
+
   const billableItems = useMemo(() => inventoryLogs.filter(i => i.extra_provided_qty > 0).map(i => {
     const edit = inventoryEdits[i.id] || {};
     const supervisorPrice = edit.supervisor_price !== "" ? parseFloat(edit.supervisor_price) : null;
@@ -380,8 +432,8 @@ export default function SupervisorAuditModal({
   const billableTotal = billableItems.reduce((sum, i) => sum + i.total, 0);
 
   const invSummary = useMemo(() => ({
-    shortageItems: inventoryLogs.filter(i => (i.shortage_qty || 0) > 0).length,
-    missingRefillable: refillables.filter(i => i.collected_qty < i.target_collect_qty).length,
+    shortageItems:    inventoryLogs.filter(i => (i.shortage_qty || 0) > 0).length,
+    missingRefill:    refillables.filter(i => i.collected_qty < i.target_collect_qty).length,
     consumableCollected: consumables.reduce((sum, i) => sum + (i.collected_qty || 0), 0),
   }), [inventoryLogs, refillables, consumables]);
 
@@ -441,7 +493,7 @@ export default function SupervisorAuditModal({
         transition={{ type: "spring", damping: 28, stiffness: 220 }}
         className="fixed bottom-0 left-0 w-full h-[92vh] z-50 flex flex-col rounded-t-[2.5rem] overflow-hidden shadow-[0_-24px_80px_-10px_rgba(0,0,0,0.4)]"
       >
-        {/* HEADER */}
+        {/* ── HEADER ────────────────────────────────────────────────────── */}
         <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white shrink-0">
           <div className="flex justify-center pt-3 pb-1"><div className="w-12 h-1 bg-white/20 rounded-full" /></div>
           <div className="px-6 md:px-10 pt-3 pb-4 flex justify-between items-start">
@@ -474,19 +526,15 @@ export default function SupervisorAuditModal({
           {/* Stat pills */}
           <div className="px-6 md:px-10 pb-4 flex gap-3 overflow-x-auto no-scrollbar">
             {[
-              { icon: <Clock size={13} className="text-blue-300" />,     label: "Duration", value: workLog ? getDuration(workLog.start_time, workLog.end_time) : "No Log" },
-              { icon: <Camera size={13} className="text-blue-300" />,    label: "Photos",   value: `${(workLog?.before_photos?.length || 0) + (workLog?.photo_urls?.length || 0)} Total` },
-              { icon: <Boxes size={13} className="text-blue-300" />,     label: "Items",    value: `${inventoryLogs.length} tracked` },
-              ...(invSummary.shortageItems > 0 ? [{ icon: <AlertTriangle size={13} className="text-red-300" />,   label: "Shortage",  value: `${invSummary.shortageItems} linens` }] : []),
-              ...(invSummary.missingRefillable > 0 ? [{ icon: <AlertTriangle size={13} className="text-amber-300" />, label: "Missing",  value: `${invSummary.missingRefillable} dispensers` }] : []),
-              ...(invSummary.consumableCollected > 0 ? [{ 
-                icon: <Coffee size={13} className="text-emerald-300" />, 
-                label: "Amenities", 
-                value: `${invSummary.consumableCollected} to stock` 
-              }] : []),
-              { icon: <PackagePlus size={13} className="text-indigo-300" />, label: "Extra", value: `${billableItems.length} billable` },
-              ...(billableTotal > 0 ? [{ icon: <CircleDollarSign size={13} className="text-emerald-300" />, label: "Billable", value: `AED ${billableTotal.toFixed(2)}` }] : []),
-              ...(booking.price > 0 ? [{ icon: <Receipt size={13} className="text-blue-300" />, label: "Set Price", value: `AED ${booking.price}` }] : []),
+              { icon: <Clock size={13} className="text-blue-300" />,          label: "Duration",  value: workLog ? getDuration(workLog.start_time, workLog.end_time) : "No Log" },
+              { icon: <Camera size={13} className="text-blue-300" />,         label: "Photos",    value: `${(workLog?.before_photos?.length || 0) + (workLog?.photo_urls?.length || 0)} Total` },
+              { icon: <Boxes size={13} className="text-blue-300" />,          label: "Items",     value: `${inventoryLogs.length} tracked` },
+              ...(invSummary.shortageItems > 0    ? [{ icon: <AlertTriangle size={13} className="text-red-300" />,   label: "Shortage", value: `${invSummary.shortageItems} linens` }] : []),
+              ...(invSummary.missingRefill > 0    ? [{ icon: <AlertTriangle size={13} className="text-amber-300" />, label: "Missing",  value: `${invSummary.missingRefill} dispensers` }] : []),
+              ...(invSummary.consumableCollected > 0 ? [{ icon: <Coffee size={13} className="text-emerald-300" />,   label: "Amenities",value: `${invSummary.consumableCollected} to stock` }] : []),
+              { icon: <PackagePlus size={13} className="text-purple-300" />,  label: "Extra",     value: `${billableItems.length} billable` },
+              ...(billableTotal > 0   ? [{ icon: <CircleDollarSign size={13} className="text-emerald-300" />, label: "Billable",  value: `AED ${billableTotal.toFixed(2)}` }] : []),
+              ...(booking.price > 0   ? [{ icon: <Receipt size={13} className="text-blue-300" />,             label: "Set Price", value: `AED ${booking.price}` }] : []),
             ].map((s, i) => (
               <div key={i} className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2.5 shrink-0 border border-white/10">
                 {s.icon}
@@ -499,7 +547,7 @@ export default function SupervisorAuditModal({
           </div>
         </div>
 
-        {/* TABS */}
+        {/* ── TABS ──────────────────────────────────────────────────────── */}
         <div className="flex bg-white border-b border-gray-100 shrink-0 overflow-x-auto no-scrollbar px-4">
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -510,7 +558,7 @@ export default function SupervisorAuditModal({
           ))}
         </div>
 
-        {/* CONTENT */}
+        {/* ── CONTENT ───────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto bg-[#F4F7FA]">
           <AnimatePresence mode="wait">
             <motion.div key={activeTab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="p-6 md:p-8 space-y-6 pb-16">
@@ -591,14 +639,15 @@ export default function SupervisorAuditModal({
                     <div className="p-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200 text-center text-gray-400 font-bold">No equipment tracked for this booking.</div>
                   ) : (
                     <>
-                      {/* Summary bar */}
+                      {/* Summary counts */}
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         {[
-                          { label: "Total",       value: inventoryLogs.length,           color: "bg-gray-100 text-gray-700" },
-                          { label: "Returnable",  value: returnables.length,             color: "bg-orange-100 text-orange-700" },
-                          { label: "Refillable",  value: refillables.length,             color: "bg-blue-100 text-blue-700" },
-                          { label: "Consumable",  value: consumables.length,             color: "bg-emerald-100 text-emerald-700" },
-                          { label: "Issues",      value: invSummary.shortageItems + invSummary.missingRefillable, color: (invSummary.shortageItems + invSummary.missingRefillable) > 0 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400" },
+                          { label: "Total",      value: inventoryLogs.length,  color: "bg-gray-100 text-gray-700" },
+                          { label: "Returnable", value: returnables.length,    color: "bg-orange-100 text-orange-700" },
+                          { label: "Refillable", value: refillables.length,    color: "bg-sky-100 text-sky-700" },
+                          { label: "Consumable", value: consumables.length,    color: "bg-emerald-100 text-emerald-700" },
+                          { label: "Issues",     value: invSummary.shortageItems + invSummary.missingRefill,
+                            color: (invSummary.shortageItems + invSummary.missingRefill) > 0 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400" },
                         ].map((s, i) => (
                           <div key={i} className={`${s.color} rounded-2xl px-4 py-3 text-center`}>
                             <p className="text-2xl font-black">{s.value}</p>
@@ -607,31 +656,43 @@ export default function SupervisorAuditModal({
                         ))}
                       </div>
 
+                      {/* Colour legend */}
+                      <ColourLegend />
+
+                      {/* Returnables */}
                       {returnables.length > 0 && (
                         <div className="space-y-3">
                           <SectionHeader icon={<Shirt size={16} className="text-orange-600" />} title="Linens & Towels — Returnable" subtitle="Dirty collected → QC → Laundry → Fresh provided" count={returnables.length} color="bg-orange-50 border-orange-100 text-orange-900" />
-                          {returnables.map((item: any) => <ReturnableRow key={item.id} item={item} />)}
+                          {returnables.map((item: any) => (
+                            <ReturnableRow key={item.id} item={item} standardQty={getStdQty(item.equipment_id)} />
+                          ))}
                         </div>
                       )}
 
+                      {/* Refillables */}
                       {refillables.length > 0 && (
                         <div className="space-y-3">
                           <SectionHeader icon={<Droplets size={16} className="text-blue-600" />} title="Dispensers & Bottles — Refillable" subtitle="Usable collected to stock → All-fresh placed in room" count={refillables.length} color="bg-blue-50 border-blue-100 text-blue-900" />
-                          {refillables.map((item: any) => <RefillableRow key={item.id} item={item} />)}
+                          {refillables.map((item: any) => (
+                            <RefillableRow key={item.id} item={item} standardQty={getStdQty(item.equipment_id)} />
+                          ))}
                         </div>
                       )}
 
+                      {/* Consumables */}
                       {consumables.length > 0 && (
                         <div className="space-y-3">
-                          <SectionHeader icon={<Coffee size={16} className="text-emerald-600" />} title="Amenities & Top-Ups — Consumable" subtitle="Unused collected to stock → Fresh standard qty placed each visit" count={consumables.length} color="bg-emerald-50 border-emerald-100 text-emerald-900" />
-                          {consumables.map((item: any) => <ConsumableRow key={item.id} item={item} />)}
+                          <SectionHeader icon={<Coffee size={16} className="text-emerald-600" />} title="Amenities & Top-Ups — Consumable" subtitle="Unused collected to stock → Standard qty placed each visit" count={consumables.length} color="bg-emerald-50 border-emerald-100 text-emerald-900" />
+                          {consumables.map((item: any) => (
+                            <ConsumableRow key={item.id} item={item} standardQty={getStdQty(item.equipment_id)} />
+                          ))}
                         </div>
                       )}
 
                       {/* Billable extras — editable */}
                       {billableItems.length > 0 && (
-                        <div className="bg-white rounded-3xl border border-emerald-200 shadow-sm overflow-hidden">
-                          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-4 flex items-center gap-2">
+                        <div className="bg-white rounded-3xl border border-purple-200 shadow-sm overflow-hidden">
+                          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-4 flex items-center gap-2">
                             <Edit3 size={17} className="text-white" />
                             <span className="font-black text-white text-sm">Extra Provided — Edit Prices & Remarks</span>
                             {billableTotal > 0 && <span className="ml-auto text-sm font-black bg-white/20 text-white px-3 py-1 rounded-xl">Total: AED {billableTotal.toFixed(2)}</span>}
@@ -645,7 +706,7 @@ export default function SupervisorAuditModal({
                                   <div className="flex items-center gap-2 mb-3">
                                     {item.equipment_master?.item_type === "returnable" ? <Shirt size={13} className="text-orange-500" /> : item.equipment_master?.item_type === "refillable" ? <Droplets size={13} className="text-blue-500" /> : <Coffee size={13} className="text-emerald-500" />}
                                     <span className="font-black text-gray-900">{item.equipment_master?.item_name}</span>
-                                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100 ml-auto">+{item.extra_provided_qty} Extra</span>
+                                    <span className="text-xs font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100 ml-auto">+{item.extra_provided_qty} Extra</span>
                                   </div>
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div>
@@ -673,9 +734,9 @@ export default function SupervisorAuditModal({
                                 </div>
                               );
                             })}
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex justify-between items-center">
-                              <span className="font-black text-emerald-700">Grand Total Billable</span>
-                              <span className="text-2xl font-black text-emerald-700">{billableTotal.toFixed(2)} <span className="text-sm">AED</span></span>
+                            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 flex justify-between items-center">
+                              <span className="font-black text-purple-700">Grand Total Billable</span>
+                              <span className="text-2xl font-black text-purple-700">{billableTotal.toFixed(2)} <span className="text-sm">AED</span></span>
                             </div>
                           </div>
                         </div>
@@ -729,16 +790,16 @@ export default function SupervisorAuditModal({
                   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Receipt size={13} /> Audit Summary</p>
                     {[
-                      { label: "Booking Ref",    value: booking.booking_ref || "N/A" },
-                      { label: "Unit",           value: `Unit ${booking.units?.unit_number} · ${booking.units?.building_name}` },
-                      { label: "Company",        value: companyName || "N/A" },
-                      { label: "Service",        value: booking.service_type || "N/A" },
-                      { label: "Date",           value: safeFormat(booking.cleaning_date, "dd MMM yyyy") },
-                      { label: "Team",           value: booking.teams?.team_name || "N/A" },
-                      { label: "Work Duration",  value: workLog ? getDuration(workLog.start_time, workLog.end_time) : "No log" },
-                      { label: "Items Tracked",  value: `${inventoryLogs.length} (${returnables.length} returnable · ${refillables.length} refillable · ${consumables.length} consumable)` },
-                      { label: "Issues",         value: (invSummary.shortageItems + invSummary.missingRefillable) > 0 ? `⚠️ ${invSummary.shortageItems} shortage, ${invSummary.missingRefillable} missing dispensers` : "None" },
-                      { label: "Extra Billable", value: `${billableItems.length} items · AED ${billableTotal.toFixed(2)}` },
+                      { label: "Booking Ref",   value: booking.booking_ref || "N/A" },
+                      { label: "Unit",          value: `Unit ${booking.units?.unit_number} · ${booking.units?.building_name}` },
+                      { label: "Company",       value: companyName || "N/A" },
+                      { label: "Service",       value: booking.service_type || "N/A" },
+                      { label: "Date",          value: safeFormat(booking.cleaning_date, "dd MMM yyyy") },
+                      { label: "Team",          value: booking.teams?.team_name || "N/A" },
+                      { label: "Work Duration", value: workLog ? getDuration(workLog.start_time, workLog.end_time) : "No log" },
+                      { label: "Items Tracked", value: `${inventoryLogs.length} (${returnables.length} returnable · ${refillables.length} refillable · ${consumables.length} consumable)` },
+                      { label: "Issues",        value: (invSummary.shortageItems + invSummary.missingRefill) > 0 ? `⚠️ ${invSummary.shortageItems} shortage, ${invSummary.missingRefill} missing dispensers` : "None" },
+                      { label: "Extra Billable",value: `${billableItems.length} items · AED ${billableTotal.toFixed(2)}` },
                     ].map((row, i) => (
                       <div key={i} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{row.label}</span>
@@ -761,15 +822,15 @@ export default function SupervisorAuditModal({
                       {billableTotal > 0 && (
                         <>
                           <div className="flex justify-between text-sm">
-                            <span className="text-emerald-300 font-bold">Extra Items (saved separately)</span>
-                            <span className="text-emerald-300 font-black">AED {billableTotal.toFixed(2)}</span>
+                            <span className="text-purple-300 font-bold">Extra Items (saved separately)</span>
+                            <span className="text-purple-300 font-black">AED {billableTotal.toFixed(2)}</span>
                           </div>
                           <div className="h-px bg-white/20" />
                           <div className="flex justify-between text-sm">
                             <span className="text-white font-black">Invoice Total</span>
                             <span className="text-white font-black">AED {(parseFloat(priceInput || "0") + billableTotal).toFixed(2)}</span>
                           </div>
-                          <p className="text-[10px] text-amber-300 font-bold">⚠️ Enter cleaning cost only. Extra items will be added separately in the invoice.</p>
+                          <p className="text-[10px] text-amber-300 font-bold">⚠️ Enter cleaning cost only. Extra items added separately in invoice.</p>
                         </>
                       )}
                     </div>

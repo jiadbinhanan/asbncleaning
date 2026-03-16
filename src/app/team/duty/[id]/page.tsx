@@ -227,17 +227,15 @@ export default function DutyPage() {
 
       // 2. Inventory Logs for DB
       const inventoryLogs = processedEquipment.map(item => ({
-        booking_id:           parseInt(bookingId),
-        unit_id:              booking.units.id,
-        equipment_id:         item.equipment_id,
-        standard_qty:         item.calc_standard,
-        extra_provided_qty:   item.calc_extra,          // extra above base (billed)
-        final_provided_qty:   item.calc_finalProv,      // base + extra
-        target_collect_qty:   item.target_collect,
-        collected_qty:        item.collected,
-        shortage_qty:         item.calc_short,
-        returned_to_stock_qty: item.calc_returnedToStock,
-        kept_in_room_qty:     item.calc_keptInRoom,
+        booking_id:         parseInt(bookingId),
+        unit_id:            booking.units.id,
+        equipment_id:       item.equipment_id,
+        base_provide_qty:   item.calc_base,        // ← renamed column, actual base placed
+        extra_provided_qty: item.calc_extra,
+        final_provided_qty: item.calc_finalProv,
+        target_collect_qty: item.target_collect,
+        collected_qty:      item.collected,
+        shortage_qty:       item.calc_short,
         qc_status: item.item_type === 'returnable' ? 'pending' : 'completed',
       }));
 
