@@ -8,7 +8,7 @@ import {
   Users, UserCircle, ShieldCheck, Tag, Layers, Shirt, Droplets,
   AlertTriangle, Hash, Edit3, Loader2,
   ChevronDown, Receipt, Save, BookOpen,
-  Coffee, ArrowRight, HelpCircle, ChevronRight, Boxes
+  Coffee, ArrowRight, HelpCircle, ChevronRight, Boxes, Search
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO } from "date-fns";
 
@@ -622,6 +622,45 @@ export default function SupervisorAuditModal({
                         <div className="h-px bg-gray-100" />
                         <PhotoGrid photos={workLog.photo_urls || []} label="After Cleaning" />
                       </div>
+
+                      {/* 🚨 NEW: Damaged Items 🚨 */}
+                    {workLog.damaged_items && (
+                      <div className='bg-red-50 rounded-3xl border border-red-200 shadow-sm p-6 space-y-4'>
+                        <p className='text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2'>
+                          <AlertTriangle size={14} /> Damaged Item Reported
+                        </p>
+                        {workLog.damaged_items.remarks && (
+                          <p className='text-sm font-bold text-red-800 bg-red-100/60 p-3.5 rounded-xl border border-red-200'>
+                            {workLog.damaged_items.remarks}
+                          </p>
+                        )}
+                        {workLog.damaged_items.photos?.length > 0 && (
+                          <div className="pt-2">
+                            <PhotoGrid photos={workLog.damaged_items.photos} label='Damage Photos' />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 🚨 NEW: Lost & Found Items 🚨 */}
+                    {workLog.lost_found_items && (
+                      <div className='bg-amber-50 rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4'>
+                        <p className='text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2'>
+                          <Search size={14} /> Lost & Found Item
+                        </p>
+                        {workLog.lost_found_items.remarks && (
+                          <p className='text-sm font-bold text-amber-900 bg-amber-100/60 p-3.5 rounded-xl border border-amber-200'>
+                            {workLog.lost_found_items.remarks}
+                          </p>
+                        )}
+                        {workLog.lost_found_items.photos?.length > 0 && (
+                          <div className="pt-2">
+                            <PhotoGrid photos={workLog.lost_found_items.photos} label='Found Item Photos' />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     </>
                   ) : (
                     <div className="p-10 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center gap-3 text-center">

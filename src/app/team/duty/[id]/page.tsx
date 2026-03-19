@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   PlayCircle, CheckCircle2, Clock, MapPin, 
   Camera, UploadCloud, ArrowLeft, Loader2, Info, Building2, ShieldCheck,
-  Trash2, CheckSquare
+  Trash2, CheckSquare, AlertTriangle, Search, ChevronDown, ChevronUp
 } from "lucide-react";
 import { getWorkPhotoUploadSignature } from "./actions";
 import EquipmentTracker from "./EquipmentTracker";
@@ -23,6 +23,19 @@ export default function DutyPage() {
   
   const [booking, setBooking] = useState<any>(null);
   const [agentId, setAgentId] = useState<string>("");
+
+  // --- Damage & Lost/Found States ---
+  const [showDamaged, setShowDamaged] = useState(false);
+  const [damagedPhotos, setDamagedPhotos] = useState<File[]>([]);
+  const [damagedRemarks, setDamagedRemarks] = useState("");
+
+  const [showLostFound, setShowLostFound] = useState(false);
+  const [lostFoundPhotos, setLostFoundPhotos] = useState<File[]>([]);
+  const [lostFoundRemarks, setLostFoundRemarks] = useState("");
+
+  // --- Photo Remove Handlers ---
+  const removeDamagedPhoto = (index: number) => setDamagedPhotos(prev => prev.filter((_, i) => i !== index));
+  const removeLostFoundPhoto = (index: number) => setLostFoundPhotos(prev => prev.filter((_, i) => i !== index));
   
   // Work Execution States
   const [isStarted, setIsStarted] = useState(false);
@@ -148,8 +161,10 @@ export default function DutyPage() {
     try {
       const uploadedBeforeUrls: string[] = [];
       const uploadedAfterUrls: string[] = [];
+      const uploadedDamagedUrls: string[] = [];     // 🚨 NEW
+      const uploadedLostFoundUrls: string[] = [];   // 🚨 NEW
       
-      if (beforePhotos.length > 0 || afterPhotos.length > 0) {
+      if (beforePhotos.length > 0 || afterPhotos.length > 0 || damagedPhotos.length > 0 || lostFoundPhotos.length > 0) {
         const { signature, timestamp, apiKey, cloudName } = await getWorkPhotoUploadSignature();
         const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
@@ -174,7 +189,19 @@ export default function DutyPage() {
           const url = await uploadToCloudinary(file);
           if (url) uploadedAfterUrls.push(url);
         }
+
+      // 🚨 NEW: Upload Damaged Photos
+      for (const file of damagedPhotos) {
+        const url = await uploadToCloudinary(file);
+        if (url) uploadedDamagedUrls.push(url);
       }
+
+      // 🚨 NEW: Upload Lost & Found Photos
+      for (const file of lostFoundPhotos) {
+        const url = await uploadToCloudinary(file);
+        if (url) uploadedLostFoundUrls.push(url);
+      }
+    }
 
       setUploadingPhotos(false);
 
@@ -319,7 +346,10 @@ export default function DutyPage() {
           end_time: new Date().toISOString(),
           photo_urls: uploadedAfterUrls,
           before_photos: uploadedBeforeUrls,
-          submitted_by: agentId
+          submitted_by: agentId,
+          // 🚨 NEW: Save Damaged and Lost & Found data as JSON
+          damaged_items: (uploadedDamagedUrls.length > 0 || damagedRemarks) ? { photos: uploadedDamagedUrls, remarks: damagedRemarks } : null,
+          lost_found_items: (uploadedLostFoundUrls.length > 0 || lostFoundRemarks) ? { photos: uploadedLostFoundUrls, remarks: lostFoundRemarks } : null
         }]);
         if (logError) throw logError;
 
@@ -471,6 +501,87 @@ export default function DutyPage() {
                     onDataChange={handleEquipmentDataChange} 
                  />
               </div>
+
+            {/* 🚨 REPORTING SECTIONS (Damaged & Lost/Found) 🚨 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                
+                {/* Damaged Items Section */}
+                <div className="bg-white rounded-3xl shadow-sm border border-red-100 overflow-hidden">
+                  <button onClick={() => setShowDamaged(!showDamaged)} className="w-full flex items-center justify-between p-5 bg-red-50/50 hover:bg-red-50 transition-colors">
+                    <div className="flex items-center gap-2 text-red-600 font-black">
+                      <AlertTriangle size={20}/> Report Damaged Item
+                    </div>
+                    {showDamaged ? <ChevronUp className="text-red-500" size={20}/> : <ChevronDown className="text-red-500" size={20}/>}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showDamaged && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-5 pb-5">
+                        <div className="pt-4 space-y-4 border-t border-red-100">
+                          <label className="border-2 border-dashed border-red-200 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-all aspect-[3/1] group">
+                            <UploadCloud className="text-red-300 group-hover:text-red-500 mb-1" size={28}/>
+                            <span className="text-[10px] font-black text-red-400 uppercase tracking-widest text-center">Upload Damage Photos</span>
+                            <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => { if (e.target.files) setDamagedPhotos(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+                          </label>
+                          {damagedPhotos.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                              {damagedPhotos.map((file, i) => (
+                                <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                                  <img src={URL.createObjectURL(file)} alt="Damage" className="w-full h-full object-cover" />
+                                  <button onClick={() => removeDamagedPhoto(i)} className="absolute top-0.5 right-0.5 bg-white/90 p-1 rounded-full text-red-500 shadow-sm"><Trash2 size={10}/></button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Remarks / Details</label>
+                            <textarea value={damagedRemarks} onChange={e => setDamagedRemarks(e.target.value)} rows={2} placeholder="Describe the damage..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-400 text-sm font-bold text-gray-700 resize-none"></textarea>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Lost & Found Section */}
+                <div className="bg-white rounded-3xl shadow-sm border border-amber-100 overflow-hidden">
+                  <button onClick={() => setShowLostFound(!showLostFound)} className="w-full flex items-center justify-between p-5 bg-amber-50/50 hover:bg-amber-50 transition-colors">
+                    <div className="flex items-center gap-2 text-amber-600 font-black">
+                      <Search size={20}/> Lost & Found Item
+                    </div>
+                    {showLostFound ? <ChevronUp className="text-amber-500" size={20}/> : <ChevronDown className="text-amber-500" size={20}/>}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showLostFound && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-5 pb-5">
+                        <div className="pt-4 space-y-4 border-t border-amber-100">
+                          <label className="border-2 border-dashed border-amber-200 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer hover:border-amber-400 hover:bg-amber-50 transition-all aspect-[3/1] group">
+                            <UploadCloud className="text-amber-300 group-hover:text-amber-500 mb-1" size={28}/>
+                            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest text-center">Upload Found Item Photos</span>
+                            <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => { if (e.target.files) setLostFoundPhotos(prev => [...prev, ...Array.from(e.target.files!)]) }} />
+                          </label>
+                          {lostFoundPhotos.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                              {lostFoundPhotos.map((file, i) => (
+                                <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                                  <img src={URL.createObjectURL(file)} alt="Lost" className="w-full h-full object-cover" />
+                                  <button onClick={() => removeLostFoundPhoto(i)} className="absolute top-0.5 right-0.5 bg-white/90 p-1 rounded-full text-red-500 shadow-sm"><Trash2 size={10}/></button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Remarks / Details</label>
+                            <textarea value={lostFoundRemarks} onChange={e => setLostFoundRemarks(e.target.value)} rows={2} placeholder="Where was it found? Describe it..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-amber-400 text-sm font-bold text-gray-700 resize-none"></textarea>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
 
               {/* AFTER PHOTOS */}
               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 mb-6">

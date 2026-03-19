@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +7,7 @@ import {
   Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList 
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import toast, { Toaster } from 'react-hot-toast';
 
 // --- Types ---
 type Booking = {
@@ -165,64 +166,87 @@ export default function BookingManagement() {
     }
   }, [formData.company_id, supabase]);
 
-  // 3. Add Booking (ID generation is now handled by Supabase trigger)
-  const handleAddBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { data, error } = await supabase.from("bookings").insert([{
-      unit_id: formData.unit_id,
-      cleaning_date: formData.cleaning_date,
-      cleaning_time: formData.cleaning_time,
-      service_type: formData.service_type,
-      assigned_team_id: formData.assigned_team_id || null,
-      checklist_template_id: formData.checklist_template_id || null,
-      price: formData.price ? parseFloat(formData.price) : 0,
-      status: 'pending'
-    }]).select();
+    // 3. Add Booking (ID generation is now handled by Supabase trigger)
+    const handleAddBooking = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const { error } = await supabase.from('bookings').insert([{
+            unit_id: formData.unit_id,
+            cleaning_date: formData.cleaning_date,
+            cleaning_time: formData.cleaning_time,
+            service_type: formData.service_type,
+            assigned_team_id: formData.assigned_team_id || null,
+            checklist_template_id: formData.checklist_template_id || null,
+            price: formData.price ? parseFloat(formData.price) : 0,
+            status: 'pending'
+        }]);
 
-    if (!error) {
-      setIsAddOpen(false);
-      fetchBookings();
-      setFormData({...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: ""});
-    } else {
-      alert("Error: " + error.message);
-    }
-  };
+        if (!error) {
+            toast.success("Booking recorded!");
+            fetchBookings();
+            setIsAddOpen(false);
+            setFormData({ ...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: "" });
+        } else {
+            toast.error("Error creating: " + error.message);
+        }
+    };
 
-  // 4. Update Booking
-  const handleUpdateBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editData) return;
+    // 4. Update Booking
+    const handleUpdateBooking = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editData) return;
 
-    setIsEditOpen(false);
+        const { error } = await supabase.from('bookings').update({
+            unit_id: parseInt(editData.unit_id),
+            cleaning_date: editData.cleaning_date,
+            cleaning_time: editData.cleaning_time,
+            service_type: editData.service_type,
+            price: parseFloat(editData.price) || 0,
+            assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
+            checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
+        }).eq('id', editData.id);
 
-    const { error } = await supabase.from("bookings").update({
-      unit_id: parseInt(editData.unit_id),
-      cleaning_date: editData.cleaning_date,
-      cleaning_time: editData.cleaning_time,
-      service_type: editData.service_type,
-      price: parseFloat(editData.price) || 0,
-      assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
-      checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
-    }).eq("id", editData.id);
-
-    if (error) {
-      alert("Failed to update booking: " + error.message);
-    } else {
-      fetchBookings(); 
-    }
-  };
+        if (!error) {
+            toast.success("Updated successfully!");
+            fetchBookings();
+            setIsEditOpen(false);
+        } else {
+            toast.error("Error updating: " + error.message);
+        }
+    };
 
 
   // 5. Delete Booking
-  const handleDeleteBooking = async (id: number) => {
-    if(!confirm("Are you sure you want to delete this booking?")) return;
-    setBookings(bookings.filter(b => b.id !== id));
-    const { error } = await supabase.from("bookings").delete().eq("id", id);
-    if (error) {
-      alert("Failed to delete booking");
-      fetchBookings();
-    }
-  };
+  // নতুন:
+const handleDeleteBooking = (id: number) => {
+  toast((t) => (
+    <div className="flex flex-col gap-3">
+      <p className="font-bold text-gray-800 text-sm">Are you sure you want to delete this record?</p>
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-black"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={async () => {
+            toast.dismiss(t.id);
+            const { error } = await supabase.from("bookings").delete().eq("id", id);
+            if (!error) {
+              setBookings(prev => prev.filter(b => b.id !== id));
+              toast.success("Deleted!", { duration: 3000 });
+            } else {
+              toast.error("Error: " + error.message, { duration: 3000 });
+            }
+          }}
+          className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-black"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  ), { duration: 8000 });
+};
 
   // 6. Filters & Grouping Logic
   const filteredBookings = bookings.filter(b => {
@@ -246,6 +270,11 @@ export default function BookingManagement() {
       if (!groups[b.cleaning_date]) groups[b.cleaning_date] = [];
       groups[b.cleaning_date].push(b);
     });
+    // 🚨 এরপর প্রতিটি গ্রুপের ভেতরের বুকিংগুলোকে created_at অনুযায়ী সর্ট করা হচ্ছে (নতুনটা উপরে)
+    Object.keys(groups).forEach(date => {
+      groups[date].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    });
+
     return groups;
   }, [filteredBookings]);
 
@@ -254,7 +283,7 @@ export default function BookingManagement() {
 
   return (
     <div className="min-h-screen pb-10">
-      
+      <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
       {/* Header (Original Design Preserved) */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div>
@@ -354,6 +383,12 @@ export default function BookingManagement() {
                         <Home size={24} />
                       </div>
                       <div className="overflow-hidden">
+                        {/* 🌟 Recently Added Time (Created At) */}
+                        <div className="mb-2">
+                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                            Added: {format(parseISO(booking.created_at), 'hh:mm a')}
+                          </span>
+                        </div>
                         {/* Booking Ref Badge */}
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider">
                           {booking.booking_ref || `ID-${booking.id}`}

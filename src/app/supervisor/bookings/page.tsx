@@ -7,10 +7,12 @@ import {
   Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Sparkles, Users
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import toast, { Toaster } from 'react-hot-toast';
 
 // --- Types ---
 type Booking = {
   id: number;
+  created_at: string; 
   unit_id: number;
   cleaning_date: string;
   cleaning_time: string;
@@ -63,7 +65,7 @@ export default function SupervisorBookings() {
 
     const [bookingsRes, companiesRes, unitsRes, checklistsRes, teamsRes] = await Promise.all([
       supabase.from('bookings').select(`
-        id, unit_id, cleaning_date, cleaning_time, service_type, status, price, checklist_template_id, assigned_team_id,
+        id, created_at, unit_id, cleaning_date, cleaning_time, service_type, status, price, checklist_template_id, assigned_team_id,
         units ( unit_number, building_name, companies ( id, name ) ),
         teams:assigned_team_id ( team_name ),
         checklist_templates ( title )
@@ -144,23 +146,54 @@ export default function SupervisorBookings() {
 
     if (editMode && formData.id) {
       const { error } = await supabase.from('bookings').update(payload).eq('id', formData.id);
-      if (!error) { alert("Updated successfully!"); fetchData(); setIsModalOpen(false); }
-      else alert("Error updating: " + error.message);
+      if (!error) { 
+        toast.success("Updated successfully!");
+        fetchData(); 
+        setIsModalOpen(false); 
+      }
+      else toast.error("Error updating: " + error.message);
     } else {
       const { error } = await supabase.from('bookings').insert([payload]);
-      if (!error) { alert("Booking recorded!"); fetchData(); setIsModalOpen(false); }
-      else alert("Error creating: " + error.message);
+      if (!error) { 
+        toast.success("Booking recorded!");
+        fetchData(); 
+        setIsModalOpen(false); 
+      }
+      else toast.error("Error creating: " + error.message);
     }
     setSaving(false);
   };
 
   // Delete Booking
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this booking record?")) {
-      const { error } = await supabase.from('bookings').delete().eq('id', id);
-      if (!error) fetchData();
-      else alert("Error: " + error.message);
-    }
+  const handleDelete = (id: number) => {
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <p className="font-bold text-gray-800 text-sm">Are you sure you want to delete this record?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-black"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const { error } = await supabase.from('bookings').delete().eq('id', id);
+              if (!error) {
+                toast.success("Record deleted successfully!", { duration: 3000 });
+                fetchData();
+              } else {
+                toast.error("Error: " + error.message, { duration: 3000 });
+              }
+            }}
+            className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-black"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 8000 });
   };
 
   // 2. GROUP BY DATE (Date-wise sorting logic)
@@ -169,6 +202,10 @@ export default function SupervisorBookings() {
     bookings.forEach(b => {
       if (!groups[b.cleaning_date]) groups[b.cleaning_date] = [];
       groups[b.cleaning_date].push(b);
+    });
+    // প্রতিটো date group এর ভেতরে recently added উপরে
+    Object.keys(groups).forEach(date => {
+      groups[date].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     });
     return groups;
   }, [bookings]);
@@ -180,6 +217,7 @@ export default function SupervisorBookings() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen bg-[#F4F7FA] font-sans pb-24">
+      <Toaster position="top-center" reverseOrder={false} />
       
       {/* HEADER - Premium Blue Gradient */}
       <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-8 rounded-[2rem] shadow-xl text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden mb-10">
@@ -231,7 +269,13 @@ export default function SupervisorBookings() {
                         {booking.status}
                       </span>
                       <span className="text-sm font-black text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 flex items-center gap-1.5"><Clock size={14} className="text-blue-500"/> {booking.cleaning_time}</span>
-                    </div>
+                                          </div>
+
+<div className="flex items-center gap-2">
+  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+    Added {format(parseISO(booking.created_at), "dd MMM, hh:mm a")}
+  </span>
+</div>
 
                     <h3 className="text-xl font-black text-gray-900 mb-1 truncate">{booking.units?.companies?.name || "Unknown Company"}</h3>
                     <p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mb-4"><MapPin size={14}/> Unit {booking.units?.unit_number} - {booking.units?.building_name}</p>

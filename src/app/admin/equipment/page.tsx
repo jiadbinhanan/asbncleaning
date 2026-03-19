@@ -42,6 +42,9 @@ export default function EquipmentSetup() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [templateConfigs, setTemplateConfigs] = useState<any[]>([]);
 
+  const [editingTemplateItem, setEditingTemplateItem] = useState<number | null>(null); // equipment_id
+  const [editTemplateItemData, setEditTemplateItemData] = useState({ qty: "", price: "" });
+
   // 3. Unit Config States
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -450,21 +453,65 @@ export default function EquipmentSetup() {
                   {selectedTemplate ? (
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                       <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-                         <h3 className="font-black text-emerald-900">Template Items: {templates.find(t=>t.id.toString()===selectedTemplate)?.name}</h3>
-                      </div>
+  <h3 className="font-black text-emerald-900">Template Items: {templates.find(t=>t.id.toString()===selectedTemplate)?.name}</h3>
+  <button
+    onClick={async () => {
+      if (!confirm("এই template টা ডিলিট করবেন?")) return;
+      const { error } = await supabase.from('equipment_templates').delete().eq('id', selectedTemplate);
+      if (!error) {
+        setTemplates(templates.filter(t => t.id.toString() !== selectedTemplate));
+        setSelectedTemplate("");
+        setTemplateConfigs([]);
+      } else alert(error.message);
+    }}
+    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-black border border-red-100 transition-colors"
+  >
+    <Trash2 size={14}/> Delete Template
+  </button>
+</div>
                       <table className="w-full text-left">
                         <thead className="bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest">
                           <tr><th className="p-4">Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Price</th><th className="p-4 text-right">Action</th></tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {templateConfigs.map((c: any) => (
-                            <tr key={c.equipment_id}>
-                              <td className="p-4 font-bold text-gray-900">{c.equipment_master?.item_name} <br/><TypeBadge type={c.equipment_master?.item_type}/></td>
-                              <td className="p-4 text-center font-black text-gray-600">{c.standard_qty}</td>
-                              <td className="p-4 text-center font-black text-gray-600">{c.extra_unit_price}</td>
-                              <td className="p-4 text-right"><button onClick={() => deleteTemplateItem(c.equipment_id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg"><Trash2 size={16}/></button></td>
-                            </tr>
-                          ))}
+                        {templateConfigs.map((c: any) => (
+  <tr key={c.equipment_id} className="hover:bg-gray-50 transition-colors group">
+    {editingTemplateItem === c.equipment_id ? (
+      <>
+        <td className="p-4 font-bold text-gray-900">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.qty} onChange={e => setEditTemplateItemData({...editTemplateItemData, qty: e.target.value})} className="w-20 p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-center outline-none"/></td>
+        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.price} onChange={e => setEditTemplateItemData({...editTemplateItemData, price: e.target.value})} className="w-24 p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-center outline-none"/></td>
+        <td className="p-4 text-right flex justify-end gap-2">
+          <button onClick={async () => {
+            const template = templates.find(t => t.id.toString() === selectedTemplate);
+            if (!template) return;
+            const updatedItems = template.items.map((i: any) =>
+              i.equipment_id === c.equipment_id
+                ? { ...i, standard_qty: parseInt(editTemplateItemData.qty) || 0, extra_unit_price: parseFloat(editTemplateItemData.price) || 0 }
+                : i
+            );
+            const { data, error } = await supabase.from('equipment_templates').update({ items: updatedItems }).eq('id', selectedTemplate).select();
+            if (data) {
+              setTemplates(templates.map(t => t.id.toString() === selectedTemplate ? data[0] : t));
+              setEditingTemplateItem(null);
+            } else alert(error?.message);
+          }} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><Save size={16}/></button>
+          <button onClick={() => setEditingTemplateItem(null)} className="p-2 bg-gray-100 text-gray-600 rounded-lg"><X size={16}/></button>
+        </td>
+      </>
+    ) : (
+      <>
+        <td className="p-4 font-bold text-gray-900">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+        <td className="p-4 text-center font-black text-gray-600">{c.standard_qty}</td>
+        <td className="p-4 text-center font-black text-gray-600">{c.extra_unit_price}</td>
+        <td className="p-4 text-right space-x-2">
+          <button onClick={() => { setEditingTemplateItem(c.equipment_id); setEditTemplateItemData({ qty: c.standard_qty.toString(), price: c.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={16}/></button>
+          <button onClick={() => deleteTemplateItem(c.equipment_id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
+        </td>
+      </>
+    )}
+  </tr>
+))}
                         </tbody>
                       </table>
                     </motion.div>
@@ -512,20 +559,53 @@ export default function EquipmentSetup() {
                     <>
                       {/* Apply Template Block */}
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-indigo-50 p-6 rounded-3xl shadow-sm border border-indigo-100">
-                        <label className="text-[10px] font-black text-indigo-800 uppercase tracking-widest block mb-2"><Copy size={12} className="inline mr-1"/> Apply a Template</label>
-                        <div className="flex gap-2">
-                          <select 
-                            value={templateToApply} 
-                            onChange={e => setTemplateToApply(e.target.value)} 
-                            className="flex-1 p-3 bg-white border border-indigo-200 rounded-xl outline-none font-black text-indigo-900 text-sm"
-                          >
-                            <option value="" className="font-bold text-gray-500">Select Template...</option>
-                            {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                          </select>
-                          <button onClick={applyTemplateToUnit} disabled={isSaving || !templateToApply} className="px-4 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 disabled:opacity-50"><CheckCircle2 size={18}/></button>
-                        </div>
-                      </motion.div>
+  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-widest block mb-2"><Copy size={12} className="inline mr-1"/> Apply a Template</label>
+  <select 
+    value={templateToApply} 
+    onChange={e => setTemplateToApply(e.target.value)} 
+    className="w-full p-3 bg-white border border-indigo-200 rounded-xl outline-none font-black text-indigo-900 text-sm mb-3"
+  >
+    <option value="" className="font-bold text-gray-500">Select Template...</option>
+    {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+  </select>
 
+  {/* Template preview */}
+  {templateToApply && (() => {
+    const tpl = templates.find(t => t.id.toString() === templateToApply);
+    const items: any[] = tpl?.items || [];
+    return items.length > 0 ? (
+      <div className="mb-3 bg-white rounded-xl border border-indigo-100 overflow-hidden">
+        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest px-3 py-2 bg-indigo-50 border-b border-indigo-100">
+          Template Contents ({items.length} items)
+        </p>
+        <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+          {items.map((item: any) => {
+            const master = masterItems.find(m => m.id === item.equipment_id);
+            return (
+              <div key={item.equipment_id} className="flex justify-between items-center px-3 py-2">
+                <span className="text-xs font-black text-gray-800">{master?.item_name || "Unknown"}</span>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                  <span className="bg-gray-100 px-2 py-0.5 rounded">Qty: {item.standard_qty}</span>
+                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">+{item.extra_unit_price} AED</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ) : (
+      <p className="text-xs text-amber-600 font-bold mb-3 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">This template is empty.</p>
+    );
+  })()}
+
+  <button 
+    onClick={applyTemplateToUnit} 
+    disabled={isSaving || !templateToApply} 
+    className="w-full py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+  >
+    {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} Apply to Unit
+  </button>
+</motion.div>
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-3"><Plus size={12} className="inline mr-1"/> Add Items Manually</label>
                         <button onClick={() => setShowBulkSelect(!showBulkSelect)} className="w-full py-3 bg-gray-50 text-gray-700 font-black rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200">

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   UserCircle, Calendar, Clock, CheckCircle2, 
   MapPin, Loader2, LogOut, Briefcase, Settings, 
-  X, Camera, Save, Building2, ChevronRight, LayoutGrid, Key
+  X, Camera, Save, Building2, ChevronRight, LayoutGrid, Key, Users
 } from "lucide-react";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 // Note: You must create this action file similar to supervisor profile
@@ -17,11 +17,12 @@ export default function AgentDashboard() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   
-  // Data States
-  const [profile, setProfile] = useState<any>(null);
-  const [todayTeam, setTodayTeam] = useState<any>(null);
-  const [pastTeams, setPastTeams] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState({ totalTasks: 0, totalHours: 0, totalShifts: 0 });
+ // Data States
+ const [profile, setProfile] = useState<any>(null);
+ const [todayTeams, setTodayTeams] = useState<any[]>([]); // 👈 Changed to array
+ const [pastTeams, setPastTeams] = useState<any[]>([]);
+ const [teamMembers, setTeamMembers] = useState<any[]>([]); // 👈 New state for member profiles
+ const [metrics, setMetrics] = useState({ totalTasks: 0, totalHours: 0, totalShifts: 0 });
 
   // Profile Edit States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function AgentDashboard() {
       // Fetch all teams this agent is part of + Bookings + Work Logs
       supabase.from('teams')
         .select(`
-          id, team_name, status, shift_date,
+          id, team_name, status, shift_date, member_ids,
           bookings ( id, cleaning_date, cleaning_time, service_type, status, units ( unit_number, building_name, layout, door_code, companies(name) ) ),
           work_logs ( start_time, end_time )
         `)
@@ -54,6 +55,7 @@ export default function AgentDashboard() {
         .limit(30)
     ]);
 
+    // 🚨 এই অংশটুকু আপনার কোড থেকে মিসিং হয়ে গেছে, এটা অ্যাড করুন
     if (profileRes.data) {
       setProfile(profileRes.data);
       setFormData({ 
@@ -63,12 +65,14 @@ export default function AgentDashboard() {
       });
       setAvatarPreview(profileRes.data.avatar_url);
     }
+    // 🚨 মিসিং অংশের শেষ
 
     if (teamsRes.data) {
-      let currentTeam = null;
+      const currentTeams: any[] = [];
       const history: any[] = [];
       let tasksCount = 0;
       let minutesCount = 0;
+      const allMemberIds = new Set<string>(); // 👈 To collect all unique member IDs
 
       teamsRes.data.forEach(team => {
         // Calculate Metrics
@@ -81,15 +85,25 @@ export default function AgentDashboard() {
           }
         });
 
-        // Separate Today's Team from History
+        // Separate Today's Teams from History
         if (team.shift_date === todayStr || team.status === 'active') {
-          currentTeam = team;
+          currentTeams.push(team);
+          team.member_ids?.forEach((id: string) => allMemberIds.add(id)); // Store member ids
         } else {
           history.push(team);
         }
       });
 
-      setTodayTeam(currentTeam);
+      // 👈 Fetch profile data for all team members
+      if (allMemberIds.size > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', Array.from(allMemberIds));
+        if (profilesData) setTeamMembers(profilesData);
+      }
+
+      setTodayTeams(currentTeams);
       setPastTeams(history);
       setMetrics({
         totalTasks: tasksCount,
@@ -173,9 +187,9 @@ export default function AgentDashboard() {
               {profile?.avatar_url ? <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" /> : <UserCircle size={48} className="text-indigo-200" />}
             </div>
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${todayTeam ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
-                  {todayTeam ? `On Duty: Team ${todayTeam.team_name}` : 'Off Duty'}
+            <div className="flex items-center gap-3 mb-1">
+                <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${todayTeams.length > 0 ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
+                  {todayTeams.length > 0 ? `On Duty: ${todayTeams.length} Teams` : 'Off Duty'}
                 </span>
               </div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight">{profile?.full_name || "Agent"}</h1>
@@ -223,40 +237,79 @@ export default function AgentDashboard() {
             <Calendar className="text-indigo-600"/> Today's Schedule
           </h2>
           
-          {todayTeam ? (
-            <div className="space-y-4">
-              {todayTeam.bookings?.map((booking: any) => (
-                <div key={booking.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 hover:border-indigo-300 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg border ${booking.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : booking.status === 'active' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-gray-200 text-gray-600 border-gray-300'}`}>
-                      {booking.status}
-                    </span>
-                    <span className="text-sm font-black text-gray-700 flex items-center gap-1.5"><Clock size={14} className="text-indigo-500"/> {booking.cleaning_time}</span>
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900 mb-1">{booking.units?.companies?.name}</h3>
-                  <p className="text-sm text-gray-600 font-bold flex items-center gap-1.5 mb-4"><MapPin size={16} className="text-gray-400"/> Unit {booking.units?.unit_number} • {booking.service_type}</p>
+          {todayTeams.length > 0 ? (
+            <div className="space-y-6">
+              {todayTeams.map(team => (
+                <div key={team.id} className="bg-white border-2 border-indigo-50 rounded-2xl overflow-hidden shadow-sm">
                   
-                  {/* Unit Details Box */}
-                  <div className="bg-white p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1 mb-0.5"><Building2 size={12}/> Building</p>
-                      <p className="font-bold text-gray-800">{booking.units?.building_name || 'N/A'}</p>
+                  {/* Team Header & Members */}
+                  <div className="bg-indigo-50/50 p-4 border-b border-indigo-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl"><Users size={20}/></div>
+                      <div>
+                        <h3 className="text-lg font-black text-indigo-900">Team {team.team_name}</h3>
+                        <p className="text-xs font-bold text-indigo-500">
+                          {team.bookings?.length || 0} Assigned Units
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1 mb-0.5"><LayoutGrid size={12}/> Layout</p>
-                      <p className="font-bold text-gray-800">{booking.units?.layout || 'N/A'}</p>
+                    
+                    {/* Team Members List */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {team.member_ids?.map((mId: string) => {
+                        const member = teamMembers.find(m => m.id === mId);
+                        if (!member) return null;
+                        return (
+                          <div key={mId} title={member.full_name} className="flex items-center gap-2 bg-white px-2 py-1.5 rounded-full border border-indigo-100 shadow-sm">
+                            <div className="w-5 h-5 rounded-full overflow-hidden bg-indigo-100 shrink-0">
+                              {member.avatar_url ? <img src={member.avatar_url} className="w-full h-full object-cover"/> : <UserCircle size={20} className="text-indigo-300"/>}
+                            </div>
+                            <span className="text-[10px] font-black text-gray-700 pr-1">{member.full_name}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="bg-gray-50 p-2 rounded-lg border border-dashed border-gray-200 text-center">
-                      <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center justify-center gap-1"><Key size={10}/> Door Code</p>
-                      <p className="font-mono font-black text-gray-900 tracking-widest">{booking.units?.door_code || 'N/A'}</p>
-                    </div>
+                  </div>
+
+                  {/* Team Bookings Sub-Cards */}
+                  <div className="p-4 space-y-4 bg-gray-50/30">
+                    {team.bookings?.map((booking: any) => (
+                      <div key={booking.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-indigo-300 transition-colors shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg border ${booking.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : booking.status === 'active' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                            {booking.status}
+                          </span>
+                          <span className="text-sm font-black text-gray-700 flex items-center gap-1.5"><Clock size={14} className="text-indigo-500"/> {booking.cleaning_time}</span>
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 mb-1">{booking.units?.companies?.name}</h3>
+                        <p className="text-sm text-gray-600 font-bold flex items-center gap-1.5 mb-4"><MapPin size={16} className="text-gray-400"/> Unit {booking.units?.unit_number} • {booking.service_type}</p>
+                        
+                        {/* Unit Details Box */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1 mb-0.5"><Building2 size={12}/> Building</p>
+                            <p className="font-bold text-gray-800">{booking.units?.building_name || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1 mb-0.5"><LayoutGrid size={12}/> Layout</p>
+                            <p className="font-bold text-gray-800">{booking.units?.layout || 'N/A'}</p>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-dashed border-gray-200 text-center shadow-sm">
+                            <p className="text-[10px] uppercase font-bold text-gray-400 flex items-center justify-center gap-1"><Key size={10}/> Door Code</p>
+                            <p className="font-mono font-black text-gray-900 tracking-widest">{booking.units?.door_code || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(!team.bookings || team.bookings.length === 0) && (
+                      <div className="text-center bg-white border border-dashed border-gray-200 rounded-xl py-6">
+                        <p className="text-gray-400 font-bold text-sm">No units assigned to this team yet.</p>
+                      </div>
+                    )}
                   </div>
 
                 </div>
               ))}
-              {(!todayTeam.bookings || todayTeam.bookings.length === 0) && (
-                <p className="text-center text-gray-500 font-medium py-4">You are assigned to Team {todayTeam.team_name}, but no units are assigned yet.</p>
-              )}
             </div>
           ) : (
             <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
@@ -266,7 +319,6 @@ export default function AgentDashboard() {
             </div>
           )}
         </div>
-
         {/* 4. RECENT WORK HISTORY */}
         <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">

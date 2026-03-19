@@ -11,10 +11,7 @@ export default function Home() {
       <HeroSection />
       
       {/* Booking Section with a Title */}
-      <div id="booking" className="text-center pt-10">
-        <h2 className="text-3xl font-bold text-gray-800">Request a Service</h2>
-        <p className="text-gray-500 mt-2">We will confirm your slot shortly</p>
-      </div>
+      
       <BookingForm />
 
       <TeamLogin />

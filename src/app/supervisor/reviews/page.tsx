@@ -43,6 +43,7 @@ export default function SupervisorReviewPage() {
           teams ( id, team_name, member_ids ),
           work_logs (
             id, start_time, end_time, before_photos, photo_urls, cost,
+            damaged_items, lost_found_items,
             agent:profiles!work_logs_submitted_by_fkey ( full_name, avatar_url )
           ),
           booking_inventory_logs (
@@ -278,47 +279,47 @@ export default function SupervisorReviewPage() {
                         className={`bg-white rounded-3xl border shadow-sm hover:shadow-md transition-all p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5
                           ${isCompleted ? "border-blue-200 hover:border-blue-300" : "border-gray-100 hover:border-gray-200"}`}
                       >
-                        {/* Left info */}
-                        <div className="flex-1 min-w-0">
-                          {/* Status + Booking Ref row — flex-wrap আগে থেকেই আছে, ঠিক আছে */}
-<div className="flex flex-wrap items-center gap-2 mb-3">
-  {isCompleted ? (
-    <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 animate-pulse shrink-0">
-      <Clock size={11}/> Needs Review
+                       {/* Left info */}
+<div className="flex-1 min-w-0 w-full">
+  {/* Status + Booking Ref row */}
+  <div className="flex flex-wrap items-center gap-2 mb-3">
+    {isCompleted ? (
+      <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 animate-pulse shrink-0">
+        <Clock size={11}/> Needs Review
+      </span>
+    ) : (
+      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 shrink-0">
+        <CheckCircle size={11}/> Finalized
+      </span>
+    )}
+    {booking.booking_ref && (
+      <span className="flex items-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 shrink-0 break-words">
+        <Hash size={10} className="shrink-0"/> 
+        <span>{booking.booking_ref}</span>
+      </span>
+    )}
+    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg shrink-0">
+      {booking.cleaning_time}
     </span>
-  ) : (
-    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 shrink-0">
-      <CheckCircle size={11}/> Finalized
-    </span>
-  )}
-  {booking.booking_ref && (
-    <span className="flex items-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 shrink-0 max-w-full overflow-hidden text-ellipsis">
-      <Hash size={10} className="shrink-0"/> 
-      <span className="truncate">{booking.booking_ref}</span>
-    </span>
-  )}
-  <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg shrink-0">
-    {booking.cleaning_time}
-  </span>
-  {hasExtra && (
-    <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1 shrink-0">
-      <PackagePlus size={10}/> Extra Items
-    </span>
-  )}
-</div>
+    {hasExtra && (
+      <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1 shrink-0">
+        <PackagePlus size={10}/> Extra Items
+      </span>
+    )}
+  </div>
 
-{/* Company + Unit */}
-<h3 className="text-lg font-black text-gray-900 mb-0.5 flex items-center gap-2 min-w-0 overflow-hidden">
-  <Building2 size={17} className="text-blue-500 shrink-0"/>
-  <span className="truncate">{booking.units?.companies?.name || "N/A"}</span>
-</h3>
-<p className="text-sm font-bold text-gray-600 mb-1">
-  Unit {booking.units?.unit_number}
-</p>
-<p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mb-3 min-w-0 overflow-hidden">
-  <MapPin size={13} className="shrink-0"/>
-  <span className="truncate">{booking.units?.building_name} · {booking.service_type}</span>
-</p>
+  {/* Company + Unit */}
+  <h3 className="text-lg font-black text-gray-900 mb-0.5 flex items-start gap-2">
+    <Building2 size={17} className="text-blue-500 shrink-0 mt-[3px]"/>
+    <span className="break-words">{booking.units?.companies?.name || "N/A"}</span>
+  </h3>
+  <p className="text-sm font-bold text-gray-600 mb-1">
+    Unit {booking.units?.unit_number}
+  </p>
+  <p className="text-sm font-bold text-gray-500 flex items-start gap-1.5 mb-3">
+    <MapPin size={13} className="shrink-0 mt-[3px]"/>
+    <span className="break-words">{booking.units?.building_name} · {booking.service_type}</span>
+  </p>
                           {/* Team + Members */}
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="text-xs font-black text-gray-600 flex items-center gap-1.5">

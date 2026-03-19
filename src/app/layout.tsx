@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://btmcleaning.vercel.app/'),
   title: "BTM Cleaning and Technical Services Co.",
   description: "Top-rated professional cleaning services in Dubai. We offer residential and commercial cleaning solutions. Book your service today!",
   openGraph: {
