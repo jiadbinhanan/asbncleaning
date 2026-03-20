@@ -383,7 +383,7 @@ export default function EquipmentTracker({ bookingId, unitId, onDataChange }: Eq
           };
         });
 
-        const saved = localStorage.getItem(`asbn_eq_${bookingId}`);
+        const saved = localStorage.getItem(`btm_eq_${bookingId}`);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
@@ -407,7 +407,7 @@ export default function EquipmentTracker({ bookingId, unitId, onDataChange }: Eq
   useEffect(() => {
     if (items.length > 0) {
       onDataChange(items);
-      localStorage.setItem(`asbn_eq_${bookingId}`, JSON.stringify(items));
+      localStorage.setItem(`btm_eq_${bookingId}`, JSON.stringify(items));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, bookingId]);

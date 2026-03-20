@@ -1,8 +1,8 @@
-# Project Blueprint: ASBN Admin Dashboard
+# Project Blueprint: BTM Admin Dashboard
 
 ## Overview
 
-This document outlines the structure, design, and features of the ASBN Admin Dashboard, a comprehensive tool for managing cleaning business operations. The dashboard is built with Next.js, TypeScript, and Tailwind CSS, featuring a modern, responsive, and intuitive user interface.
+This document outlines the structure, design, and features of the BTM Admin Dashboard, a comprehensive tool for managing cleaning business operations. The dashboard is built with Next.js, TypeScript, and Tailwind CSS, featuring a modern, responsive, and intuitive user interface.
 
 ## Core Features & Design
 

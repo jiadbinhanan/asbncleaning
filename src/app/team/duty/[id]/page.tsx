@@ -98,7 +98,7 @@ export default function DutyPage() {
         }
 
         // Restore Local Storage
-        const savedStateStr = localStorage.getItem(`asbn_duty_${bookingId}`);
+        const savedStateStr = localStorage.getItem(`btm_duty_${bookingId}`);
         if (savedStateStr) {
           const savedState = JSON.parse(savedStateStr);
           setIsStarted(savedState.isStarted || false);
@@ -114,7 +114,7 @@ export default function DutyPage() {
   // --- 2. Auto-Save to LocalStorage ---
   useEffect(() => {
     if (isStarted) {
-      localStorage.setItem(`asbn_duty_${bookingId}`, JSON.stringify({ isStarted, startTime: startTime?.toISOString(), checkedItems }));
+      localStorage.setItem(`btm_duty_${bookingId}`, JSON.stringify({ isStarted, startTime: startTime?.toISOString(), checkedItems }));
     }
   }, [isStarted, startTime, checkedItems, bookingId]);
 
@@ -135,9 +135,46 @@ export default function DutyPage() {
     setCheckedItems(allChecked);
   };
 
+  // Back button intercept (popstate)
+useEffect(() => {
+  if (!isStarted) return;
+
+  const handlePopState = async (e: PopStateEvent) => {
+    // browser history তে আবার push করি যাতে back cancel করা যায়
+    window.history.pushState(null, '', window.location.href);
+
+    const confirmed = window.confirm(
+      "⚠️ Shift is in progress!\n\nCancel shift and go back? Booking will be reset to Active."
+    );
+    if (confirmed) {
+      await supabase
+        .from('bookings')
+        .update({ work_status: null })
+        .eq('id', bookingId);
+      localStorage.removeItem(`btm_duty_${bookingId}`);
+      localStorage.removeItem(`btm_eq_${bookingId}`);
+      router.push('/team/dashboard');
+    }
+  };
+
+  // history stack এ একটা entry push করি
+  window.history.pushState(null, '', window.location.href);
+  window.addEventListener('popstate', handlePopState);
+  return () => window.removeEventListener('popstate', handlePopState);
+}, [isStarted, bookingId, supabase, router]);
+
   const removeBeforePhoto = (index: number) => setBeforePhotos(prev => prev.filter((_, i) => i !== index));
   const removeAfterPhoto = (index: number) => setAfterPhotos(prev => prev.filter((_, i) => i !== index));
-  const startShift = () => { setIsStarted(true); setStartTime(new Date()); };
+  // নতুন:
+const startShift = async () => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ work_status: 'in_progress' })
+    .eq('id', bookingId);
+  if (error) { alert("Failed to start shift: " + error.message); return; }
+  setIsStarted(true);
+  setStartTime(new Date());
+};
 
   // --- Final Submit Logic ---
   const handleCompleteWork = async () => {
@@ -369,12 +406,16 @@ export default function DutyPage() {
         }
 
       // Update booking status
-      const { error: statusError } = await supabase.from('bookings').update({ status: 'completed' }).eq('id', bookingId);
-      if (statusError) throw statusError;
+      // নতুন — একসাথে দুটো field update:
+        const { error: statusError } = await supabase
+       .from('bookings')
+       .update({ status: 'completed', work_status: 'work_done' })
+       .eq('id', bookingId);
+        if (statusError) throw statusError;
 
       // Clean up Local Storage
-      localStorage.removeItem(`asbn_duty_${bookingId}`);
-      localStorage.removeItem(`asbn_eq_${bookingId}`);
+      localStorage.removeItem(`btm_duty_${bookingId}`);
+      localStorage.removeItem(`btm_eq_${bookingId}`);
 
       alert("Shift Completed Successfully! Redirecting to Quality Control...");
       // ড্যাশবোর্ডের বদলে সরাসরি এই বুকিংয়ের QC পেজে পাঠিয়ে দেব
@@ -394,7 +435,27 @@ export default function DutyPage() {
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
       
       <div className="bg-gray-900 text-white p-6 shadow-md sticky top-0 z-30 flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition"><ArrowLeft size={20}/></button>
+      // নতুন — isStarted থাকলে popstate দিয়েই handle হবে, তাই back disable:
+<button
+  onClick={async () => {
+    if (isStarted) {
+      const confirmed = window.confirm(
+        "⚠️ Shift is in progress!\n\nCancel shift and go back? Booking will be reset to Active."
+      );
+      if (confirmed) {
+        await supabase.from('bookings').update({ work_status: null }).eq('id', bookingId);
+        localStorage.removeItem(`btm_duty_${bookingId}`);
+        localStorage.removeItem(`btm_eq_${bookingId}`);
+        router.push('/team/dashboard');
+      }
+    } else {
+      router.back();
+    }
+  }}
+  className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition"
+>
+  <ArrowLeft size={20}/>
+</button>        
         <div>
            <h1 className="text-xl font-black">Unit {booking.units?.unit_number}</h1>
            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{booking.units?.companies?.name}</p>

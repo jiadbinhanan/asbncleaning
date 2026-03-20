@@ -40,8 +40,10 @@ export async function middleware(request: NextRequest) {
   const adminRoutes = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')
   const supervisorRoutes = pathname.startsWith('/supervisor') && !pathname.startsWith('/supervisor/login')
   const agentRoutes = pathname.startsWith('/agent') && !pathname.startsWith('/agent/login')
+  const driverRoutes = pathname.startsWith('/driver')
 
-  if (adminRoutes || supervisorRoutes || agentRoutes) {
+
+  if (adminRoutes || supervisorRoutes || agentRoutes || driverRoutes) {
     if (!user) {
       // Redirect to appropriate login page
       let loginPath = '/login'
@@ -93,6 +95,12 @@ export async function middleware(request: NextRequest) {
       if (userRole === 'admin') url.pathname = '/admin/login'
       else if (userRole === 'supervisor') url.pathname = '/supervisor/login'
       else url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    if (driverRoutes && userRole !== 'driver') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/agent/login'
       return NextResponse.redirect(url)
     }
   }

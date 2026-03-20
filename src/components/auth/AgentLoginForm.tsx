@@ -42,13 +42,14 @@ export default function AgentLoginForm() {
         throw new Error('Profile not found');
       }
 
-      if (profile.role !== 'agent') {
+      if (profile.role === 'agent') {
+        router.push('/agent/dashboard');
+      } else if (profile.role === 'driver') {
+        router.push('/driver/dashboard');
+      } else {
         await supabase.auth.signOut();
-        throw new Error('Access denied. Agent privileges required.');
+        throw new Error('Access denied. Agent or Driver privileges required.');
       }
-
-      // Success - redirect to agent dashboard
-      router.push('/agent/dashboard');
       router.refresh();
 
     } catch (err) {

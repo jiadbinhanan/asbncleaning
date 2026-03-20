@@ -89,7 +89,7 @@ export default function TeamDashboard() {
         const [profilesRes, bookingsRes] = await Promise.all([
           supabase.from('profiles').select('id, full_name, avatar_url').in('id', allMemberIds),
           supabase.from('bookings')
-            .select('*, units(unit_number, layout, door_code, building_name, companies(name)), checklist_templates(title)')
+            .select('*, units(unit_number, layout, door_code, building_name, companies(name)), checklist_templates(title), work_status')
             .eq('cleaning_date', todayStr)
             .in('status', ['active', 'completed'])
             .or(`assigned_team_id.in.(${teamIds.join(',')}),assigned_team_id.is.null`)
@@ -227,11 +227,55 @@ export default function TeamDashboard() {
                             
                             <ExtraDetails booking={booking} />
 
-                            <div className="mt-5">
-                              <button onClick={() => router.push(`/team/duty/${booking.id}`)} className="w-full py-4 bg-gray-900 hover:bg-black text-white font-black rounded-2xl shadow-md transition-all flex items-center justify-center gap-2">
-                                <PlayCircle size={20}/> Start Duty Now
-                              </button>
-                            </div>
+                            // booking card এর ভেতরে, ExtraDetails এর নিচে, Start Duty বাটনের আগে:
+{booking.work_status === 'in_progress' && (
+  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+      <p className="text-xs font-black text-amber-700">Shift started but not submitted</p>
+    </div>
+    <button
+      onClick={async () => {
+        const confirmed = window.confirm("Cancel this in-progress shift and reset to Active?");
+        if (!confirmed) return;
+        const { error } = await supabase
+          .from('bookings')
+          .update({ work_status: null })
+          .eq('id', booking.id);
+        if (!error) {
+          // localStorage ও clear করো
+          localStorage.removeItem(`asbn_duty_${booking.id}`);
+          localStorage.removeItem(`asbn_eq_${booking.id}`);
+          setBookings(prev =>
+            prev.map(b => b.id === booking.id ? { ...b, work_status: null } : b)
+          );
+        } else {
+          alert("Error: " + error.message);
+        }
+      }}
+      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl transition-colors shrink-0"
+    >
+      Cancel Shift
+    </button>
+  </div>
+)}
+
+{/* Start Duty বাটন — in_progress হলে Resume দেখাবে */}
+<div className="mt-5">
+  <button
+    onClick={() => router.push(`/team/duty/${booking.id}`)}
+    className={`w-full py-4 font-black rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 ${
+      booking.work_status === 'in_progress'
+        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+        : 'bg-gray-900 hover:bg-black text-white'
+    }`}
+  >
+    {booking.work_status === 'in_progress'
+      ? <><PlayCircle size={20}/> Resume Shift</>
+      : <><PlayCircle size={20}/> Start Duty Now</>
+    }
+  </button>
+</div>
                           </div>
                         ))}
                       </div>
