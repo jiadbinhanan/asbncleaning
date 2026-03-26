@@ -417,6 +417,16 @@ const startShift = async () => {
       localStorage.removeItem(`btm_duty_${bookingId}`);
       localStorage.removeItem(`btm_eq_${bookingId}`);
 
+
+      // Send notification
+      await fetch('/api/notify', {
+        method: 'POST',
+        body: JSON.stringify({
+          bookingId,
+          unitNumber: booking.units.unit_number,
+          message: `Unit ${booking.units.unit_number} cleaning complete — ready for pickup`
+        })
+      });
       alert("Shift Completed Successfully! Redirecting to Quality Control...");
       // ড্যাশবোর্ডের বদলে সরাসরি এই বুকিংয়ের QC পেজে পাঠিয়ে দেব
       router.push(`/team/qc/${bookingId}`);
@@ -435,7 +445,7 @@ const startShift = async () => {
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
       
       <div className="bg-gray-900 text-white p-6 shadow-md sticky top-0 z-30 flex items-center gap-4">
-      // নতুন — isStarted থাকলে popstate দিয়েই handle হবে, তাই back disable:
+        {/* // নতুন — isStarted থাকলে popstate দিয়েই handle হবে, তাই back disable:*/}
 <button
   onClick={async () => {
     if (isStarted) {

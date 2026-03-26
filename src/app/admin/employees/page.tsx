@@ -252,10 +252,11 @@ export default function EmployeeManagement() {
                     <select
                       className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                       value={newEmp.role}
-                      onChange={(e) => setNewEmp({ ...newEmp, role: e.target.value as 'agent' | 'supervisor' })}
+                      onChange={(e) => setNewEmp({ ...newEmp, role: e.target.value as 'agent' | 'supervisor' | 'driver'})}
                     >
                       <option value="agent">Cleaning Agent</option>
                       <option value="supervisor">Supervisor</option>
+                      <option value="driver">Driver</option>
                     </select>
                   </div>
                   <div>

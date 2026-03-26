@@ -1,0 +1,32 @@
+{
+  "name": "BTM Cleaning — Driver",
+  "short_name": "BTM Driver",
+  "description": "BTM Cleaning Service driver panel — deliveries, pickups, and load tracking.",
+  "start_url": "/driver/dashboard",
+  "scope": "/driver/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo_btm-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo_btm-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Status",
+      "url": "/driver/dashboard?tab=status",
+      "description": "See today's delivery status"
+    }
+  ]
+}

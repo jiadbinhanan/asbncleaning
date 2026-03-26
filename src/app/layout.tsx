@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://btmcleaning.vercel.app/'),
   title: "BTM Cleaning and Technical Services Co.",
   description: "Top-rated professional cleaning services in Dubai. We offer residential and commercial cleaning solutions. Book your service today!",
+  // 🚨 NEW: PWA theme color
+  themeColor: "#2563eb",
   openGraph: {
     title: "BTM Cleaning and Technical Services Co.",
     description: "Top-rated professional cleaning services in Dubai.",
@@ -40,10 +42,34 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        {/* 🚨 NEW: PWA manifest link */}
+        <link rel="manifest" href="/manifest.json" />
+        {/* 🚨 NEW: iOS PWA support */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="BTM Driver" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body>
         {children}
         <SpeedInsights />
         <Analytics />
+
+        {/* 🚨 NEW: Service Worker registration */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) {
+                  console.log('[BTM] SW registered, scope:', reg.scope);
+                })
+                .catch(function(err) {
+                  console.error('[BTM] SW registration failed:', err);
+                });
+            });
+          }
+        `}} />
       </body>
     </html>
   );
