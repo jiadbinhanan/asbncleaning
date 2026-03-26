@@ -14,8 +14,8 @@ interface Profile {
   username: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: 'agent' | 'supervisor';
-  phone: string | null;
+role: 'agent' | 'supervisor' | 'driver'; // 🚨 এখানে 'driver' যুক্ত করা হয়েছে  
+phone: string | null;
 }
 
 export default function EmployeeManagement() {
@@ -29,7 +29,8 @@ export default function EmployeeManagement() {
   const [selectedEmp, setSelectedEmp] = useState<Profile | null>(null);
 
   // Form State (New Employee)
-  const [newEmp, setNewEmp] = useState({ fullName: '', username: '', password: '', phone: '', role: 'agent' as 'agent' | 'supervisor' });
+  // Form State (New Employee)
+  const [newEmp, setNewEmp] = useState({ fullName: '', username: '', password: '', phone: '', role: 'agent' as 'agent' | 'supervisor' | 'driver' }); // 🚨 এখানে 'driver' যুক্ত করা হয়েছে
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- New States for Credentials Update ---
@@ -44,7 +45,7 @@ export default function EmployeeManagement() {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .in('role', ['agent', 'supervisor'])
+      .in('role', ['agent', 'supervisor', 'driver'])
       .order('created_at', { ascending: false });
 
     if (data) setEmployees(data as Profile[]);
@@ -56,7 +57,7 @@ export default function EmployeeManagement() {
   }, [fetchEmployees]);
 
   // Create Handler
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => { // 🚨 <HTMLFormElement> যুক্ত করা হয়েছে
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -86,8 +87,8 @@ export default function EmployeeManagement() {
     await deleteEmployeeAction(id);
   };
   
-  // --- Handler for Credentials Update ---
-  const handleUpdateCredentials = async (e: React.FormEvent) => {
+// --- Handler for Credentials Update ---
+  const handleUpdateCredentials = async (e: React.FormEvent) => { // 🚨 <HTMLFormElement> যুক্ত করা হয়েছে
     e.preventDefault();
     if (!credEmp) return;
     setIsUpdatingCreds(true);

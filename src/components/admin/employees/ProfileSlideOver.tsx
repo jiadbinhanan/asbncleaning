@@ -12,7 +12,7 @@ interface Profile {
   username: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: 'agent' | 'supervisor';
+  role: 'agent' | 'supervisor' | 'driver';
   phone: string | null;
 }
 
@@ -22,7 +22,7 @@ interface FormData {
     username: string;
     full_name: string;
     avatar_url: string;
-    role: 'agent' | 'supervisor';
+    role: 'agent' | 'supervisor' | 'driver';
     phone: string;
 }
 
