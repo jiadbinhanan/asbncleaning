@@ -15,7 +15,7 @@ self.addEventListener("push", event => {
     data = { title: "BTM Cleaning", body: event.data.text(), url: "/driver/dashboard" };
   }
 
-  const { title = "BTM Cleaning", body = "", icon = "/logo_btm.png", badge = "/badge-96.png", url = "/driver/dashboard", tag } = data;
+  const { title = "BTM Cleaning", body = "", icon = "/logo_btm-192.png", badge = "/badge-96.png", url = "/driver/dashboard", tag } = data;
 
   event.waitUntil(
     self.registration.showNotification(title, {

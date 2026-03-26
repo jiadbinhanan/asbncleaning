@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const payload = JSON.stringify({
       title:  notifTitle,
       body:   notifBody,
-      icon:   "/icon-192.png",
+      icon:   "/logo_btm-192.png",
       badge:  "/badge-96.png",
       url:    notifUrl,
       tag:    `pickup-${bookingId}`,      // replaces any previous notification for same booking
