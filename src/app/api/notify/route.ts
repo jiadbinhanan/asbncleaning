@@ -1,5 +1,5 @@
 // src/app/api/notify/route.ts
-// Called by the agent duty page after booking is marked completed
+// Called by the agent duty page on shift start and shift complete
 // Finds driver's push subscription and sends a Web Push notification
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,13 +16,13 @@ webpush.setVapidDetails(
 // ── Init Supabase (service role — no RLS) ─────────────────────────────────
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,  // service role key, NOT anon key
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { bookingId, unitNumber, buildingName, companyName, message } = body;
+    const { bookingId, unitNumber, message, type = "shift_complete" } = body;
 
     if (!bookingId) {
       return NextResponse.json({ error: "bookingId required" }, { status: 400 });
@@ -40,18 +40,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ sent: 0, message: "No drivers with push subscriptions" });
     }
 
-    // 2. Build notification payload
-    const notifTitle = `📦 Ready for Pickup`;
-    const notifBody  = message || `Unit ${unitNumber} — ${companyName} cleaning complete. Bags ready.`;
-    const notifUrl   = `/driver/dashboard`;
+    // 2. Build notification payload based on type
+    let notifTitle: string;
+    let notifBody: string;
+    let notifTag: string;
+
+    if (type === "shift_start") {
+      notifTitle = `🧹 Cleaning Started`;
+      notifBody  = message || `Unit ${unitNumber} cleaning has started.`;
+      notifTag   = `shift-start-${bookingId}`;
+    } else {
+      notifTitle = `📦 Ready for Pickup`;
+      notifBody  = message || `Unit ${unitNumber} cleaning complete. Bags ready for pickup.`;
+      notifTag   = `pickup-${bookingId}`;
+    }
 
     const payload = JSON.stringify({
       title:  notifTitle,
       body:   notifBody,
       icon:   "/logo_btm-192.png",
       badge:  "/badge-96.png",
-      url:    notifUrl,
-      tag:    `pickup-${bookingId}`,      // replaces any previous notification for same booking
+      url:    `/driver/dashboard`,
+      tag:    notifTag,
     });
 
     // 3. Send to all drivers
@@ -62,7 +72,7 @@ export async function POST(req: NextRequest) {
           await webpush.sendNotification(sub, payload);
           return { driverId: driver.id, status: "sent" };
         } catch (err: any) {
-          // 410 Gone = subscription expired/revoked → clean up DB
+          // 410 Gone / 404 = subscription expired/revoked → clean up DB
           if (err.statusCode === 410 || err.statusCode === 404) {
             await supabase.from("profiles")
               .update({ push_subscription: null })
@@ -74,8 +84,8 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    const sent    = results.filter(r => r.status === "fulfilled").length;
-    const failed  = results.filter(r => r.status === "rejected").length;
+    const sent   = results.filter(r => r.status === "fulfilled").length;
+    const failed = results.filter(r => r.status === "rejected").length;
 
     return NextResponse.json({ sent, failed, total: drivers.length });
   } catch (err: any) {

@@ -174,6 +174,18 @@ const startShift = async () => {
   if (error) { alert("Failed to start shift: " + error.message); return; }
   setIsStarted(true);
   setStartTime(new Date());
+
+  // Notify drivers that cleaning has started
+  await fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bookingId,
+      unitNumber: booking?.units?.unit_number,
+      message: `Unit ${booking?.units?.unit_number} cleaning has started`,
+      type: 'shift_start',
+    }),
+  });
 };
 
   // --- Final Submit Logic ---
@@ -418,14 +430,16 @@ const startShift = async () => {
       localStorage.removeItem(`btm_eq_${bookingId}`);
 
 
-      // Send notification
+      // Notify drivers that cleaning is complete and unit is ready for pickup
       await fetch('/api/notify', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId,
           unitNumber: booking.units.unit_number,
-          message: `Unit ${booking.units.unit_number} cleaning complete — ready for pickup`
-        })
+          message: `Unit ${booking.units.unit_number} cleaning complete — ready for pickup`,
+          type: 'shift_complete',
+        }),
       });
       alert("Shift Completed Successfully! Redirecting to Quality Control...");
       // ড্যাশবোর্ডের বদলে সরাসরি এই বুকিংয়ের QC পেজে পাঠিয়ে দেব

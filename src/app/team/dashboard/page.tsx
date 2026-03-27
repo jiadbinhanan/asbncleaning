@@ -227,7 +227,6 @@ export default function TeamDashboard() {
                             
                             <ExtraDetails booking={booking} />
 
-                            // booking card এর ভেতরে, ExtraDetails এর নিচে, Start Duty বাটনের আগে:
 {booking.work_status === 'in_progress' && (
   <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3">
     <div className="flex items-center gap-2">
