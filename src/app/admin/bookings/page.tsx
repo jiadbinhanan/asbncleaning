@@ -358,9 +358,9 @@ const handleDeleteBooking = (id: number) => {
         </div>
       ) : (
         <div className="space-y-8">
-          {sortedDates.map(date => {
-            // Sort by time within the date group
-            const dayBookings = groupedBookings[date].sort((a, b) => a.cleaning_time.localeCompare(b.cleaning_time));
+{sortedDates.map(date => {
+            // Sort by created_at (Recent first) within the date group
+            const dayBookings = groupedBookings[date].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
             
             return (
               <div key={date} className="space-y-4">
