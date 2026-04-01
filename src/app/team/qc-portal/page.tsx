@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -6,8 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, ClipboardCheck, Building2, Calendar, 
-  Clock, Package, AlertTriangle, CheckCircle2, ShieldCheck, 
-  ArrowRight, Search, X, ArrowLeft, User, History
+  Package, AlertTriangle, CheckCircle2, ShieldCheck, 
+  ArrowRight, Search, ArrowLeft, User, History, Flame 
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -16,17 +15,17 @@ function QCPortalContent() {
   const searchParams = useSearchParams();
   const source = searchParams.get('source'); // 'admin' | 'supervisor' | null
   const supabase = createClient();
-  
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  
+
   // Data States
   const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
   const [searchQuery, setSearchQuery] = useState("");
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any>({}); // Store user profiles mapping
-  
+
   // Selection States
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [qcItems, setQcItems] = useState<any[]>([]);
@@ -42,11 +41,11 @@ function QCPortalContent() {
     }
     setCurrentUser(session.user);
 
-    // Fetch logs (Added work_logs)
+    // ✅ Fetch logs (Added qc_damage_qty)
     const { data: logsData } = await supabase
       .from('booking_inventory_logs')
       .select(`
-        id, equipment_id, collected_qty, qc_status, qc_good_qty, qc_bad_qty, qc_completed_at, qc_completed_by,
+        id, equipment_id, collected_qty, qc_status, qc_good_qty, qc_bad_qty, qc_damage_qty, qc_completed_at, qc_completed_by,
         equipment_master ( item_name, current_stock ),
         booking_id,
         bookings!inner ( 
@@ -67,10 +66,8 @@ function QCPortalContent() {
       });
 
       if (userIds.size > 0) {
-        // 🚨 ADDED: avatar_url
         const { data: profData } = await supabase.from('profiles').select('id, full_name, username, avatar_url').in('id', Array.from(userIds));
         if (profData) {
-          // Object হিসেবে সেভ করা হলো যাতে নাম ও DP দুটোই পাওয়া যায়
           const profMap = profData.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
           setProfiles(profMap);
         }
@@ -82,7 +79,7 @@ function QCPortalContent() {
         if (!uniqueBookingsMap.has(log.booking_id)) {
           uniqueBookingsMap.set(log.booking_id, {
             ...log.bookings,
-            status: log.qc_status, // Status is based on the logs
+            status: log.qc_status, 
             logs: []
           });
         }
@@ -115,7 +112,6 @@ function QCPortalContent() {
     );
   });
 
-  // 2. Filter & Group Data (Date-wise)
   const groupedBookings = filteredBookings.reduce((acc: any, b: any) => {
     const dateStr = b.cleaning_date;
     if (!acc[dateStr]) acc[dateStr] = [];
@@ -130,10 +126,12 @@ function QCPortalContent() {
   // 3. Handlers
   const handleSelectBooking = (booking: any) => {
     setSelectedBooking(booking);
+    // ✅ Include 'damage' when initializing items
     const preparedItems = booking.logs.map((log: any) => ({
       ...log,
       good: log.qc_status === 'completed' ? log.qc_good_qty : 0,
       bad: log.qc_status === 'completed' ? log.qc_bad_qty : 0,
+      damage: log.qc_status === 'completed' ? (log.qc_damage_qty || 0) : 0,
       error: ""
     }));
     setQcItems(preparedItems);
@@ -142,32 +140,45 @@ function QCPortalContent() {
 
   const closeWorkspace = () => {
     setIsMobileModalOpen(false);
-    setTimeout(() => setSelectedBooking(null), 200); // delay to allow unmount animation
+    setTimeout(() => setSelectedBooking(null), 200); 
   };
 
-  const handleInput = (logId: string, field: 'good' | 'bad', value: string) => {
+  // ✅ Smart Input logic (Calculates 3rd input automatically)
+  const handleInput = (logId: string, field: 'good' | 'bad' | 'damage', value: string) => {
     if (activeTab === 'completed') return; // Protect completed items
-    const num = parseInt(value) || 0;
+    const num = Math.max(0, parseInt(value) || 0);
+
     setQcItems(prev => prev.map(item => {
-      if (item.id === logId) {
-        const updated = { ...item, [field]: num };
-        const total = updated.good + updated.bad;
-        updated.error = total > item.collected_qty ? `Exceeds total (${item.collected_qty})` : "";
-        return updated;
+      if (item.id !== logId) return item;
+
+      const updated = { ...item, [field]: num };
+      const fields: ('good' | 'bad' | 'damage')[] = ['good', 'bad', 'damage'];
+      const others = fields.filter(f => f !== field);
+
+      const autoField = others.find(f => updated[f] === 0 && updated[field] > 0) ?? null;
+      if (autoField) {
+        const autoVal = item.collected_qty - updated[field] - updated[others.find(f => f !== autoField)!];
+        if (autoVal >= 0) updated[autoField] = autoVal;
       }
-      return item;
+
+      const total = updated.good + updated.bad + updated.damage;
+      updated.error = total > item.collected_qty ? `Exceeds total (${item.collected_qty})` : "";
+
+      return updated;
     }));
   };
 
+  // ✅ Optimized Submit with TS Fix and Damage integration
   const handleSubmit = async () => {
-    const hasErrors = qcItems.some(i => i.error || (i.good + i.bad !== i.collected_qty));
-    if (hasErrors) return alert("Please ensure all quantities exactly match the total collected items.");
+    const hasErrors = qcItems.some(i => i.error || (i.good + i.bad + i.damage !== i.collected_qty));
+    if (hasErrors) return alert("Please ensure the sum of Good, Dirty, and Damaged exactly matches the total collected quantity.");
 
     setSubmitting(true);
     try {
-      const logsToUpdate = [];
-      const laundryRecordsToInsert = [];
-      const transactionLogs = [];
+      const logsToUpdate: any[] = [];
+      const laundryRecordsToInsert: any[] = [];
+      const transactionLogs: any[] = [];
+      const stockUpdates: any[] = []; // Changed to any[] to avoid Promise TS error
 
       for (const item of qcItems) {
         logsToUpdate.push({
@@ -175,8 +186,9 @@ function QCPortalContent() {
           qc_status: 'completed',
           qc_good_qty: item.good,
           qc_bad_qty: item.bad,
+          qc_damage_qty: item.damage > 0 ? item.damage : 0,
           qc_completed_at: new Date().toISOString(),
-          qc_completed_by: currentUser.id // Tracking the user
+          qc_completed_by: currentUser.id
         });
 
         if (item.bad > 0) {
@@ -185,7 +197,7 @@ function QCPortalContent() {
             unit_id: selectedBooking.units.id,
             equipment_id: item.equipment_id,
             sent_qty: item.bad,
-            status: 'pooled_dirty' // 🚨 FIXED: Now goes to Supervisor's Pool
+            status: 'pooled_dirty' // Fixed status based on schema
           });
         }
 
@@ -201,15 +213,21 @@ function QCPortalContent() {
             balance_after: newStock,
             remarks: `Returned from Unit after QC (Unused)`
           });
-          await supabase.from('equipment_master').update({ current_stock: newStock }).eq('id', item.equipment_id);
+          stockUpdates.push(
+            supabase.from('equipment_master').update({ current_stock: newStock }).eq('id', item.equipment_id)
+          );
         }
       }
 
-      await Promise.all([
-        supabase.from('booking_inventory_logs').upsert(logsToUpdate),
-        transactionLogs.length > 0 ? supabase.from('inventory_transaction_logs').insert(transactionLogs) : Promise.resolve(),
-        laundryRecordsToInsert.length > 0 ? supabase.from('laundry_records').insert(laundryRecordsToInsert) : Promise.resolve()
-      ]);
+      const promises: any[] = [
+        supabase.from('booking_inventory_logs').upsert(logsToUpdate)
+      ];
+
+      if (laundryRecordsToInsert.length > 0) promises.push(supabase.from('laundry_records').insert(laundryRecordsToInsert));
+      if (transactionLogs.length > 0) promises.push(supabase.from('inventory_transaction_logs').insert(transactionLogs));
+      promises.push(...stockUpdates);
+
+      await Promise.all(promises);
 
       alert("QC Processed Successfully!");
       closeWorkspace();
@@ -233,12 +251,11 @@ function QCPortalContent() {
 
   if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>;
 
-  // Workspace View (Desktop right side or Mobile Modal)
+  // ======================= WORKSPACE VIEW =======================
   const WorkspaceView = () => (
     <div className="flex-1 flex flex-col h-full bg-[#F4F7FA] relative">
       <div className="bg-white p-4 md:p-6 shadow-sm border-b border-gray-100 shrink-0 flex items-start md:items-center gap-4">
-        
-        {/* 🚨 NEW: Prominent Mobile Back Button */}
+
         <button onClick={closeWorkspace} className="md:hidden mt-1 p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700 shrink-0 transition-colors">
           <ArrowLeft size={20}/>
         </button>
@@ -260,56 +277,89 @@ function QCPortalContent() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <div className="max-w-3xl mx-auto space-y-4">
-          {qcItems.map((item) => (
-            <div key={item.id} className={`bg-white p-5 rounded-2xl shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${activeTab === 'completed' ? 'border-emerald-100 opacity-90' : 'border-gray-100 hover:border-indigo-200'}`}>
-              <div className="flex-1">
-                <h3 className="font-black text-lg text-gray-800 mb-1">{item.equipment_master?.item_name}</h3>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-100 w-fit px-2 py-1 rounded">Collected: {item.collected_qty}</p>
-                
-                {/* Audit Trail for Completed Items */}
-                {activeTab === 'completed' && item.qc_completed_by && (
-                  <p className="text-[10px] font-bold text-gray-400 mt-3 flex items-center gap-1">
-                    <User size={12}/> Checked by {profiles[item.qc_completed_by]?.full_name || profiles[item.qc_completed_by]?.username || 'Staff'} • {format(new Date(item.qc_completed_at), 'dd MMM, hh:mm a')}
-                  </p>
-                )}
-              </div>
 
-              <div className="flex gap-3 w-full md:w-auto">
-                <div className="flex-1 md:w-24">
-                  <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1.5 block">Good (Stock)</label>
-                  <input 
-                    type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
-                    value={item.good === 0 && item.bad === 0 && activeTab === 'pending' ? '' : item.good} 
-                    onChange={(e) => handleInput(item.id, 'good', e.target.value)}
-                    className="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-black text-emerald-900 text-center disabled:opacity-70 disabled:bg-emerald-100/30"
-                    placeholder="0"
-                  />
-                </div>
-                <div className="flex-1 md:w-24">
-                  <label className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1.5 block">Bad (Laundry)</label>
-                  <input 
-                    type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
-                    value={item.good === 0 && item.bad === 0 && activeTab === 'pending' ? '' : item.bad} 
-                    onChange={(e) => handleInput(item.id, 'bad', e.target.value)}
-                    className="w-full p-2.5 bg-red-50/50 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 font-black text-red-900 text-center disabled:opacity-70 disabled:bg-red-100/30"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
+          {/* Instruction Note */}
+          {activeTab === 'pending' && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3.5 rounded-2xl text-xs font-bold shadow-sm leading-relaxed mb-4">
+              Enter any two values. The third one will be calculated automatically based on the total collected quantity.
+            </div>
+          )}
 
-              {activeTab === 'pending' && (
-                <div className="w-full md:w-28 flex flex-col justify-center shrink-0">
-                  {item.error ? (
-                    <p className="text-[10px] text-red-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> {item.error}</p>
-                  ) : (item.good + item.bad !== item.collected_qty) ? (
-                    <p className="text-[10px] text-orange-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> Match Total</p>
-                  ) : (
-                    <p className="text-[10px] text-emerald-500 font-bold flex items-center gap-1 bg-emerald-50 p-1.5 rounded"><CheckCircle2 size={14}/> Ready</p>
+          {qcItems.map((item) => {
+            const total = item.good + item.bad + item.damage;
+            const isReady = !item.error && total === item.collected_qty;
+
+            return (
+              <div key={item.id} className={`bg-white p-5 rounded-2xl shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${activeTab === 'completed' ? 'border-emerald-100 opacity-90' : 'border-gray-100 hover:border-indigo-200'}`}>
+                <div className="flex-1">
+                  <h3 className="font-black text-lg text-gray-800 mb-1">{item.equipment_master?.item_name}</h3>
+                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-100 w-fit px-2 py-1 rounded">Collected: {item.collected_qty}</p>
+
+                  {activeTab === 'completed' && item.qc_completed_by && (
+                    <p className="text-[10px] font-bold text-gray-400 mt-3 flex items-center gap-1">
+                      <User size={12}/> Checked by {profiles[item.qc_completed_by]?.full_name || profiles[item.qc_completed_by]?.username || 'Staff'} • {format(new Date(item.qc_completed_at), 'dd MMM, hh:mm a')}
+                    </p>
                   )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div className="flex flex-col w-full md:w-auto">
+                  {/* ✅ 3-Column Grid setup */}
+                  <div className="flex gap-2 w-full">
+                    <div className="flex-1 md:w-20">
+                      <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1.5 block">✅ Good</label>
+                      <input 
+                        type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
+                        value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.good} 
+                        onChange={(e) => handleInput(item.id, 'good', e.target.value)}
+                        className="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-black text-emerald-900 text-center disabled:opacity-70 disabled:bg-emerald-100/30"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="flex-1 md:w-20">
+                      <label className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1.5 block">🧺 Dirty</label>
+                      <input 
+                        type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
+                        value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.bad} 
+                        onChange={(e) => handleInput(item.id, 'bad', e.target.value)}
+                        className="w-full p-2.5 bg-red-50/50 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 font-black text-red-900 text-center disabled:opacity-70 disabled:bg-red-100/30"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="flex-1 md:w-20">
+                      <label className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Flame size={10}/> Damage</label>
+                      <input 
+                        type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
+                        value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.damage} 
+                        onChange={(e) => handleInput(item.id, 'damage', e.target.value)}
+                        className="w-full p-2.5 bg-orange-50/50 border border-orange-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 font-black text-orange-900 text-center disabled:opacity-70 disabled:bg-orange-100/30"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ✅ Progress bar indicator */}
+                  <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden flex w-full">
+                    <div className="bg-emerald-400 transition-all duration-300" style={{width: `${(item.good/item.collected_qty)*100}%`}}/>
+                    <div className="bg-red-400 transition-all duration-300" style={{width: `${(item.bad/item.collected_qty)*100}%`}}/>
+                    <div className="bg-orange-400 transition-all duration-300" style={{width: `${(item.damage/item.collected_qty)*100}%`}}/>
+                  </div>
+                </div>
+
+                {/* Validation Info */}
+                {activeTab === 'pending' && (
+                  <div className="w-full md:w-24 flex flex-col justify-center shrink-0 mt-2 md:mt-0">
+                    {item.error ? (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> {item.error}</p>
+                    ) : !isReady ? (
+                      <p className="text-[10px] text-orange-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> Match Total</p>
+                    ) : (
+                      <p className="text-[10px] text-emerald-500 font-bold flex items-center justify-center gap-1 bg-emerald-50 py-1.5 rounded"><CheckCircle2 size={14}/> Ready</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -333,10 +383,10 @@ function QCPortalContent() {
 
   return (
     <div className="h-screen bg-[#F4F7FA] font-sans flex overflow-hidden">
-      
+
       {/* ======================= LEFT SIDEBAR (LIST VIEW) ======================= */}
       <div className={`w-full md:w-[350px] lg:w-[400px] bg-white border-r border-gray-200 flex flex-col h-full shadow-2xl z-20 shrink-0 ${isMobileModalOpen ? 'hidden md:flex' : 'flex'}`}>
-        
+
         {/* Header & Navigation */}
         <div className="bg-gray-900 text-white p-5 shadow-md shrink-0">
           <div className="flex justify-between items-center mb-4">
@@ -345,7 +395,7 @@ function QCPortalContent() {
               {source ? <><ArrowLeft size={14}/> Back to {source}</> : <><User size={14}/> Logout</>}
             </button>
           </div>
-          
+
           {/* Tabs */}
           <div className="flex bg-black/40 p-1 rounded-xl mb-4">
             <button onClick={() => setActiveTab('pending')} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'pending' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>Pending QC</button>
@@ -396,18 +446,16 @@ function QCPortalContent() {
                         Ref: {b.booking_ref || b.id}
                       </p>
 
-                      {/* 🚨 UPDATED: Shift Submitter & QC Submitter Info */}
                       {(() => {
                         const workLog = b.work_logs?.[0];
                         const shiftSubmitter = workLog?.submitted_by ? profiles[workLog.submitted_by] : null;
-                        
-                        // QC Submitter (Assuming all items in a booking are QC'd by the same person)
+
                         const qcSubmitterId = b.logs?.[0]?.qc_completed_by;
                         const qcSubmitter = qcSubmitterId ? profiles[qcSubmitterId] : null;
-                        
+
                         return (
                           <div className={`mt-3 pt-3 border-t flex flex-col gap-2.5 ${selectedBooking?.id === b.id ? 'border-indigo-400/30' : 'border-gray-100'}`}>
-                            
+
                             {/* --- Shift Info --- */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -511,7 +559,6 @@ function QCPortalContent() {
   );
 }
 
-// Suspense Boundary wrapper for useSearchParams
 export default function GlobalQCPortal() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>}>

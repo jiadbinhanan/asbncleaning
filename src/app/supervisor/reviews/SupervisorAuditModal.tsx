@@ -20,6 +20,8 @@ const getDuration = (start: string, end: string) => {
   const mins = differenceInMinutes(parseISO(end), parseISO(start));
   const h = Math.floor(mins / 60); const m = mins % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const [extraCharges, setExtraCharges] = useState<{id: string; description: string; amount: string; log_id?: string; charge_type: 'damage'|'manual'}[]>([]);
+const [loadingCharges, setLoadingCharges] = useState(false);
 };
 type Tab = "details" | "inventory" | "checklist" | "finalize";
 
