@@ -337,7 +337,7 @@ export default function BookingManagement() {
           placeholder="Search by Ref, Company, Unit or Building..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 transition-all"
+          className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 transition-all"
         />
       </div>
 
@@ -353,18 +353,18 @@ export default function BookingManagement() {
               {/* UPGRADE 1: Date From */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date From</label>
-                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
+                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
               </div>
               {/* UPGRADE 1: Date To */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date To</label>
-                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
+                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Company</label>
-                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
+                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)}>
                   <option value="">All Companies</option>
                   {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -373,7 +373,7 @@ export default function BookingManagement() {
               {/* UPGRADE 6: Extended status options */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Status</label>
-                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
+                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
