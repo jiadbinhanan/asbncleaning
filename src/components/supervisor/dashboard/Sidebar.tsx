@@ -16,7 +16,6 @@ interface SidebarProps {
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/supervisor/dashboard' },
-  { name: 'Activations', icon: Zap, path: '/supervisor/activations' },
   { name: 'QC Portal', icon: ClipboardCheck, path: '/team/qc-portal?source=supervisor' },
   { name: 'Review & Pricing', icon: ListTodo, path: '/supervisor/reviews' },
   { name: 'My Teams', icon: Users, path: '/supervisor/teams' },

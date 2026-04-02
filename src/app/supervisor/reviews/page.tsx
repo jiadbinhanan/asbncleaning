@@ -48,7 +48,7 @@ export default function SupervisorReviewPage() {
           ),
           booking_inventory_logs (
             id, equipment_id, base_provide_qty, extra_provided_qty, final_provided_qty,
-            target_collect_qty, collected_qty, shortage_qty, qc_status,
+            target_collect_qty, collected_qty, shortage_qty, qc_status, qc_damage_qty,
             supervisor_price, remarks,
             equipment_master ( item_name, item_type )
           )

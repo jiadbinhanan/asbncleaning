@@ -3,9 +3,9 @@ import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, Filter, Clock, Calendar, Building2, 
-  MapPin, CheckCircle2, AlertCircle, Camera, UserCircle, X, 
-  ChevronDown, FileCheck, CircleDollarSign, CheckSquare, Users, PackagePlus, RefreshCcw
+  Loader2, Filter, Clock, Calendar, 
+  MapPin, AlertCircle, Camera, 
+  ChevronDown, FileCheck, CheckSquare, Users, PackagePlus, AlertTriangle
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import WorkAuditModal from "./WorkAuditModal";
@@ -32,7 +32,7 @@ export default function WorkRecords() {
   // --- Modal State ---
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
 
-  // --- Fetch Static Data (companies, profiles, templates, configs) ---
+  // --- Fetch Static Data ---
   useEffect(() => {
     const fetchStaticData = async () => {
       const [cRes, pRes, tRes, ucRes] = await Promise.all([
@@ -50,7 +50,7 @@ export default function WorkRecords() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Fetch Bookings based on date/status filters ---
+  // --- Fetch Bookings ---
   const fetchRecords = async () => {
     setLoading(true);
 
@@ -72,6 +72,9 @@ export default function WorkRecords() {
           target_collect_qty, collected_qty, shortage_qty, qc_status,
           supervisor_price, remarks,
           equipment_master ( item_name, item_type )
+        ),
+        booking_extra_added_charges (
+          id, charge_type, item_description, amount
         )
       `)
       .in('status', ['completed', 'finalized'])
@@ -94,9 +97,7 @@ export default function WorkRecords() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, filterStatus]);
 
-  // --- Helper: Get extra/billable items from booking_inventory_logs ---
-  // Logic: extra_provided_qty > 0 items are billable
-  // Price: supervisor_price ?? unit_equipment_config.extra_unit_price
+  // --- Helpers ---
   const getExtraInventory = (booking: any) => {
     const logs = booking.booking_inventory_logs || [];
     return logs
@@ -136,7 +137,7 @@ export default function WorkRecords() {
     }
 
     if (filterHasExtra) {
-      result = result.filter(b => getExtraInventory(b).length > 0);
+      result = result.filter(b => getExtraInventory(b).length > 0 || (b.booking_extra_added_charges?.length > 0));
     }
 
     return result;
@@ -172,7 +173,7 @@ export default function WorkRecords() {
     return { groups, sortedDates };
   }, [currentItems]);
 
-  // --- Helper Functions ---
+  // --- Helpers ---
   const getDuration = (start: string, end: string) => {
     if (!start || !end) return "Unknown";
     const mins = differenceInMinutes(parseISO(end), parseISO(start));
@@ -189,8 +190,8 @@ export default function WorkRecords() {
   return (
     <div className='min-h-screen bg-[#F4F7FA] pb-24 font-sans relative overflow-hidden'>
 
-      {/* --- HEADER --- */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative'>
+      {/* --- HEADER (Adjusted padding to prevent overlap) --- */}
+      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-12 md:pb-20 px-4 md:px-8 shadow-2xl relative'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
         <div className='max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
           <div>
@@ -203,8 +204,7 @@ export default function WorkRecords() {
             onClick={() => setShowFilters(!showFilters)}
             className='px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center gap-2 backdrop-blur-md'
           >
-            <Filter size={18}/> Filters{ ' '
-            }
+            <Filter size={18}/> Filters{ ' ' }
             {showFilters
               ? <ChevronDown size={18} className='rotate-180 transition-transform'/>
               : <ChevronDown size={18} className='transition-transform'/>
@@ -213,7 +213,7 @@ export default function WorkRecords() {
         </div>
       </div>
 
-      <div className='max-w-5xl mx-auto px-4 md:px-8 -mt-10 relative z-20'>
+      <div className='max-w-5xl mx-auto px-4 md:px-8 -mt-6 md:-mt-10 relative z-20'>
 
         {/* --- FILTERS PANEL --- */}
         <AnimatePresence>
@@ -248,7 +248,7 @@ export default function WorkRecords() {
                 <div className='flex items-end'>
                   <label className='flex items-center justify-center gap-2 cursor-pointer p-3 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-xl w-full h-[46px] transition-colors'>
                     <input type='checkbox' checked={filterHasExtra} onChange={e => setFilterHasExtra(e.target.checked)} className='w-4 h-4 accent-indigo-600'/>
-                    <span className='text-xs font-black text-indigo-900'>Has Extra Provide</span>
+                    <span className='text-xs font-black text-indigo-900'>Has Extra Charges</span>
                   </label>
                 </div>
               </div>
@@ -266,15 +266,19 @@ export default function WorkRecords() {
             <p className='text-sm mt-2'>Try changing the date range or filters.</p>
           </div>
         ) : (
-          <div className='space-y-10'>
+          <div className='space-y-10 mt-4 md:mt-0'>
             {groupedBookings.sortedDates.map(dateStr => (
               <div key={dateStr} className='space-y-5'>
 
-                {/* Date Header */}
+                {/* 🚨 NEW: Pill Style Date Header (Solves Mobile Overlap) 🚨 */}
                 <div className='flex items-center gap-3 pl-2'>
-                  <div className='p-2 bg-blue-100 text-blue-700 rounded-lg'><Calendar size={18} strokeWidth={2.5}/></div>
-                  <h2 className='text-lg font-black text-gray-800 tracking-tight'>{format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}</h2>
-                  <div className='h-px bg-gray-300 flex-1 ml-4'></div>
+                  <div className='flex items-center gap-2 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-sm border border-gray-100'>
+                    <div className='p-1.5 bg-blue-100 text-blue-700 rounded-lg'><Calendar size={16} strokeWidth={2.5}/></div>
+                    <h2 className='text-base md:text-lg font-black text-gray-800 tracking-tight'>
+                      {format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}
+                    </h2>
+                  </div>
+                  <div className='h-px bg-gray-300 flex-1 ml-2 hidden md:block'></div>
                 </div>
 
                 {/* Timeline */}
@@ -286,7 +290,13 @@ export default function WorkRecords() {
                     const companyName = Array.isArray(booking.units?.companies)
                       ? booking.units.companies[0]?.name
                       : booking.units?.companies?.name;
+
+                    // Billing Calcs
                     const extras = getExtraInventory(booking);
+                    const extraCharges = booking.booking_extra_added_charges || [];
+                    const extraInvTotal = extras.reduce((sum: number, inv: any) => sum + inv.totalPrice, 0);
+                    const extraChgTotal = extraCharges.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+                    const grandTotal = Number(booking.price || 0) + extraInvTotal + extraChgTotal;
 
                     return (
                       <motion.div
@@ -315,9 +325,9 @@ export default function WorkRecords() {
                               <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest inline-block ${isFinalized ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                 {booking.status}
                               </span>
-                              {isFinalized && booking.price > 0 && (
+                              {isFinalized && grandTotal > 0 && (
                                 <span className='text-sm font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded border border-gray-200'>
-                                  AED {booking.price}
+                                  Total: AED {grandTotal.toFixed(2)}
                                 </span>
                               )}
                               {booking.invoice_no && (
@@ -328,9 +338,9 @@ export default function WorkRecords() {
                             </div>
                           </div>
 
-                          {/* Extra/Billable Summary (from booking_inventory_logs) */}
+                          {/* Extra Inventory Billed */}
                           {extras.length > 0 && (
-                            <div className='mb-4 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl'>
+                            <div className='mb-3 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl'>
                               <p className='text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-1'>
                                 <PackagePlus size={12}/> Extra Provide Billed
                               </p>
@@ -347,8 +357,30 @@ export default function WorkRecords() {
                             </div>
                           )}
 
+                          {/* Extra Manual / Damage Charges */}
+                          {extraCharges.length > 0 && (
+                            <div className='mb-4 p-3 bg-orange-50/70 border border-orange-100 rounded-xl'>
+                              <p className='text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2 flex items-center gap-1'>
+                                <AlertTriangle size={12}/> Extra Added Charges
+                              </p>
+                              <div className='space-y-1.5'>
+                                {extraCharges.map((chg: any) => (
+                                  <div key={chg.id} className='flex justify-between items-center text-xs'>
+                                    <span className='font-bold text-orange-900 flex items-center gap-1.5'>
+                                      <span className='text-[8px] bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded uppercase tracking-wider'>{chg.charge_type === 'damage' ? 'DMG' : 'MNL'}</span>
+                                      {chg.item_description}
+                                    </span>
+                                    <span className='font-black text-orange-700'>
+                                      AED {Number(chg.amount).toFixed(2)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Team & Duration row */}
-                          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6'>
+                          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-4'>
                             <div>
                               <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1'>
                                 <Users size={12}/> {booking.teams?.team_name}

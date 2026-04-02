@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import {
   Check, X, Loader2, Building2, Search,
-  Hash, Calendar, Tag, Circle, CheckCircle2, Zap,
+  Hash, Calendar, Tag, Circle, CheckCircle2, Zap, Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -107,32 +107,31 @@ function BookingCard({
             <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
               <Hash size={9} /> {booking.units?.unit_number ?? '—'}
             </span>
-            {booking.service_type && (
-              <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                {booking.service_type}
-              </span>
-            )}
           </div>
 
-          {/* Status + Date */}
-          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-widest ${cfg.color} ${cfg.bg} ${cfg.border}`}>
+          {/* Status + Time + Service */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${cfg.color} ${cfg.bg} ${cfg.border}`}>
               {cfg.icon} {cfg.label}
             </span>
-            {booking.cleaning_date && (
-              <span className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
-                <Calendar size={10} />
-                {format(new Date(booking.cleaning_date), compact ? 'dd MMM' : 'dd MMM yyyy')}
-                {booking.cleaning_time && !compact && (
-                  <span className="ml-1">{booking.cleaning_time.slice(0, 5)}</span>
-                )}
+
+            {booking.cleaning_time && (
+              <span className="flex items-center gap-1 text-[10px] text-slate-600 font-black bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg">
+                <Clock size={10} className="text-slate-400" />
+                {booking.cleaning_time.slice(0, 5)}
               </span>
+            )}
+
+            {booking.service_type && (
+               <span className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg capitalize">
+                 {booking.service_type}
+               </span>
             )}
           </div>
 
           {/* Assigned-elsewhere warning */}
           {isAssignedElsewhere && (
-            <p className="text-[10px] text-amber-600 font-black mt-1.5 flex items-center gap-1">
+            <p className="text-[10px] text-amber-600 font-black mt-2 flex items-center gap-1 bg-amber-100/50 w-fit px-2 py-1 rounded">
               <Tag size={10} /> {compact ? '' : 'Currently: '}{elseTeam?.team_name ?? `Team #${booking.assigned_team_id}`}
             </p>
           )}
@@ -174,7 +173,7 @@ function FilterBar({
       <select
         value={bookingStatusFilter}
         onChange={e => onStatusFilterChangeAction(e.target.value)}
-        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 outline-none cursor-pointer"
+        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 outline-none cursor-pointer focus:border-indigo-400"
       >
         <option value="all">All Status</option>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
@@ -265,13 +264,19 @@ export default function SupervisorAssignmentPanel({
         {/* Header */}
         <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-indigo-50/60 to-white flex justify-between items-start shrink-0">
           <div>
-            <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mb-1">Assigning to</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest">Assigning to</p>
+              <span className="text-[9px] font-black text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200">
+                <Calendar size={10} />
+                {selectedTeam?.shift_date ? format(new Date(selectedTeam.shift_date), 'dd MMM yyyy') : 'Date Not Set'}
+              </span>
+            </div>
             <h2 className="text-xl font-black text-slate-900">{selectedTeam?.team_name}</h2>
             <p className="text-xs text-slate-400 font-bold mt-1">Click a booking to assign or unassign</p>
           </div>
           <button
             onClick={onCloseAction}
-            className="p-2 bg-white hover:bg-slate-100 text-slate-400 rounded-full border border-slate-200 transition-colors"
+            className="p-2 bg-white hover:bg-slate-100 text-slate-400 rounded-full border border-slate-200 transition-colors shadow-sm"
           >
             <X size={18} />
           </button>
@@ -288,7 +293,7 @@ export default function SupervisorAssignmentPanel({
         </div>
 
         {/* List */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="overflow-y-auto flex-1 p-4 bg-slate-50/30">
           <BookingList
             filteredBookings={filteredBookings}
             loadingBookings={loadingBookings}
@@ -300,9 +305,9 @@ export default function SupervisorAssignmentPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 shrink-0">
-          <p className="text-xs text-slate-400 font-bold text-center">
-            {assignedCount} booking(s) assigned to this squad
+        <div className="px-6 py-4 border-t border-slate-100 bg-white shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+          <p className="text-xs text-slate-500 font-bold text-center flex items-center justify-center gap-1.5">
+            <CheckCircle2 size={14} className="text-indigo-500"/> {assignedCount} booking(s) assigned to this squad
           </p>
         </div>
       </motion.div>
@@ -331,18 +336,24 @@ export default function SupervisorAssignmentPanel({
         </div>
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-start shrink-0">
           <div>
-            <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest">Assigning to</p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest">Assigning to</p>
+              <span className="text-[9px] font-black text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200">
+                <Calendar size={10} />
+                {selectedTeam?.shift_date ? format(new Date(selectedTeam.shift_date), 'dd MMM yyyy') : ''}
+              </span>
+            </div>
             <h2 className="text-lg font-black text-slate-900">{selectedTeam?.team_name}</h2>
           </div>
-          <button onClick={onCloseAction} className="p-2 bg-slate-100 rounded-full text-slate-500">
+          <button onClick={onCloseAction} className="p-2 bg-slate-50 border border-slate-200 rounded-full text-slate-500 mt-1">
             <X size={18} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-4 py-3 border-b border-slate-50 shrink-0">
+        <div className="px-4 py-3 border-b border-slate-50 shrink-0 bg-white">
           <FilterBar
             bookingSearch={bookingSearch}
             bookingStatusFilter={bookingStatusFilter}
@@ -352,7 +363,7 @@ export default function SupervisorAssignmentPanel({
         </div>
 
         {/* List */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="overflow-y-auto flex-1 p-4 bg-slate-50/30">
           <BookingList
             filteredBookings={filteredBookings}
             loadingBookings={loadingBookings}

@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, UserPlus, Archive, Check, User,
   Briefcase, Loader2, X, Edit, Clock, CalendarDays,
-  Filter, ArrowLeftRight,
+  Filter, ArrowLeftRight, ChevronLeft, ChevronRight, Calendar
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays, subDays } from 'date-fns';
 
 import AssignmentPanel, { type Booking, type Team } from './AssignmentPanel';
 
@@ -35,9 +35,12 @@ export default function AdminTeamManagement() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [assigningId, setAssigningId]         = useState<number | null>(null);
 
-  // ── Tab & Archive Filter ─────────────────────────────────────
+  // ── Tab & Filters ─────────────────────────────────────
   const [activeTab, setActiveTab]     = useState<'active' | 'archived'>('active');
   const [archiveDate, setArchiveDate] = useState<string>('');
+
+  // 🚨 NEW: Roster Date Filter for Active Teams
+  const [activeDateFilter, setActiveDateFilter] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   // ── Assignment Panel ─────────────────────────────────────────
   const [selectedTeamId, setSelectedTeamId]         = useState<number | null>(null);
@@ -51,57 +54,69 @@ export default function AdminTeamManagement() {
   const [teamName, setTeamName]                 = useState('');
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
+  // 🚨 NEW: Shift Date for Team Creation
+  const [shiftDateInput, setShiftDateInput]     = useState(format(new Date(), 'yyyy-MM-dd'));
+
   // ── Derived ──────────────────────────────────────────────────
   const isPanelOpen  = selectedTeamId !== null;
   const selectedTeam = activeTeams.find(t => t.id === selectedTeamId) ?? null;
 
-  // ── FETCH 1: Agents + today's active teams ───────────────────
+  // ── FETCH 1: Agents + Active Teams (Filtered by activeDateFilter) ──
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingActive(true);
 
-      const { data: agentsData } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .eq('role', 'agent');
-      if (agentsData) setAgents(agentsData);
+      if (agents.length === 0) {
+        const { data: agentsData } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .eq('role', 'agent');
+        if (agentsData) setAgents(agentsData);
+      }
 
-      const today = new Date().toISOString().split('T')[0];
-      const { data: activeData } = await supabase
+      let query = supabase
         .from('teams')
         .select('*, bookings(id, assigned_team_id, status, created_at, cleaning_date, units(unit_number, companies(name)))')
         .eq('status', 'active')
-        .eq('shift_date', today)
+        .order('shift_date', { ascending: true })
         .order('created_at', { ascending: false });
 
+      // If a specific date is selected, filter by it. Otherwise fetch all active.
+      if (activeDateFilter !== 'all') {
+        query = query.eq('shift_date', activeDateFilter);
+      }
+
+      const { data: activeData } = await query;
       if (activeData) setActiveTeams(activeData as unknown as Team[]);
       setLoadingActive(false);
     };
 
     fetchInitialData();
-  }, [supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, activeDateFilter]); // Runs when date filter changes
 
-// ── FETCH 2: All bookings (lazy — opens when panel first opens)
+  // ── FETCH 2: Bookings for Assignment Panel (Dynamic Date) ──
   useEffect(() => {
-    if (!isPanelOpen || allBookings.length > 0) return;
+    if (!isPanelOpen || !selectedTeam) return;
 
     const fetchBookings = async () => {
       setLoadingBookings(true);
-      const today = new Date().toISOString().split('T')[0]; // 🚨 আজকের ডেট বের করা
+      // 🚨 NEW: Fetch bookings based on the Team's shift_date!
+      const targetDate = selectedTeam.shift_date; 
 
       const { data } = await supabase
         .from('bookings')
-        // 🚨 নতুন ফিল্ড এবং রিলেশন (teams, layout) যুক্ত করা হয়েছে
         .select('id, booking_ref, assigned_team_id, status, created_at, cleaning_date, cleaning_time, service_type, units(unit_number, layout, companies(name)), teams(team_name)')
-        .eq('cleaning_date', today) // 🚨 শুধুমাত্র আজকের বুকিং
-        .order('cleaning_time', { ascending: true }); // সময় অনুযায়ী সাজানো
+        .eq('cleaning_date', targetDate) // Filter by team's shift date
+        .order('cleaning_time', { ascending: true });
 
       if (data) setAllBookings(data as unknown as Booking[]);
       setLoadingBookings(false);
     };
 
     fetchBookings();
-  }, [isPanelOpen, allBookings.length, supabase]);
+  }, [isPanelOpen, selectedTeam?.id, selectedTeam?.shift_date, supabase]);
+
   // ── FETCH 3: Archive ─────────────────────────────────────────
   useEffect(() => {
     if (activeTab !== 'archived') return;
@@ -155,7 +170,7 @@ export default function AdminTeamManagement() {
 
     const { error } = await supabase
       .from('bookings')
-      .update({ assigned_team_id: newTeamId }) // 🚨 Update the correct column
+      .update({ assigned_team_id: newTeamId })
       .eq('id', booking.id);
 
     if (!error) {
@@ -195,35 +210,47 @@ export default function AdminTeamManagement() {
   const openCreateModal = () => {
     setModalMode('create'); setEditingTeamId(null);
     setTeamName(''); setSelectedAgentIds([]);
+    setShiftDateInput(activeDateFilter === 'all' ? format(new Date(), 'yyyy-MM-dd') : activeDateFilter);
     setIsModalOpen(true);
   };
 
   const openEditModal = (team: Team) => {
     setModalMode('edit'); setEditingTeamId(team.id);
     setTeamName(team.team_name); setSelectedAgentIds(team.member_ids ?? []);
+    setShiftDateInput(team.shift_date || format(new Date(), 'yyyy-MM-dd'));
     setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (!teamName || selectedAgentIds.length === 0) return;
+    if (!teamName || selectedAgentIds.length === 0 || !shiftDateInput) return;
     const timestamp = new Date().toISOString();
-    const today = timestamp.split('T')[0];
 
     if (modalMode === 'create') {
       const { data, error } = await supabase
         .from('teams')
-        .insert([{ team_name: teamName, member_ids: selectedAgentIds, status: 'active', shift_date: today, updated_at: timestamp }])
+        .insert([{ team_name: teamName, member_ids: selectedAgentIds, status: 'active', shift_date: shiftDateInput, updated_at: timestamp }])
         .select();
-      if (!error && data) { setActiveTeams(prev => [data[0] as Team, ...prev]); setIsModalOpen(false); }
+      if (!error && data) { 
+        // Only append to UI if we are in 'all' view or the date matches our current filter
+        if (activeDateFilter === 'all' || activeDateFilter === shiftDateInput) {
+          setActiveTeams(prev => [data[0] as Team, ...prev]); 
+        }
+        setIsModalOpen(false); 
+      }
     } else if (modalMode === 'edit' && editingTeamId) {
       const { error } = await supabase
         .from('teams')
-        .update({ team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp })
+        .update({ team_name: teamName, member_ids: selectedAgentIds, shift_date: shiftDateInput, updated_at: timestamp })
         .eq('id', editingTeamId);
       if (!error) {
-        setActiveTeams(prev =>
-          prev.map(t => t.id === editingTeamId ? { ...t, team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp } : t)
-        );
+        // If date was changed and we are in a specific date view, remove from current view
+        if (activeDateFilter !== 'all' && activeDateFilter !== shiftDateInput) {
+          setActiveTeams(prev => prev.filter(t => t.id !== editingTeamId));
+        } else {
+          setActiveTeams(prev =>
+            prev.map(t => t.id === editingTeamId ? { ...t, team_name: teamName, member_ids: selectedAgentIds, shift_date: shiftDateInput, updated_at: timestamp } : t)
+          );
+        }
         setIsModalOpen(false);
       }
     }
@@ -235,12 +262,14 @@ export default function AdminTeamManagement() {
   const displayTeams = activeTab === 'active' ? activeTeams : archivedTeams;
   const isLoading    = activeTab === 'active' ? loadingActive : loadingArchive;
 
+  // Group Archived Teams
   const groupedArchivedTeams = useMemo(() => {
     const groups: Record<string, Team[]> = {};
     if (activeTab !== 'archived') return groups;
     displayTeams.forEach(team => {
-      if (!groups[team.shift_date]) groups[team.shift_date] = [];
-      groups[team.shift_date].push(team);
+      const date = team.shift_date || '1970-01-01';
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(team);
     });
     return groups;
   }, [displayTeams, activeTab]);
@@ -248,6 +277,35 @@ export default function AdminTeamManagement() {
   const sortedArchivedDates = Object.keys(groupedArchivedTeams).sort(
     (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
+
+  // 🚨 NEW: Group Active Teams
+  const groupedActiveTeams = useMemo(() => {
+    const groups: Record<string, Team[]> = {};
+    if (activeTab !== 'active') return groups;
+    displayTeams.forEach(team => {
+      const date = team.shift_date || '1970-01-01';
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(team);
+    });
+    return groups;
+  }, [displayTeams, activeTab]);
+
+  const sortedActiveDates = Object.keys(groupedActiveTeams).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime() // Ascending order for active roster
+  );
+
+  const getFormatDateLabel = (dateStr: string) => {
+    if (dateStr === 'all') return 'All Dates';
+    const d = parseISO(dateStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dTime = d.getTime();
+    if (dTime === today.getTime()) return `Today (${format(d, 'd MMM')})`;
+    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+    if (dTime === yest.getTime()) return `Yesterday (${format(d, 'd MMM')})`;
+    const tom = new Date(today); tom.setDate(tom.getDate() + 1);
+    if (dTime === tom.getTime()) return `Tomorrow (${format(d, 'd MMM')})`;
+    return format(d, 'EEE, d MMM yyyy');
+  };
 
   // ─────────────────────────────────────────────────────────────
   // JSX
@@ -277,14 +335,14 @@ export default function AdminTeamManagement() {
       {/* MAIN */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
 
-        {/* Tabs */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        {/* Tabs & Top Filters */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex bg-gray-100 p-1.5 rounded-xl w-full md:w-auto">
             <button
-              onClick={() => { setActiveTab('active'); setArchiveDate(''); closeAssignPanel(); }}
+              onClick={() => { setActiveTab('active'); closeAssignPanel(); }}
               className={`flex-1 md:flex-none px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Active Today
+              Active Roster
             </button>
             <button
               onClick={() => { setActiveTab('archived'); closeAssignPanel(); }}
@@ -307,8 +365,58 @@ export default function AdminTeamManagement() {
           )}
         </div>
 
+        {/* 🚨 NEW: Roster Date Switcher (Only for Active Tab) */}
+        {activeTab === 'active' && (
+          <div className="flex items-center justify-between bg-white px-3 py-2 rounded-2xl border border-gray-200 shadow-sm mb-6 mt-4 w-full md:w-max">
+            <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setActiveDateFilter('all')}
+                className={`px-4 py-1.5 rounded-xl font-bold text-sm transition-all shrink-0 ${activeDateFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                All Upcoming
+              </button>
+              <div className="w-px h-5 bg-gray-200 shrink-0 mx-1.5" />
+
+              <button
+                onClick={() => {
+                  if (activeDateFilter === 'all') setActiveDateFilter(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
+                  else setActiveDateFilter(format(subDays(parseISO(activeDateFilter), 1), 'yyyy-MM-dd'));
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 shrink-0 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="relative shrink-0 min-w-[140px]">
+                <input
+                  type="date"
+                  value={activeDateFilter === 'all' ? '' : activeDateFilter}
+                  onChange={(e) => {
+                    if (e.target.value) setActiveDateFilter(e.target.value);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-xl font-black text-sm border-2 transition-all ${activeDateFilter !== 'all' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-transparent text-gray-600 bg-gray-50 hover:bg-gray-100'}`}>
+                  <CalendarDays size={14} className={activeDateFilter === 'all' ? 'opacity-50' : ''}/>
+                  {activeDateFilter === 'all' ? 'Select Date' : getFormatDateLabel(activeDateFilter)}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (activeDateFilter === 'all') setActiveDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+                  else setActiveDateFilter(format(addDays(parseISO(activeDateFilter), 1), 'yyyy-MM-dd'));
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 shrink-0 transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* SPLIT SCREEN */}
-        <div className="flex gap-6 items-start">
+        <div className="flex gap-6 items-start mt-6">
 
           {/* LEFT: Teams List */}
           <motion.div
@@ -322,117 +430,137 @@ export default function AdminTeamManagement() {
               </div>
 
             ) : displayTeams.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-100 shadow-sm">
+              <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm mt-4">
                 <Users size={56} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-bold text-gray-700">No {activeTab} squads found</h3>
+                <h3 className="text-xl font-bold text-gray-700">No squads found</h3>
                 <p className="text-gray-400 text-sm mt-2 font-medium">
-                  {activeTab === 'active' ? 'Create a new team to assign agents.' : 'No archived records for this date.'}
+                  {activeTab === 'active' ? `No teams planned for ${getFormatDateLabel(activeDateFilter)}.` : 'No archived records for this date.'}
                 </p>
+                {activeTab === 'active' && (
+                  <button onClick={openCreateModal} className="mt-6 px-6 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-black transition-all">
+                    Create one now
+                  </button>
+                )}
               </div>
 
             ) : activeTab === 'active' ? (
-              /* Active Teams Grid */
-              <div className={`grid gap-5 ${isPanelOpen ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-                <AnimatePresence>
-                  {displayTeams.map((team, idx) => {
-                    const isSelected = selectedTeamId === team.id;
-                    return (
-                      <motion.div
-                        key={team.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ delay: idx * 0.04 }}
-                        onClick={() => openAssignPanel(team.id)}
-                        className={`bg-white rounded-3xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group
-                          ${isSelected
-                            ? 'border-blue-400 ring-2 ring-blue-200 shadow-blue-100'
-                            : 'border-gray-100 hover:border-blue-200'
-                          }`}
-                      >
-                        {/* Card Header */}
-                        <div className={`p-5 border-b flex justify-between items-start transition-colors ${isSelected ? 'bg-blue-50/60 border-blue-100' : 'bg-blue-50/20 border-gray-50'}`}>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-lg text-gray-900 truncate">{team.team_name}</h3>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
-                              <Clock size={11} className="text-blue-400" />
-                              Updated: {format(new Date(team.updated_at), 'h:mm a')}
-                            </p>
-                            <div className="mt-2.5">
-                              {team.bookings && team.bookings.length > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                                  <Check size={11} /> {team.bookings.length} Assigned
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                                  <Users size={11} /> Not Assigned
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Buttons — stop propagation */}
-                          <div className="flex gap-2 ml-3 shrink-0" onClick={e => e.stopPropagation()}>
-                            <button
-                              onClick={() => openEditModal(team)}
-                              className="p-2 bg-white text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg shadow-sm border border-blue-100 transition-all"
-                              title="Edit Team"
-                            >
-                              <Edit size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleArchiveTeam(team.id)}
-                              className="p-2 bg-white text-red-500 hover:bg-red-500 hover:text-white rounded-lg shadow-sm border border-red-100 transition-all"
-                              title="Archive Team"
-                            >
-                              <Archive size={15} />
-                            </button>
-                          </div>
+              /* 🚨 NEW: Active Teams Grouped By Date 🚨 */
+              <div className="space-y-10">
+                {sortedActiveDates.map(date => (
+                  <div key={date}>
+                    {activeDateFilter === 'all' && (
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-black flex items-center gap-2 shadow-sm border border-blue-200">
+                          <CalendarDays size={14} />
+                          {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                         </div>
-
-                        {/* Members */}
-                        <div className="p-5 flex-1">
-                          <div className="flex justify-between items-center mb-3">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Members</p>
-                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black">
-                              {team.member_ids?.length ?? 0}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {team.member_ids?.map(memberId => {
-                              const agent = getAgentDetails(memberId);
-                              return (
-                                <div key={memberId} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 bg-white rounded-full border border-gray-200 shadow-sm">
-                                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600 overflow-hidden shrink-0">
-                                    {agent?.avatar_url
-                                      ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={11} />}
+                        <div className="h-px bg-gray-200 flex-1" />
+                      </div>
+                    )}
+                    <div className={`grid gap-5 ${isPanelOpen ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                      <AnimatePresence>
+                        {groupedActiveTeams[date].map((team, idx) => {
+                          const isSelected = selectedTeamId === team.id;
+                          return (
+                            <motion.div
+                              key={team.id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ delay: idx * 0.04 }}
+                              onClick={() => openAssignPanel(team.id)}
+                              className={`bg-white rounded-3xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group
+                                ${isSelected
+                                  ? 'border-blue-400 ring-2 ring-blue-200 shadow-blue-100'
+                                  : 'border-gray-100 hover:border-blue-200'
+                                }`}
+                            >
+                              {/* Card Header */}
+                              <div className={`p-5 border-b flex justify-between items-start transition-colors ${isSelected ? 'bg-blue-50/60 border-blue-100' : 'bg-blue-50/20 border-gray-50'}`}>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-lg text-gray-900 truncate">{team.team_name}</h3>
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                                    <Clock size={11} className="text-blue-400" />
+                                    Updated: {format(new Date(team.updated_at), 'h:mm a')}
+                                  </p>
+                                  <div className="mt-2.5">
+                                    {team.bookings && team.bookings.length > 0 ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                                        <Check size={11} /> {team.bookings.length} Assigned
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border border-gray-200">
+                                        <Users size={11} /> Not Assigned
+                                      </span>
+                                    )}
                                   </div>
-                                  <span className="text-xs font-bold text-gray-700 truncate max-w-[90px]">
-                                    {agent?.full_name ?? agent?.username ?? 'Unknown'}
+                                </div>
+
+                                {/* Buttons — stop propagation */}
+                                <div className="flex gap-2 ml-3 shrink-0" onClick={e => e.stopPropagation()}>
+                                  <button
+                                    onClick={() => openEditModal(team)}
+                                    className="p-2 bg-white text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg shadow-sm border border-blue-100 transition-all"
+                                    title="Edit Team"
+                                  >
+                                    <Edit size={15} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleArchiveTeam(team.id)}
+                                    className="p-2 bg-white text-red-500 hover:bg-red-500 hover:text-white rounded-lg shadow-sm border border-red-100 transition-all"
+                                    title="Archive Team"
+                                  >
+                                    <Archive size={15} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Members */}
+                              <div className="p-5 flex-1">
+                                <div className="flex justify-between items-center mb-3">
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Members</p>
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black">
+                                    {team.member_ids?.length ?? 0}
                                   </span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {team.member_ids?.map(memberId => {
+                                    const agent = getAgentDetails(memberId);
+                                    return (
+                                      <div key={memberId} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 bg-white rounded-full border border-gray-200 shadow-sm">
+                                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600 overflow-hidden shrink-0">
+                                          {agent?.avatar_url
+                                            ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={11} />}
+                                        </div>
+                                        <span className="text-xs font-bold text-gray-700 truncate max-w-[90px]">
+                                          {agent?.full_name ?? agent?.username ?? 'Unknown'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
 
-                        {/* Assign CTA */}
-                        {!isPanelOpen && (
-                          <div className="px-5 pb-4">
-                            <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-xs font-black uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
-                              <ArrowLeftRight size={13} /> Assign Tasks
-                            </div>
-                          </div>
-                        )}
+                              {/* Assign CTA */}
+                              {!isPanelOpen && (
+                                <div className="px-5 pb-4">
+                                  <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-xs font-black uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                                    <ArrowLeftRight size={13} /> Assign Tasks
+                                  </div>
+                                </div>
+                              )}
 
-                        {/* Selected bar */}
-                        {isSelected && <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-400" />}
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                              {/* Selected bar */}
+                              {isSelected && <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-400" />}
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                ))}
               </div>
 
             ) : (
@@ -549,9 +677,9 @@ export default function AdminTeamManagement() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     {modalMode === 'create' ? <UserPlus className="text-blue-600" /> : <Edit className="text-blue-600" />}
-                    {modalMode === 'create' ? 'Create Team' : 'Edit Team Members'}
+                    {modalMode === 'create' ? 'Create Team' : 'Edit Team Details'}
                   </h2>
-                  <p className="text-sm text-gray-500 font-medium mt-1">Select agents to add to this team.</p>
+                  <p className="text-sm text-gray-500 font-medium mt-1">Set squad schedule and select agents.</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white hover:bg-gray-100 text-gray-400 rounded-full border border-gray-200 transition-colors">
                   <X size={20} />
@@ -559,14 +687,26 @@ export default function AdminTeamManagement() {
               </div>
 
               <div className="p-6 md:p-8 overflow-y-auto flex-1">
-                <div className="mb-8">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Team Name</label>
-                  <input
-                    placeholder="e.g. Team Alpha"
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 font-bold transition-all"
-                    value={teamName}
-                    onChange={e => setTeamName(e.target.value)}
-                  />
+                {/* 🚨 NEW: Added Shift Date Input to Modal */}
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Team Name</label>
+                    <input
+                      placeholder="e.g. Team Alpha"
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 font-bold transition-all"
+                      value={teamName}
+                      onChange={e => setTeamName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Shift Date</label>
+                    <input
+                      type="date"
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 font-bold transition-all cursor-pointer"
+                      value={shiftDateInput}
+                      onChange={e => setShiftDateInput(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -617,7 +757,7 @@ export default function AdminTeamManagement() {
                 <button onClick={() => setIsModalOpen(false)} className="w-1/3 py-3.5 text-gray-500 hover:bg-gray-200 rounded-xl font-bold transition-colors">Cancel</button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!teamName || selectedAgentIds.length === 0}
+                  disabled={!teamName || selectedAgentIds.length === 0 || !shiftDateInput}
                   className="w-2/3 py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-black disabled:opacity-50 transition-all flex justify-center items-center gap-2 shadow-lg"
                 >
                   {modalMode === 'create' ? <><Check size={18} /> Create Squad</> : <><Edit size={18} /> Update Team</>}

@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   UsersRound, UserPlus, Archive, CheckCircle2, User,
   ShieldCheck, Loader2, X, Edit3, Clock, CalendarIcon,
-  ListFilter, Check, ArrowLeftRight,
+  ListFilter, Check, ArrowLeftRight, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO, addDays, subDays } from 'date-fns';
 
 import SupervisorAssignmentPanel, { type Booking, type Team } from './SupervisorAssignmentPanel';
 
@@ -35,9 +35,12 @@ export default function SupervisorTeamManagement() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [assigningId, setAssigningId]         = useState<number | null>(null);
 
-  // ── Tab & Archive Filter ─────────────────────────────────────
+  // ── Tab & Filters ─────────────────────────────────────
   const [activeTab, setActiveTab]     = useState<'active' | 'archived'>('active');
   const [archiveDate, setArchiveDate] = useState<string>('');
+
+  // 🚨 NEW: Roster Date Filter for Active Teams
+  const [activeDateFilter, setActiveDateFilter] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   // ── Assignment Panel ─────────────────────────────────────────
   const [selectedTeamId, setSelectedTeamId]           = useState<number | null>(null);
@@ -51,57 +54,66 @@ export default function SupervisorTeamManagement() {
   const [teamName, setTeamName]                 = useState('');
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
+  // 🚨 NEW: Shift Date for Team Creation
+  const [shiftDateInput, setShiftDateInput]     = useState(format(new Date(), 'yyyy-MM-dd'));
+
   // ── Derived ──────────────────────────────────────────────────
   const isPanelOpen  = selectedTeamId !== null;
   const selectedTeam = activeTeams.find(t => t.id === selectedTeamId) ?? null;
 
-  // ── FETCH 1: Agents + today's active teams ───────────────────
+  // ── FETCH 1: Agents + Active Teams (Filtered by activeDateFilter) ──
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingActive(true);
 
-      const { data: agentsData } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .eq('role', 'agent');
-      if (agentsData) setAgents(agentsData);
+      if (agents.length === 0) {
+        const { data: agentsData } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .eq('role', 'agent');
+        if (agentsData) setAgents(agentsData);
+      }
 
-      const today = new Date().toISOString().split('T')[0];
-      const { data: activeData } = await supabase
+      let query = supabase
         .from('teams')
         .select('*, bookings(id, booking_ref, assigned_team_id, status, created_at, cleaning_date, cleaning_time, service_type, units(unit_number, layout, companies(name)), teams(team_name))')
         .eq('status', 'active')
-        .eq('shift_date', today)
+        .order('shift_date', { ascending: true })
         .order('created_at', { ascending: false });
 
+      if (activeDateFilter !== 'all') {
+        query = query.eq('shift_date', activeDateFilter);
+      }
+
+      const { data: activeData } = await query;
       if (activeData) setActiveTeams(activeData as unknown as Team[]);
       setLoadingActive(false);
     };
 
     fetchInitialData();
-  }, [supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, activeDateFilter]);
 
-  
-// ── FETCH 2: All bookings (lazy — opens when panel first opens)
+  // ── FETCH 2: Bookings for Assignment Panel (Dynamic Date based on Team Shift) ──
   useEffect(() => {
-    if (!isPanelOpen || allBookings.length > 0) return;
+    if (!isPanelOpen || !selectedTeam) return;
 
     const fetchBookings = async () => {
       setLoadingBookings(true);
-      const today = new Date().toISOString().split('T')[0]; // আজকের ডেট
+      const targetDate = selectedTeam.shift_date; // 🚨 Team এর নির্দিষ্ট শিফট ডেট
 
       const { data } = await supabase
         .from('bookings')
         .select('id, booking_ref, assigned_team_id, status, created_at, cleaning_date, cleaning_time, service_type, units(unit_number, layout, companies(name)), teams(team_name)')
-        .eq('cleaning_date', today) // শুধুমাত্র আজকের বুকিং
-        .order('cleaning_time', { ascending: true }); // সময় অনুযায়ী সাজানো
+        .eq('cleaning_date', targetDate) // 🚨 শুধুমাত্র ঐ ডেটের বুকিং
+        .order('cleaning_time', { ascending: true });
 
       if (data) setAllBookings(data as unknown as Booking[]);
       setLoadingBookings(false);
     };
 
     fetchBookings();
-  }, [isPanelOpen, allBookings.length, supabase]);
+  }, [isPanelOpen, selectedTeam?.id, selectedTeam?.shift_date, supabase]);
 
   // ── FETCH 3: Archive ─────────────────────────────────────────
   useEffect(() => {
@@ -183,7 +195,7 @@ export default function SupervisorTeamManagement() {
   }, [selectedTeamId, supabase]);
 
   const handleArchiveTeam = async (id: number) => {
-    if (!confirm('Are you sure? Archiving this team will mark it as closed for today.')) return;
+    if (!confirm('Are you sure? Archiving this team will mark it as closed for its shift date.')) return;
     const teamToArchive = activeTeams.find(t => t.id === id);
     setActiveTeams(prev => prev.filter(t => t.id !== id));
     if (teamToArchive) {
@@ -196,38 +208,48 @@ export default function SupervisorTeamManagement() {
   const openCreateModal = () => {
     setModalMode('create'); setEditingTeamId(null);
     setTeamName(''); setSelectedAgentIds([]);
+    setShiftDateInput(activeDateFilter === 'all' ? format(new Date(), 'yyyy-MM-dd') : activeDateFilter);
     setIsModalOpen(true);
   };
 
   const openEditModal = (team: Team) => {
     setModalMode('edit'); setEditingTeamId(team.id);
     setTeamName(team.team_name); setSelectedAgentIds(team.member_ids ?? []);
+    setShiftDateInput(team.shift_date || format(new Date(), 'yyyy-MM-dd'));
     setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (!teamName || selectedAgentIds.length === 0) return;
+    if (!teamName || selectedAgentIds.length === 0 || !shiftDateInput) return;
     const timestamp = new Date().toISOString();
-    const today = timestamp.split('T')[0];
 
     if (modalMode === 'create') {
       const { data, error } = await supabase
         .from('teams')
-        .insert([{ team_name: teamName, member_ids: selectedAgentIds, status: 'active', shift_date: today, updated_at: timestamp }])
+        .insert([{ team_name: teamName, member_ids: selectedAgentIds, status: 'active', shift_date: shiftDateInput, updated_at: timestamp }])
         .select();
-      if (!error && data) { setActiveTeams(prev => [data[0] as Team, ...prev]); setIsModalOpen(false); }
+      if (!error && data) { 
+        if (activeDateFilter === 'all' || activeDateFilter === shiftDateInput) {
+          setActiveTeams(prev => [data[0] as Team, ...prev]); 
+        }
+        setIsModalOpen(false); 
+      }
     } else if (modalMode === 'edit' && editingTeamId) {
       const { error } = await supabase
         .from('teams')
-        .update({ team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp })
+        .update({ team_name: teamName, member_ids: selectedAgentIds, shift_date: shiftDateInput, updated_at: timestamp })
         .eq('id', editingTeamId);
       if (!error) {
-        setActiveTeams(prev =>
-          prev.map(t => t.id === editingTeamId
-            ? { ...t, team_name: teamName, member_ids: selectedAgentIds, updated_at: timestamp }
-            : t
-          )
-        );
+        if (activeDateFilter !== 'all' && activeDateFilter !== shiftDateInput) {
+          setActiveTeams(prev => prev.filter(t => t.id !== editingTeamId));
+        } else {
+          setActiveTeams(prev =>
+            prev.map(t => t.id === editingTeamId
+              ? { ...t, team_name: teamName, member_ids: selectedAgentIds, shift_date: shiftDateInput, updated_at: timestamp }
+              : t
+            )
+          );
+        }
         setIsModalOpen(false);
       }
     }
@@ -238,6 +260,50 @@ export default function SupervisorTeamManagement() {
 
   const displayTeams = activeTab === 'active' ? activeTeams : archivedTeams;
   const isLoading    = activeTab === 'active' ? loadingActive : loadingArchive;
+
+  const groupedArchivedTeams = useMemo(() => {
+    const groups: Record<string, Team[]> = {};
+    if (activeTab !== 'archived') return groups;
+    displayTeams.forEach(team => {
+      const date = team.shift_date || '1970-01-01';
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(team);
+    });
+    return groups;
+  }, [displayTeams, activeTab]);
+
+  const sortedArchivedDates = Object.keys(groupedArchivedTeams).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
+  );
+
+  // 🚨 NEW: Group Active Teams
+  const groupedActiveTeams = useMemo(() => {
+    const groups: Record<string, Team[]> = {};
+    if (activeTab !== 'active') return groups;
+    displayTeams.forEach(team => {
+      const date = team.shift_date || '1970-01-01';
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(team);
+    });
+    return groups;
+  }, [displayTeams, activeTab]);
+
+  const sortedActiveDates = Object.keys(groupedActiveTeams).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+  );
+
+  const getFormatDateLabel = (dateStr: string) => {
+    if (dateStr === 'all') return 'All Upcoming';
+    const d = parseISO(dateStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dTime = d.getTime();
+    if (dTime === today.getTime()) return `Today (${format(d, 'd MMM')})`;
+    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+    if (dTime === yest.getTime()) return `Yesterday (${format(d, 'd MMM')})`;
+    const tom = new Date(today); tom.setDate(tom.getDate() + 1);
+    if (dTime === tom.getTime()) return `Tomorrow (${format(d, 'd MMM')})`;
+    return format(d, 'EEE, d MMM yyyy');
+  };
 
   // ─────────────────────────────────────────────────────────────
   // JSX
@@ -256,7 +322,7 @@ export default function SupervisorTeamManagement() {
               <ShieldCheck size={14} /> Operations Control
             </p>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Team Assignments</h1>
-            <p className="text-blue-100 mt-1 text-sm md:text-base font-medium">Build and manage your cleaning squads for today's shifts.</p>
+            <p className="text-blue-100 mt-1 text-sm md:text-base font-medium">Build and manage your cleaning squads for daily shifts.</p>
           </div>
 
           <button
@@ -274,19 +340,19 @@ export default function SupervisorTeamManagement() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
 
         {/* Tabs & Filters */}
-        <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
           <div className="flex bg-slate-50 p-1.5 rounded-xl w-full md:w-auto">
             <button
               onClick={() => { setActiveTab('active'); setArchiveDate(''); closeAssignPanel(); }}
               className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all ${activeTab === 'active' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Active Today
+              Active Roster
             </button>
             <button
               onClick={() => { setActiveTab('archived'); closeAssignPanel(); }}
               className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all ${activeTab === 'archived' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Archived
+              Archived History
             </button>
           </div>
 
@@ -303,8 +369,58 @@ export default function SupervisorTeamManagement() {
           )}
         </div>
 
+        {/* 🚨 NEW: Roster Date Switcher (Styled for Supervisor Panel) */}
+        {activeTab === 'active' && (
+          <div className="flex items-center justify-between bg-white px-3 py-2 rounded-2xl border border-slate-200 shadow-sm mb-8 w-full md:w-max">
+            <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setActiveDateFilter('all')}
+                className={`px-4 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all shrink-0 ${activeDateFilter === 'all' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                All Upcoming
+              </button>
+              <div className="w-px h-5 bg-slate-200 shrink-0 mx-1.5" />
+
+              <button
+                onClick={() => {
+                  if (activeDateFilter === 'all') setActiveDateFilter(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
+                  else setActiveDateFilter(format(subDays(parseISO(activeDateFilter), 1), 'yyyy-MM-dd'));
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 shrink-0 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="relative shrink-0 min-w-[140px]">
+                <input
+                  type="date"
+                  value={activeDateFilter === 'all' ? '' : activeDateFilter}
+                  onChange={(e) => {
+                    if (e.target.value) setActiveDateFilter(e.target.value);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider border-2 transition-all ${activeDateFilter !== 'all' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-transparent text-slate-600 bg-slate-50 hover:bg-slate-100'}`}>
+                  <CalendarIcon size={14} className={activeDateFilter === 'all' ? 'opacity-50' : ''}/>
+                  {activeDateFilter === 'all' ? 'Select Date' : getFormatDateLabel(activeDateFilter)}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (activeDateFilter === 'all') setActiveDateFilter(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+                  else setActiveDateFilter(format(addDays(parseISO(activeDateFilter), 1), 'yyyy-MM-dd'));
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 shrink-0 transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── SPLIT SCREEN ───────────────────────────────────── */}
-        <div className="flex gap-6 items-start">
+        <div className="flex gap-6 items-start mt-6">
 
           {/* LEFT: Teams List */}
           <motion.div
@@ -320,182 +436,214 @@ export default function SupervisorTeamManagement() {
             ) : displayTeams.length === 0 ? (
               <div className="text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
                 <UsersRound size={56} className="mx-auto text-indigo-100 mb-4" />
-                <h3 className="text-xl font-black text-slate-800">No {activeTab} squads available</h3>
+                <h3 className="text-xl font-black text-slate-800">No squads found</h3>
                 <p className="text-slate-500 text-sm mt-2 font-medium">
-                  {activeTab === 'active' ? 'Create a new squad to assign tasks.' : 'Select a different date to view history.'}
+                  {activeTab === 'active' ? `No squads planned for ${getFormatDateLabel(activeDateFilter)}.` : 'No archived records for this date.'}
                 </p>
+                {activeTab === 'active' && (
+                  <button onClick={openCreateModal} className="mt-6 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-black transition-all">
+                    Form a Squad
+                  </button>
+                )}
               </div>
 
             ) : activeTab === 'active' ? (
-              /* Active Teams Grid */
-              <div className={`grid gap-6 ${isPanelOpen ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-                <AnimatePresence>
-                  {displayTeams.map((team, idx) => {
-                    const isSelected = selectedTeamId === team.id;
-                    return (
-                      <motion.div
-                        key={team.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ delay: idx * 0.05 }}
-                        onClick={() => openAssignPanel(team.id)}
-                        className={`bg-white rounded-[2rem] border shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all overflow-hidden flex flex-col group cursor-pointer
-                          ${isSelected
-                            ? 'border-indigo-400 ring-2 ring-indigo-200 shadow-indigo-100'
-                            : 'border-gray-100 hover:border-indigo-200'
-                          }`}
-                      >
-                        {/* Card Header */}
-                        <div className={`p-6 border-b flex justify-between items-start transition-colors
-                          ${isSelected ? 'bg-indigo-50/60 border-indigo-100' : 'bg-gradient-to-br from-indigo-50/50 to-white border-gray-50'}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-xl text-slate-900 truncate">{team.team_name}</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
-                              <Clock size={12} className="text-indigo-400" />
-                              Updated: {format(new Date(team.updated_at), 'h:mm a')}
-                            </p>
-
-                            {/* Assignment badge */}
-                            <div className="mt-3">
-                              {team.bookings && team.bookings.length > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                                  <CheckCircle2 size={12} /> {team.bookings.length} Assigned
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                                  <ShieldCheck size={12} /> Not Assigned
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Action buttons — stop propagation */}
-                          <div
-                            className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-3 shrink-0"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <button
-                              onClick={() => openEditModal(team)}
-                              className="p-2.5 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm border border-indigo-100 transition-all"
-                              title="Edit Team"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleArchiveTeam(team.id)}
-                              className="p-2.5 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm border border-rose-100 transition-all"
-                              title="Archive Team"
-                            >
-                              <Archive size={16} />
-                            </button>
-                          </div>
+              /* Active Teams Grouped By Date */
+              <div className="space-y-10">
+                {sortedActiveDates.map(date => (
+                  <div key={date}>
+                    {activeDateFilter === 'all' && (
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-black flex items-center gap-2 shadow-sm border border-indigo-200">
+                          <CalendarIcon size={14} />
+                          {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                         </div>
+                        <div className="h-px bg-slate-200 flex-1" />
+                      </div>
+                    )}
+                    <div className={`grid gap-6 ${isPanelOpen ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                      <AnimatePresence>
+                        {groupedActiveTeams[date].map((team, idx) => {
+                          const isSelected = selectedTeamId === team.id;
+                          return (
+                            <motion.div
+                              key={team.id}
+                              layout
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ delay: idx * 0.05 }}
+                              onClick={() => openAssignPanel(team.id)}
+                              className={`bg-white rounded-[2rem] border shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all overflow-hidden flex flex-col group cursor-pointer
+                                ${isSelected
+                                  ? 'border-indigo-400 ring-2 ring-indigo-200 shadow-indigo-100'
+                                  : 'border-gray-100 hover:border-indigo-200'
+                                }`}
+                            >
+                              {/* Card Header */}
+                              <div className={`p-6 border-b flex justify-between items-start transition-colors
+                                ${isSelected ? 'bg-indigo-50/60 border-indigo-100' : 'bg-gradient-to-br from-indigo-50/50 to-white border-gray-50'}`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-black text-xl text-slate-900 truncate">{team.team_name}</h3>
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                                    <Clock size={12} className="text-indigo-400" />
+                                    Updated: {format(new Date(team.updated_at), 'h:mm a')}
+                                  </p>
 
-                        {/* Members */}
-                        <div className="p-6 flex-1">
-                          <div className="flex justify-between items-center mb-4">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Squad Members</p>
-                            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
-                              {team.member_ids?.length ?? 0}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {team.member_ids?.map(memberId => {
-                              const agent = getAgentDetails(memberId);
-                              return (
-                                <div key={memberId} className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
-                                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 overflow-hidden shrink-0">
-                                    {agent?.avatar_url
-                                      ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={12} />}
+                                  {/* Assignment badge */}
+                                  <div className="mt-3">
+                                    {team.bookings && team.bookings.length > 0 ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                                        <CheckCircle2 size={12} /> {team.bookings.length} Assigned
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                                        <ShieldCheck size={12} /> Not Assigned
+                                      </span>
+                                    )}
                                   </div>
-                                  <span className="text-xs font-bold text-slate-700 truncate max-w-[100px]">
-                                    {agent?.full_name?.split(' ')[0] ?? agent?.username ?? 'Agent'}
+                                </div>
+
+                                {/* Action buttons — stop propagation */}
+                                <div
+                                  className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-3 shrink-0"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <button
+                                    onClick={() => openEditModal(team)}
+                                    className="p-2.5 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm border border-indigo-100 transition-all"
+                                    title="Edit Team"
+                                  >
+                                    <Edit3 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleArchiveTeam(team.id)}
+                                    className="p-2.5 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm border border-rose-100 transition-all"
+                                    title="Archive Team"
+                                  >
+                                    <Archive size={16} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Members */}
+                              <div className="p-6 flex-1">
+                                <div className="flex justify-between items-center mb-4">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Squad Members</p>
+                                  <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
+                                    {team.member_ids?.length ?? 0}
                                   </span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {team.member_ids?.map(memberId => {
+                                    const agent = getAgentDetails(memberId);
+                                    return (
+                                      <div key={memberId} className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 overflow-hidden shrink-0">
+                                          {agent?.avatar_url
+                                            ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={12} />}
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 truncate max-w-[100px]">
+                                          {agent?.full_name?.split(' ')[0] ?? agent?.username ?? 'Agent'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
 
-                        {/* Assign CTA */}
-                        {!isPanelOpen && (
-                          <div className="px-6 pb-5">
-                            <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-black uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
-                              <ArrowLeftRight size={13} /> Assign Bookings
-                            </div>
-                          </div>
-                        )}
+                              {/* Assign CTA */}
+                              {!isPanelOpen && (
+                                <div className="px-6 pb-5">
+                                  <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-black uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
+                                    <ArrowLeftRight size={13} /> Assign Bookings
+                                  </div>
+                                </div>
+                              )}
 
-                        {/* Selected bar */}
-                        {isSelected && <div className="h-1 bg-gradient-to-r from-indigo-500 to-blue-400" />}
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                              {/* Selected bar */}
+                              {isSelected && <div className="h-1 bg-gradient-to-r from-indigo-500 to-blue-400" />}
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                ))}
               </div>
 
             ) : (
               /* Archived Teams Timeline */
-              <div className="relative border-l-2 border-slate-200 ml-4 md:ml-6 space-y-6">
+              <div className="relative border-l-2 border-slate-200 ml-4 md:ml-6 space-y-6 mt-6">
                 <AnimatePresence>
-                  {displayTeams.map((team, idx) => (
-                    <motion.div
-                      key={team.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="relative pl-6 md:pl-8"
-                    >
-                      <div className="absolute -left-[11px] top-4 w-5 h-5 rounded-full border-4 border-[#F8FAFC] bg-slate-400 shadow-sm" />
-
-                      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-black text-lg text-slate-800">{team.team_name}</h3>
-                            <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest">Archived</span>
-                          </div>
-                          <p className="text-xs text-slate-400 font-bold flex items-center gap-1.5">
-                            <Clock size={12} /> Archived on {format(new Date(team.updated_at), 'dd MMM yyyy, h:mm a')}
-                          </p>
-                          <div className="mt-2.5">
-                            {team.bookings && team.bookings.length > 0 ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50/50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100">
-                                {team.bookings.map((b: Booking) =>
-                                  `${b.units?.companies?.name ?? 'Unknown'} (U-${b.units?.unit_number ?? '?'})`
-                                ).join(', ')}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-200">
-                                Not Assigned
-                              </span>
-                            )}
-                          </div>
+                  {sortedArchivedDates.map(date => (
+                    <div key={date} className="relative">
+                      <div className="flex items-center gap-3 mb-6 sticky top-0 z-10 bg-[#F8FAFC] py-2">
+                        <div className="px-4 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm">
+                          <CalendarIcon size={15} className="text-slate-500" />
+                          {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                         </div>
-
-                        <div className="flex flex-wrap gap-2 md:max-w-[50%] md:justify-end mt-2 md:mt-0">
-                          {team.member_ids?.map(memberId => {
-                            const agent = getAgentDetails(memberId);
-                            return (
-                              <div key={memberId} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 bg-slate-50 rounded-full border border-slate-100">
-                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-black text-slate-600 overflow-hidden shrink-0">
-                                  {agent?.avatar_url
-                                    ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                    : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={10} />}
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 truncate max-w-[80px]">
-                                  {agent?.full_name?.split(' ')[0] ?? agent?.username ?? 'Agent'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <div className="h-px bg-slate-200 flex-1" />
                       </div>
-                    </motion.div>
+
+                      <div className="space-y-6 border-l-2 border-slate-200 ml-2 md:ml-4 pl-6 md:pl-8">
+                        {groupedArchivedTeams[date].map(team => (
+                          <motion.div
+                            key={team.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="relative"
+                          >
+                            <div className="absolute -left-[35px] md:-left-[43px] top-4 w-5 h-5 rounded-full border-4 border-[#F8FAFC] bg-indigo-400 shadow-sm" />
+
+                            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                  <h3 className="font-black text-lg text-slate-800">{team.team_name}</h3>
+                                  <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest">Closed</span>
+                                </div>
+                                <p className="text-xs text-slate-400 font-bold flex items-center gap-1.5">
+                                  <Clock size={12} /> Closed at {format(new Date(team.updated_at), 'h:mm a')}
+                                </p>
+                                <div className="mt-2.5">
+                                  {team.bookings && team.bookings.length > 0 ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50/50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                      {team.bookings.map((b: Booking) =>
+                                        `${b.units?.companies?.name ?? 'Unknown'} (U-${b.units?.unit_number ?? '?'})`
+                                      ).join(', ')}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-200">
+                                      Not Assigned
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 md:max-w-[50%] md:justify-end mt-2 md:mt-0">
+                                {team.member_ids?.map(memberId => {
+                                  const agent = getAgentDetails(memberId);
+                                  return (
+                                    <div key={memberId} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 bg-slate-50 rounded-full border border-slate-100">
+                                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-black text-slate-600 overflow-hidden shrink-0">
+                                        {agent?.avatar_url
+                                          ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                          : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={10} />}
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-600 truncate max-w-[80px]">
+                                        {agent?.full_name?.split(' ')[0] ?? agent?.username ?? 'Agent'}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </AnimatePresence>
               </div>
@@ -548,7 +696,7 @@ export default function SupervisorTeamManagement() {
                     {modalMode === 'create' ? <UserPlus className="text-indigo-600" /> : <Edit3 className="text-indigo-600" />}
                     {modalMode === 'create' ? 'Assemble New Squad' : 'Modify Squad Roster'}
                   </h2>
-                  <p className="text-sm text-slate-500 font-medium mt-1">Select agents to add them to this team.</p>
+                  <p className="text-sm text-slate-500 font-medium mt-1">Set squad schedule and select agents.</p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
@@ -559,15 +707,26 @@ export default function SupervisorTeamManagement() {
               </div>
 
               <div className="p-6 md:p-8 overflow-y-auto flex-1">
-                {/* Team Name */}
-                <div className="mb-8">
-                  <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Squad Identifier</label>
-                  <input
-                    placeholder="e.g. Alpha Team, Floor 3 Crew..."
-                    className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none text-lg text-slate-900 font-black transition-all placeholder:font-bold placeholder:text-slate-300"
-                    value={teamName}
-                    onChange={e => setTeamName(e.target.value)}
-                  />
+                {/* Team Name & Shift Date Grid */}
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Squad Identifier</label>
+                    <input
+                      placeholder="e.g. Alpha Team..."
+                      className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none text-lg text-slate-900 font-black transition-all placeholder:font-bold placeholder:text-slate-300"
+                      value={teamName}
+                      onChange={e => setTeamName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Shift Date</label>
+                    <input
+                      type="date"
+                      className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white outline-none text-lg text-slate-900 font-black transition-all cursor-pointer"
+                      value={shiftDateInput}
+                      onChange={e => setShiftDateInput(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 {/* Agents */}
@@ -632,7 +791,7 @@ export default function SupervisorTeamManagement() {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!teamName || selectedAgentIds.length === 0}
+                  disabled={!teamName || selectedAgentIds.length === 0 || !shiftDateInput}
                   className="w-2/3 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 shadow-xl shadow-indigo-500/20 transition-all flex justify-center items-center gap-2"
                 >
                   {modalMode === 'create'

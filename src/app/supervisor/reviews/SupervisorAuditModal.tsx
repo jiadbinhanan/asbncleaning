@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,14 +15,14 @@ import { format, differenceInMinutes, parseISO } from "date-fns";
 const safeFormat = (dt: string, fmt: string) => {
   try { return format(parseISO(dt), fmt); } catch { return "N/A"; }
 };
+
 const getDuration = (start: string, end: string) => {
   if (!start || !end) return "N/A";
   const mins = differenceInMinutes(parseISO(end), parseISO(start));
   const h = Math.floor(mins / 60); const m = mins % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
-  const [extraCharges, setExtraCharges] = useState<{id: string; description: string; amount: string; log_id?: string; charge_type: 'damage'|'manual'}[]>([]);
-const [loadingCharges, setLoadingCharges] = useState(false);
 };
+
 type Tab = "details" | "inventory" | "checklist" | "finalize";
 
 // ─── Colour system ────────────────────────────────────────────────────────────
@@ -391,6 +391,10 @@ export default function SupervisorAuditModal({
   const [showGuide, setShowGuide]       = useState(false);
   const [priceInput, setPriceInput]     = useState(booking.price ? String(booking.price) : "");
 
+  // 🚨 FIXED: State declared correctly inside component scope
+  const [extraCharges, setExtraCharges] = useState<{id: string; description: string; amount: string; log_id?: string; charge_type: 'damage'|'manual'}[]>([]);
+  const [loadingCharges, setLoadingCharges] = useState(false);
+
   const [inventoryEdits, setInventoryEdits] = useState<Record<string, { supervisor_price: string; remarks: string }>>(() => {
     const init: Record<string, { supervisor_price: string; remarks: string }> = {};
     (booking.booking_inventory_logs || []).forEach((i: any) => {
@@ -433,6 +437,9 @@ export default function SupervisorAuditModal({
 
   const billableTotal = billableItems.reduce((sum, i) => sum + i.total, 0);
 
+  // 🚨 NEW: Extra Charges Total
+  const extraChargesTotal = extraCharges.filter(c => parseFloat(c.amount) > 0).reduce((s,c) => s + (parseFloat(c.amount)||0), 0);
+
   const invSummary = useMemo(() => ({
     shortageItems:    inventoryLogs.filter(i => (i.shortage_qty || 0) > 0).length,
     missingRefill:    refillables.filter(i => i.collected_qty < i.target_collect_qty).length,
@@ -453,6 +460,37 @@ export default function SupervisorAuditModal({
     return { template, grouped, totalTasks };
   }, [checklistTemplates, booking.checklist_template_id]);
 
+  // 🚨 ADDED: Effect to load existing charges or populate from damages
+  useEffect(() => {
+    const loadChargesAndDamages = async () => {
+      setLoadingCharges(true);
+      // Fetch Existing charges
+      const { data: existing } = await supabase
+        .from('booking_extra_added_charges')
+        .select('id, item_description, amount, booking_inventory_log_id, charge_type')
+        .eq('booking_id', booking.id);
+
+      if (existing?.length) {
+        setExtraCharges(existing.map(c => ({
+          id: c.id, description: c.item_description,
+          amount: String(c.amount), log_id: c.booking_inventory_log_id, charge_type: c.charge_type
+        })));
+      } else {
+        // Pre-populate from QC damaged items
+        const damaged = inventoryLogs.filter((i: any) => (i.qc_damage_qty || 0) > 0);
+        if (damaged.length) {
+          setExtraCharges(damaged.map((i: any) => ({
+            id: crypto.randomUUID(), log_id: i.id, charge_type: 'damage' as const,
+            description: `${i.equipment_master?.item_name} - Damaged (${i.qc_damage_qty} pcs)`,
+            amount: ""
+          })));
+        }
+      }
+      setLoadingCharges(false);
+    };
+    loadChargesAndDamages();
+  }, [booking.id, inventoryLogs, supabase]);
+
   const saveInventoryEdits = async () => {
     const extras = inventoryLogs.filter(i => i.extra_provided_qty > 0);
     if (!extras.length) return true;
@@ -465,11 +503,32 @@ export default function SupervisorAuditModal({
     return !results.find(r => r.error);
   };
 
+  // 🚨 UPDATED: Handle Finalize with Charges Saving Logic
   const handleFinalize = async () => {
     if (!priceInput) return;
     setIsSubmitting(true);
     try {
       if (!await saveInventoryEdits()) throw new Error("Failed to save inventory edits.");
+
+      // Save/Update Extra Charges
+      const validCharges = extraCharges.filter(c => c.description.trim() && parseFloat(c.amount) > 0);
+      if (validCharges.length > 0) {
+        // Simple UPSERT strategy - Delete old, insert new
+        await supabase.from('booking_extra_added_charges').delete().eq('booking_id', booking.id);
+        const { data: userData } = await supabase.auth.getUser();
+
+        await supabase.from('booking_extra_added_charges').insert(
+          validCharges.map(c => ({
+            booking_id: booking.id,
+            booking_inventory_log_id: c.log_id || null,
+            charge_type: c.charge_type,
+            item_description: c.description,
+            amount: parseFloat(c.amount),
+            created_by: userData?.user?.id
+          }))
+        );
+      }
+
       const { error } = await supabase.from("bookings")
         .update({ price: parseFloat(priceInput), status: "finalized" }).eq("id", booking.id);
       if (error) throw error;
@@ -625,44 +684,43 @@ export default function SupervisorAuditModal({
                         <PhotoGrid photos={workLog.photo_urls || []} label="After Cleaning" />
                       </div>
 
-                      {/* 🚨 NEW: Damaged Items 🚨 */}
-                    {workLog.damaged_items && (
-                      <div className='bg-red-50 rounded-3xl border border-red-200 shadow-sm p-6 space-y-4'>
-                        <p className='text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2'>
-                          <AlertTriangle size={14} /> Damaged Item Reported
-                        </p>
-                        {workLog.damaged_items.remarks && (
-                          <p className='text-sm font-bold text-red-800 bg-red-100/60 p-3.5 rounded-xl border border-red-200'>
-                            {workLog.damaged_items.remarks}
+                      {/* Damaged Items */}
+                      {workLog.damaged_items && (
+                        <div className='bg-red-50 rounded-3xl border border-red-200 shadow-sm p-6 space-y-4'>
+                          <p className='text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2'>
+                            <AlertTriangle size={14} /> Damaged Item Reported
                           </p>
-                        )}
-                        {workLog.damaged_items.photos?.length > 0 && (
-                          <div className="pt-2">
-                            <PhotoGrid photos={workLog.damaged_items.photos} label='Damage Photos' />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          {workLog.damaged_items.remarks && (
+                            <p className='text-sm font-bold text-red-800 bg-red-100/60 p-3.5 rounded-xl border border-red-200'>
+                              {workLog.damaged_items.remarks}
+                            </p>
+                          )}
+                          {workLog.damaged_items.photos?.length > 0 && (
+                            <div className="pt-2">
+                              <PhotoGrid photos={workLog.damaged_items.photos} label='Damage Photos' />
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                    {/* 🚨 NEW: Lost & Found Items 🚨 */}
-                    {workLog.lost_found_items && (
-                      <div className='bg-amber-50 rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4'>
-                        <p className='text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2'>
-                          <Search size={14} /> Lost & Found Item
-                        </p>
-                        {workLog.lost_found_items.remarks && (
-                          <p className='text-sm font-bold text-amber-900 bg-amber-100/60 p-3.5 rounded-xl border border-amber-200'>
-                            {workLog.lost_found_items.remarks}
+                      {/* Lost & Found Items */}
+                      {workLog.lost_found_items && (
+                        <div className='bg-amber-50 rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4'>
+                          <p className='text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2'>
+                            <Search size={14} /> Lost & Found Item
                           </p>
-                        )}
-                        {workLog.lost_found_items.photos?.length > 0 && (
-                          <div className="pt-2">
-                            <PhotoGrid photos={workLog.lost_found_items.photos} label='Found Item Photos' />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
+                          {workLog.lost_found_items.remarks && (
+                            <p className='text-sm font-bold text-amber-900 bg-amber-100/60 p-3.5 rounded-xl border border-amber-200'>
+                              {workLog.lost_found_items.remarks}
+                            </p>
+                          )}
+                          {workLog.lost_found_items.photos?.length > 0 && (
+                            <div className="pt-2">
+                              <PhotoGrid photos={workLog.lost_found_items.photos} label='Found Item Photos' />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="p-10 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center gap-3 text-center">
@@ -849,32 +907,110 @@ export default function SupervisorAuditModal({
                     ))}
                   </div>
 
+                  {/* 🚨 EXTRA ADDED CHARGES SECTION 🚨 */}
+                  <div className="bg-white rounded-3xl border border-orange-200 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-r from-orange-500 to-red-500 px-5 py-4 flex items-center gap-2">
+                      <AlertTriangle size={17} className="text-white"/>
+                      <span className="font-black text-white text-sm">Extra Added Charges</span>
+                      <span className="ml-auto text-xs font-black bg-white/20 text-white px-3 py-1 rounded-xl">
+                        Total: AED {extraChargesTotal.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="p-5 space-y-3">
+                      {loadingCharges ? (
+                        <div className="flex justify-center py-4"><Loader2 className="animate-spin text-orange-400" size={24}/></div>
+                      ) : (
+                        <>
+                          {extraCharges.map((charge, idx) => (
+                            <div key={charge.id} className={`flex flex-col md:flex-row gap-3 md:items-center p-3 rounded-2xl border ${charge.charge_type === 'damage' ? 'bg-orange-50 border-orange-100' : 'bg-gray-50 border-gray-200'}`}>
+
+                              {/* Mobile Header: Type badge + Remove Button */}
+                              <div className="flex justify-between items-center w-full md:w-auto">
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg shrink-0 ${charge.charge_type === 'damage' ? 'bg-orange-200 text-orange-800' : 'bg-gray-200 text-gray-700'}`}>
+                                  {charge.charge_type === 'damage' ? '🔥 DMG' : '✏️ Manual'}
+                                </span>
+                                <button onClick={() => setExtraCharges(prev => prev.filter((_,i) => i !== idx))}
+                                  className="md:hidden p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors shrink-0">
+                                  <X size={14}/>
+                                </button>
+                              </div>
+
+                              {/* Description */}
+                              <input type="text" value={charge.description}
+                                onChange={e => setExtraCharges(prev => prev.map((c,i) => i===idx ? {...c, description: e.target.value} : c))}
+                                placeholder="Describe the charge..."
+                                className="w-full md:flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl outline-none text-sm font-medium text-gray-700 focus:border-orange-400 transition-colors"/>
+
+                              {/* Amount & Desktop Remove */}
+                              <div className="flex items-center gap-2 w-full md:w-auto">
+                                <div className="flex-1 md:flex-none flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-3 py-2 md:w-28 focus-within:border-orange-400 transition-colors shrink-0">
+                                  <span className="text-xs font-black text-gray-400">AED</span>
+                                  <input type="number" min="0" step="0.01" value={charge.amount}
+                                    onChange={e => setExtraCharges(prev => prev.map((c,i) => i===idx ? {...c, amount: e.target.value} : c))}
+                                    placeholder="0.00"
+                                    className="flex-1 outline-none text-sm font-black text-gray-900 bg-transparent w-full"/>
+                                </div>
+                                <button onClick={() => setExtraCharges(prev => prev.filter((_,i) => i !== idx))}
+                                  className="hidden md:block p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors shrink-0">
+                                  <X size={14}/>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Add manual charge */}
+                          <button onClick={() => setExtraCharges(prev => [...prev, {
+                            id: crypto.randomUUID(), charge_type: 'manual', description: "", amount: ""
+                          }])}
+                            className="w-full py-3 border-2 border-dashed border-gray-200 rounded-2xl text-sm font-black text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-all flex items-center justify-center gap-2">
+                            + Add Manual Charge
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="bg-gradient-to-br from-blue-900 to-indigo-950 p-8 rounded-3xl shadow-xl relative overflow-hidden">
                     <div className="absolute -right-10 -top-10 text-blue-800/30"><Receipt size={150} /></div>
                     <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2 relative z-10">
                       <div className="p-2 bg-emerald-400 rounded-xl text-gray-900"><CircleDollarSign size={20} /></div>
                       {booking.status === "completed" ? "Finalize Booking Price" : "Edit Booking Price"}
                     </h3>
+
                     <div className="relative z-10 mb-6 bg-white/10 rounded-2xl p-4 border border-white/10 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-blue-200 font-bold">Cleaning Price (cleaning cost only)</span>
                         <span className="text-white font-black">{priceInput ? `AED ${parseFloat(priceInput).toFixed(2)}` : "—"}</span>
                       </div>
+
                       {billableTotal > 0 && (
-                        <>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-purple-300 font-bold">Extra Items (saved separately)</span>
-                            <span className="text-purple-300 font-black">AED {billableTotal.toFixed(2)}</span>
-                          </div>
-                          <div className="h-px bg-white/20" />
-                          <div className="flex justify-between text-sm">
-                            <span className="text-white font-black">Invoice Total</span>
-                            <span className="text-white font-black">AED {(parseFloat(priceInput || "0") + billableTotal).toFixed(2)}</span>
-                          </div>
-                          <p className="text-[10px] text-amber-300 font-bold">⚠️ Enter cleaning cost only. Extra items added separately in invoice.</p>
-                        </>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-purple-300 font-bold">Extra Items (saved separately)</span>
+                          <span className="text-purple-300 font-black">AED {billableTotal.toFixed(2)}</span>
+                        </div>
                       )}
+
+                      {/* 🚨 Show Extra Charges in Final Invoice Total Breakdown */}
+                      {extraChargesTotal > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-orange-300 font-bold">Extra Added Charges (Damages/Manual)</span>
+                          <span className="text-orange-300 font-black">AED {extraChargesTotal.toFixed(2)}</span>
+                        </div>
+                      )}
+
+                      <div className="h-px bg-white/20" />
+
+                      {/* 🚨 Updated Invoice Total Calculation */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-white font-black">Invoice Total</span>
+                        <span className="text-white font-black">
+                          AED {(parseFloat(priceInput || "0") + billableTotal + extraChargesTotal).toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-amber-300 font-bold mt-1">⚠️ Enter cleaning cost only. Extra items and damages are added separately in the final invoice.</p>
                     </div>
+
                     <div className="flex flex-col md:flex-row gap-4 relative z-10">
                       <div className="flex-1 relative">
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-400 text-sm">AED</span>

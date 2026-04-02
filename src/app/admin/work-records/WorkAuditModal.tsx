@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Clock, Camera, FileCheck, CircleDollarSign, CheckSquare,
   PackagePlus, CheckCircle2, AlertCircle, Building2, Calendar,
-  Users, ShieldCheck, Layers, Shirt, Droplets, Sparkles,
+  Users, ShieldCheck, Layers, Shirt, Droplets,
   AlertTriangle, Hash, ChevronDown, Receipt, Coffee,
-  ArrowRight, Boxes, Tag, Search
+  ArrowRight, Tag, Search
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO } from "date-fns";
 
@@ -265,6 +265,8 @@ export default function WorkAuditModal({
 
   const workLog      = booking.work_logs?.[0];
   const inventoryLogs: any[] = booking.booking_inventory_logs || [];
+  const extraCharges: any[]  = booking.booking_extra_added_charges || [];
+
   const companyName  = Array.isArray(booking.units?.companies)
     ? booking.units.companies[0]?.name : booking.units?.companies?.name;
 
@@ -272,6 +274,7 @@ export default function WorkAuditModal({
   const refillables = inventoryLogs.filter(i => i.equipment_master?.item_type === "refillable");
   const consumables = inventoryLogs.filter(i => i.equipment_master?.item_type === "consumable");
 
+  // Calcs for Extra Inventory & Added Charges
   const billableItems = useMemo(() => {
     return inventoryLogs.filter(i => i.extra_provided_qty > 0).map(i => {
       const config = unitConfigs.find(
@@ -285,6 +288,8 @@ export default function WorkAuditModal({
   }, [inventoryLogs, unitConfigs, booking.unit_id]);
 
   const billableTotal = billableItems.reduce((sum, i) => sum + i.total, 0);
+  const extraChargesTotal = extraCharges.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+  const grandTotal = Number(booking.price || 0) + billableTotal + extraChargesTotal;
 
   const invSummary = useMemo(() => ({
     shortageItems:    inventoryLogs.filter(i => (i.shortage_qty || 0) > 0).length,
@@ -365,33 +370,6 @@ export default function WorkAuditModal({
             </span>
           </div>
         </div>
-
-        {/* Stat pills */}
-        <div className='px-6 md:px-10 pb-4 flex gap-3 overflow-x-auto no-scrollbar'>
-          {[
-            { icon: <Clock size={13} className='text-blue-300' />,     label: "Duration", value: workLog ? getDuration(workLog.start_time, workLog.end_time) : "No Log" },
-            { icon: <Camera size={13} className='text-blue-300' />,    label: "Photos",   value: `${(workLog?.before_photos?.length || 0) + (workLog?.photo_urls?.length || 0)} Total` },
-            { icon: <Boxes size={13} className='text-blue-300' />,     label: "Items",    value: `${invSummary.totalItems} tracked` },
-            ...(invSummary.shortageItems > 0 ? [{ icon: <AlertTriangle size={13} className='text-red-300' />, label: "Shortage", value: `${invSummary.shortageItems} linens` }] : []),
-            ...(invSummary.missingRefill > 0 ? [{ icon: <AlertTriangle size={13} className='text-amber-300' />, label: "Missing", value: `${invSummary.missingRefill} dispensers` }] : []),
-            ...(invSummary.consumableCollected > 0 ? [{ 
-              icon: <Coffee size={13} className='text-emerald-300' />, 
-              label: "Amenities", 
-              value: `${invSummary.consumableCollected} to stock` 
-            }] : []),
-            { icon: <PackagePlus size={13} className='text-purple-300' />, label: "Extra", value: `${billableItems.length} billable` },
-            ...(billableTotal > 0 ? [{ icon: <CircleDollarSign size={13} className='text-emerald-300' />, label: "Billable", value: `AED ${billableTotal.toFixed(2)}` }] : []),
-            ...(booking.price > 0 ? [{ icon: <Receipt size={13} className='text-blue-300' />, label: "Final Price", value: `AED ${booking.price}` }] : []),
-          ].map((s, i) => (
-            <div key={i} className='flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2.5 shrink-0 border border-white/10'>
-              {s.icon}
-              <div>
-                <p className='text-[8px] font-black text-white/40 uppercase tracking-widest'>{s.label}</p>
-                <p className='text-sm font-black text-white'>{s.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* ── TABS ───────────────────────────────────────────────────────────── */}
@@ -429,15 +407,14 @@ export default function WorkAuditModal({
                     <p className='text-sm font-bold text-gray-500 mt-0.5 flex items-center gap-1'><Clock size={12} /> {booking.cleaning_time || "N/A"}</p>
                     {booking.booking_ref && <p className='text-sm font-black text-indigo-600 mt-1 flex items-center gap-1'><Hash size={12} /> {booking.booking_ref}</p>}
                   </div>
-                  <div className='border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6'>
-                    <p className='text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1'><Users size={10} /> Team</p>
-                    <p className='font-black text-gray-900'>{booking.teams?.team_name || "Unassigned"}</p>
-                    {workLog?.agent && (
-                      <p className='text-sm font-bold text-gray-500 mt-1'>By <span className='text-gray-900'>{workLog.agent.full_name}</span></p>
-                    )}
-                    {booking.price > 0 && (
-                      <p className='text-sm font-black text-emerald-700 mt-2'>Final: AED {booking.price}</p>
-                    )}
+                  <div className='border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 flex flex-col justify-between'>
+                    <div>
+                      <p className='text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1'><Users size={10} /> Team</p>
+                      <p className='font-black text-gray-900'>{booking.teams?.team_name || "Unassigned"}</p>
+                      {workLog?.agent && (
+                        <p className='text-sm font-bold text-gray-500 mt-1'>By <span className='text-gray-900'>{workLog.agent.full_name}</span></p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -470,7 +447,7 @@ export default function WorkAuditModal({
                       <PhotoGrid photos={workLog.photo_urls || []} label='After Cleaning' />
                     </div>
 
-                    {/* 🚨 NEW: Damaged Items 🚨 */}
+                    {/* 🚨 Damaged Items 🚨 */}
                     {workLog.damaged_items && (
                       <div className='bg-red-50 rounded-3xl border border-red-200 shadow-sm p-6 space-y-4'>
                         <p className='text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2'>
@@ -489,7 +466,7 @@ export default function WorkAuditModal({
                       </div>
                     )}
 
-                    {/* 🚨 NEW: Lost & Found Items 🚨 */}
+                    {/* 🚨 Lost & Found Items 🚨 */}
                     {workLog.lost_found_items && (
                       <div className='bg-amber-50 rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4'>
                         <p className='text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2'>
@@ -507,15 +484,74 @@ export default function WorkAuditModal({
                         )}
                       </div>
                     )}
-                    
+
                   </>
                 ) : (
                   <div className="p-10 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center gap-3 text-center">
                     <AlertCircle size={48} className="text-red-400 opacity-80" />
                     <p className="text-xl font-black text-red-600">Work Log Not Found</p>
                     <p className="text-sm text-red-400">The team marked this booking but no work log was submitted.</p>
+                  </div>
+                )}
+
+                {/* 🚨 NEW: Billing & Charges Details (Separated from top section) 🚨 */}
+                <div className='bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4 mt-6'>
+                  <p className='text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2'>
+                    <Receipt size={14} /> Billing & Charges Details
+                  </p>
+
+                  <div className='space-y-3'>
+                    {/* Main Booking Price */}
+                    <div className='flex justify-between items-center bg-gray-50 p-3.5 rounded-xl border border-gray-100'>
+                      <span className='text-sm font-bold text-gray-600 flex items-center gap-2'>
+                        <div className='w-2 h-2 rounded-full bg-blue-400'/> Main Cleaning Price
+                      </span>
+                      <span className='font-black text-gray-900 text-base'>AED {Number(booking.price || 0).toFixed(2)}</span>
                     </div>
-                  )}
+
+                    {/* Extra Inventory Billed */}
+                    {billableTotal > 0 && (
+                      <div className='flex justify-between items-center bg-indigo-50 p-3.5 rounded-xl border border-indigo-100'>
+                        <span className='text-sm font-bold text-indigo-700 flex items-center gap-2'>
+                          <div className='w-2 h-2 rounded-full bg-indigo-400'/> Extra Inventory Provided
+                        </span>
+                        <span className='font-black text-indigo-900 text-base'>AED {billableTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {/* Damage Charges */}
+                    {extraCharges.filter(c => c.charge_type === 'damage').length > 0 && (
+                      <div className='flex justify-between items-center bg-red-50 p-3.5 rounded-xl border border-red-100'>
+                        <span className='text-sm font-bold text-red-700 flex items-center gap-2'>
+                          <div className='w-2 h-2 rounded-full bg-red-400'/> Damaged Items Charges
+                        </span>
+                        <span className='font-black text-red-900 text-base'>
+                          AED {extraCharges.filter(c => c.charge_type === 'damage').reduce((s, c) => s + Number(c.amount), 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Manual/Custom Charges */}
+                    {extraCharges.filter(c => c.charge_type === 'manual').length > 0 && (
+                      <div className='flex justify-between items-center bg-orange-50 p-3.5 rounded-xl border border-orange-100'>
+                        <span className='text-sm font-bold text-orange-700 flex items-center gap-2'>
+                          <div className='w-2 h-2 rounded-full bg-orange-400'/> Custom / Manual Charges
+                        </span>
+                        <span className='font-black text-orange-900 text-base'>
+                          AED {extraCharges.filter(c => c.charge_type === 'manual').reduce((s, c) => s + Number(c.amount), 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className='h-px bg-gray-100 my-4' />
+
+                  {/* Grand Total */}
+                  <div className='flex justify-between items-center bg-gray-900 p-5 rounded-2xl shadow-md'>
+                    <span className='text-sm font-black text-white uppercase tracking-widest'>Grand Total Invoice</span>
+                    <span className='text-2xl font-black text-emerald-400'>AED {grandTotal.toFixed(2)}</span>
+                  </div>
+                </div>
               </>
             )}
 
@@ -574,9 +610,9 @@ export default function WorkAuditModal({
 
                     {/* Billable summary — VIEW ONLY */}
                     {billableItems.length > 0 && (
-                      <div className='bg-white rounded-3xl border border-purple-200 shadow-sm overflow-hidden'>
-                        <div className='bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-4 flex items-center gap-2'>
-                          <CircleDollarSign size={18} className='text-white' />
+                      <div className='bg-white rounded-3xl border border-indigo-200 shadow-sm overflow-hidden'>
+                        <div className='bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center gap-2'>
+                          <PackagePlus size={18} className='text-white' />
                           <span className='font-black text-white text-sm'>Extra Provided — Billable Summary</span>
                           {billableTotal > 0 && (
                             <span className='ml-auto text-sm font-black bg-white/20 text-white px-3 py-1 rounded-xl'>
@@ -596,7 +632,7 @@ export default function WorkAuditModal({
                             </thead>
                             <tbody className='divide-y divide-gray-50'>
                               {billableItems.map((item: any) => (
-                                <tr key={`bill-${item.id}`} className='hover:bg-purple-50/30 transition-colors'>
+                                <tr key={`bill-${item.id}`} className='hover:bg-indigo-50/30 transition-colors'>
                                   <td className='px-4 py-3.5'>
                                     <div className='flex items-center gap-2'>
                                       {item.equipment_master?.item_type === "returnable" ? <Shirt size={12} className='text-orange-400' /> : item.equipment_master?.item_type === "refillable" ? <Droplets size={12} className='text-blue-400' /> : <Coffee size={12} className='text-emerald-400' />}
@@ -608,13 +644,13 @@ export default function WorkAuditModal({
                                       </p>
                                     )}
                                     {item.supervisor_price != null && (
-                                      <p className='text-[9px] font-black text-purple-500 mt-0.5 flex items-center gap-1'>
+                                      <p className='text-[9px] font-black text-indigo-500 mt-0.5 flex items-center gap-1'>
                                         <ShieldCheck size={9} /> Supervisor price applied
                                       </p>
                                     )}
                                   </td>
                                   <td className='px-4 py-3.5 text-center'>
-                                    <span className='text-sm font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100'>+{item.extra_provided_qty}</span>
+                                    <span className='text-sm font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100'>+{item.extra_provided_qty}</span>
                                   </td>
                                   <td className='px-4 py-3.5 text-center'>
                                     {item.isPriced
@@ -633,10 +669,57 @@ export default function WorkAuditModal({
                             </tbody>
                             {billableTotal > 0 && (
                               <tfoot>
-                                <tr className='bg-purple-50 border-t-2 border-purple-100'>
-                                  <td colSpan={3} className='px-4 py-3.5 text-sm font-black text-purple-700'>Grand Total Billable</td>
-                                  <td className='px-4 py-3.5 text-right text-xl font-black text-purple-700'>
+                                <tr className='bg-indigo-50 border-t-2 border-indigo-100'>
+                                  <td colSpan={3} className='px-4 py-3.5 text-sm font-black text-indigo-700'>Inventory Billable Total</td>
+                                  <td className='px-4 py-3.5 text-right text-xl font-black text-indigo-700'>
                                     {billableTotal.toFixed(2)} <span className='text-sm'>AED</span>
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            )}
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* View Only Extra Added Charges (Manual/Damaged) */}
+                    {extraCharges.length > 0 && (
+                      <div className='bg-white rounded-3xl border border-orange-200 shadow-sm overflow-hidden mt-4'>
+                        <div className='bg-gradient-to-r from-orange-500 to-red-500 px-5 py-4 flex items-center gap-2'>
+                          <AlertTriangle size={18} className='text-white' />
+                          <span className='font-black text-white text-sm'>Extra Added Charges (Damage & Manual)</span>
+                          <span className='ml-auto text-sm font-black bg-white/20 text-white px-3 py-1 rounded-xl'>
+                            Total: AED {extraChargesTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className='overflow-x-auto'>
+                          <table className='w-full text-left text-sm'>
+                            <thead className='bg-gray-50 border-b border-gray-100'>
+                              <tr>
+                                <th className='px-4 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider w-24'>Type</th>
+                                <th className='px-4 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider'>Description</th>
+                                <th className='px-4 py-3 text-[10px] font-black uppercase text-gray-400 tracking-wider text-right'>Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className='divide-y divide-gray-50'>
+                              {extraCharges.map((charge: any) => (
+                                <tr key={charge.id} className='hover:bg-orange-50/30 transition-colors'>
+                                  <td className='px-4 py-3.5'>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${charge.charge_type === 'damage' ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                                      {charge.charge_type === 'damage' ? '🔥 DMG' : '✏️ Manual'}
+                                    </span>
+                                  </td>
+                                  <td className='px-4 py-3.5 font-bold text-gray-800'>{charge.item_description}</td>
+                                  <td className='px-4 py-3.5 text-right font-black text-gray-900'>{Number(charge.amount).toFixed(2)} <span className='text-xs text-gray-400'>AED</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            {extraChargesTotal > 0 && (
+                              <tfoot>
+                                <tr className='bg-orange-50 border-t-2 border-orange-100'>
+                                  <td colSpan={2} className='px-4 py-3.5 text-sm font-black text-orange-700'>Charges Total</td>
+                                  <td className='px-4 py-3.5 text-right text-xl font-black text-orange-700'>
+                                    {extraChargesTotal.toFixed(2)} <span className='text-sm'>AED</span>
                                   </td>
                                 </tr>
                               </tfoot>

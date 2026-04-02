@@ -4,9 +4,10 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Home, Users, CheckCircle2, AlertCircle, 
-  Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList 
+  Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList,
+  Search, Zap, RotateCcw
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import toast, { Toaster } from 'react-hot-toast';
 
 // --- Types ---
@@ -23,34 +24,47 @@ type Booking = {
   assigned_team_id: number | null;
   checklist_template_id: number | null;
   units: {
-    id: number;           // 🚨 NEW
-    company_id: number;   // 🚨 NEW
+    id: number;
+    company_id: number;
     unit_number: string;
     building_name: string;
-    companies: { id: number, name: string } // 🚨 NEW
+    companies: { id: number, name: string }
   };
   teams?: { team_name: string };
   checklist_templates?: { title: string };
 };
 
+type Team = {
+  id: number;
+  team_name: string;
+  shift_date: string;
+};
 
 export default function BookingManagement() {
   const supabase = createClient();
-  
+
   // States
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
-  const [activeTeams, setActiveTeams] = useState<any[]>([]);
+  const [activeTeams, setActiveTeams] = useState<Team[]>([]);
   const [checklists, setChecklists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // UI States
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
-  
+  // UPGRADE 4: Activate/Undo loading state
+  const [activatingId, setActivatingId] = useState<number | null>(null);
+  // UPGRADE 8: Save button loading state
+  const [saving, setSaving] = useState(false);
+
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
-  const [filterDate, setFilterDate] = useState("");
+  // UPGRADE 2: Search bar state
+  const [searchQuery, setSearchQuery] = useState("");
+  // UPGRADE 1: Date range (replaces single filterDate)
+  const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [filterCompany, setFilterCompany] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
@@ -71,7 +85,7 @@ export default function BookingManagement() {
 
   // Edit States
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isEditCustomService, setIsEditCustomService] = useState(false); // 🚨 NEW
+  const [isEditCustomService, setIsEditCustomService] = useState(false);
   const [editData, setEditData] = useState<{
     id: number,
     company_id: string,
@@ -84,28 +98,25 @@ export default function BookingManagement() {
     checklist_template_id: string
   } | null>(null);
 
-  // 🚨 NEW: Load Units when Edit Company is selected
+  // UPGRADE 3: Fetch ALL static data once on mount
   useEffect(() => {
-    if (isEditOpen && editData?.company_id) {
-      const fetchUnits = async () => {
-        const { data } = await supabase.from("units").select("*").eq("company_id", editData.company_id);
-        if (data) setUnits(data);
-      };
-      fetchUnits();
-    }
-  }, [editData?.company_id, isEditOpen, supabase]);
+    const fetchStaticData = async () => {
+      const [companiesRes, unitsRes, checklistsRes, teamsRes] = await Promise.all([
+        supabase.from('companies').select('*').order('name'),
+        supabase.from('units').select('*'),
+        supabase.from('checklist_templates').select('id, title'),
+        supabase.from('teams').select('id, team_name, shift_date').eq('status', 'active')
+      ]);
+      if (companiesRes.data) setCompanies(companiesRes.data);
+      if (unitsRes.data) setUnits(unitsRes.data);
+      if (checklistsRes.data) setChecklists(checklistsRes.data);
+      if (teamsRes.data) setActiveTeams(teamsRes.data as Team[]);
+    };
+    fetchStaticData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-
-  const fetchInitialData = async () => {
-    const { data: compData } = await supabase.from("companies").select("*");
-    const { data: teamData } = await supabase.from("teams").select("*").eq("status", "active");
-    const { data: listData } = await supabase.from("checklist_templates").select("id, title");
-    
-    if (compData) setCompanies(compData);
-    if (teamData) setActiveTeams(teamData);
-    if (listData) setChecklists(listData);
-  };
-
+  // UPGRADE 1: Fetch bookings by date range
   const fetchBookings = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -113,21 +124,35 @@ export default function BookingManagement() {
       .select(`
         id, booking_ref, created_at, unit_id, cleaning_date, cleaning_time, service_type, status, price, assigned_team_id, checklist_template_id,
         units ( 
-          id,
-          company_id,
-          unit_number,
-          building_name,
+          id, company_id, unit_number, building_name,
           companies ( id, name )
         ),
         teams:assigned_team_id ( team_name ),
         checklist_templates ( title )
       `)
-      .order("cleaning_date", { ascending: false });
+      .gte('cleaning_date', dateFrom)
+      .lte('cleaning_date', dateTo)
+      .order("cleaning_date", { ascending: false })
+      .order("cleaning_time", { ascending: true });
+
     if (data) setBookings(data as any);
+    if (error) toast.error("Failed to load bookings");
     setLoading(false);
   };
 
-  // 🚨 NEW: Function to check if a team is already assigned on a specific date
+  // Re-fetch when date range changes
+  useEffect(() => {
+    if (dateFrom && dateTo) fetchBookings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom, dateTo]);
+
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenuId(null);
+    if(activeMenuId !== null) window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [activeMenuId]);
+
+  // UPGRADE 5: Team availability check
   const getTeamAssignmentAlert = (teamId: number, date: string, currentBookingId?: number) => {
     const isBusy = bookings.some(b => 
       b.assigned_team_id === teamId && 
@@ -138,152 +163,150 @@ export default function BookingManagement() {
     return isBusy ? " (Assigned with another booking)" : "";
   };
 
+  // UPGRADE 5: Teams available for selected add-form date
+  const availableTeamsForAddDate = useMemo(() => {
+    if (!formData.cleaning_date) return [];
+    return activeTeams.filter(t => t.shift_date === formData.cleaning_date);
+  }, [activeTeams, formData.cleaning_date]);
 
-  // 1. Initial Data Fetch
-  useEffect(() => {
-    fetchBookings();
-    fetchInitialData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // UPGRADE 5: Teams available for selected edit-form date
+  const availableTeamsForEditDate = useMemo(() => {
+    if (!editData?.cleaning_date) return [];
+    return activeTeams.filter(t => t.shift_date === editData.cleaning_date);
+  }, [activeTeams, editData?.cleaning_date]);
 
-  useEffect(() => {
-    const handleClickOutside = () => setActiveMenuId(null);
-    if(activeMenuId !== null) window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
-  }, [activeMenuId]);
+  // 3. Add Booking
+  const handleAddBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await supabase.from('bookings').insert([{
+      unit_id: formData.unit_id,
+      cleaning_date: formData.cleaning_date,
+      cleaning_time: formData.cleaning_time,
+      service_type: formData.service_type,
+      assigned_team_id: formData.assigned_team_id || null,
+      checklist_template_id: formData.checklist_template_id || null,
+      price: formData.price ? parseFloat(formData.price) : 0,
+      status: 'pending'
+    }]);
 
-  // 2. Load Units when Company is selected
-  useEffect(() => {
-    if (formData.company_id) {
-      const fetchUnits = async () => {
-        const { data } = await supabase
-          .from("units")
-          .select("*")
-          .eq("company_id", formData.company_id);
-        if (data) setUnits(data);
-      };
-      fetchUnits();
+    if (!error) {
+      toast.success("Booking recorded!");
+      fetchBookings();
+      setIsAddOpen(false);
+      setFormData({ ...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: "" });
+    } else {
+      toast.error("Error creating: " + error.message);
     }
-  }, [formData.company_id, supabase]);
+    setSaving(false);
+  };
 
-    // 3. Add Booking (ID generation is now handled by Supabase trigger)
-    const handleAddBooking = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const { error } = await supabase.from('bookings').insert([{
-            unit_id: formData.unit_id,
-            cleaning_date: formData.cleaning_date,
-            cleaning_time: formData.cleaning_time,
-            service_type: formData.service_type,
-            assigned_team_id: formData.assigned_team_id || null,
-            checklist_template_id: formData.checklist_template_id || null,
-            price: formData.price ? parseFloat(formData.price) : 0,
-            status: 'pending'
-        }]);
+  // 4. Update Booking
+  const handleUpdateBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editData) return;
+    setSaving(true);
 
-        if (!error) {
-            toast.success("Booking recorded!");
-            fetchBookings();
-            setIsAddOpen(false);
-            setFormData({ ...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: "" });
-        } else {
-            toast.error("Error creating: " + error.message);
-        }
-    };
+    const { error } = await supabase.from('bookings').update({
+      unit_id: parseInt(editData.unit_id),
+      cleaning_date: editData.cleaning_date,
+      cleaning_time: editData.cleaning_time,
+      service_type: editData.service_type,
+      price: parseFloat(editData.price) || 0,
+      assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
+      checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
+    }).eq('id', editData.id);
 
-    // 4. Update Booking
-    const handleUpdateBooking = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editData) return;
-
-        const { error } = await supabase.from('bookings').update({
-            unit_id: parseInt(editData.unit_id),
-            cleaning_date: editData.cleaning_date,
-            cleaning_time: editData.cleaning_time,
-            service_type: editData.service_type,
-            price: parseFloat(editData.price) || 0,
-            assigned_team_id: editData.assigned_team_id ? parseInt(editData.assigned_team_id) : null,
-            checklist_template_id: editData.checklist_template_id ? parseInt(editData.checklist_template_id) : null
-        }).eq('id', editData.id);
-
-        if (!error) {
-            toast.success("Updated successfully!");
-            fetchBookings();
-            setIsEditOpen(false);
-        } else {
-            toast.error("Error updating: " + error.message);
-        }
-    };
-
+    if (!error) {
+      toast.success("Updated successfully!");
+      fetchBookings();
+      setIsEditOpen(false);
+    } else {
+      toast.error("Error updating: " + error.message);
+    }
+    setSaving(false);
+  };
 
   // 5. Delete Booking
-  // নতুন:
-const handleDeleteBooking = (id: number) => {
-  toast((t) => (
-    <div className="flex flex-col gap-3">
-      <p className="font-bold text-gray-800 text-sm">Are you sure you want to delete this record?</p>
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => toast.dismiss(t.id)}
-          className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-black"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={async () => {
-            toast.dismiss(t.id);
-            const { error } = await supabase.from("bookings").delete().eq("id", id);
-            if (!error) {
-              setBookings(prev => prev.filter(b => b.id !== id));
-              toast.success("Deleted!", { duration: 3000 });
-            } else {
-              toast.error("Error: " + error.message, { duration: 3000 });
-            }
-          }}
-          className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-black"
-        >
-          Delete
-        </button>
+  const handleDeleteBooking = (id: number) => {
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <p className="font-bold text-gray-800 text-sm">Are you sure you want to delete this record?</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => toast.dismiss(t.id)} className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-black">Cancel</button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const { error } = await supabase.from("bookings").delete().eq("id", id);
+              if (!error) { setBookings(prev => prev.filter(b => b.id !== id)); toast.success("Deleted!", { duration: 3000 }); }
+              else toast.error("Error: " + error.message, { duration: 3000 });
+            }}
+            className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-black"
+          >Delete</button>
+        </div>
       </div>
-    </div>
-  ), { duration: 8000 });
-};
+    ), { duration: 8000 });
+  };
 
-  // 6. Filters & Grouping Logic
-  const filteredBookings = bookings.filter(b => {
-    let match = true;
-    if (filterDate && b.cleaning_date !== filterDate) match = false;
-    if (filterCompany && b.units?.companies?.name !== filterCompany) match = false;
-    if (filterStatus && b.status !== filterStatus) match = false;
-    return match;
-  });
+  // UPGRADE 4: Toggle Activation with Optimistic UI
+  const handleToggleActivation = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'pending' ? 'active' : 'pending';
+    setActivatingId(id);
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
+
+    const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', id);
+    if (error) {
+      toast.error("Failed to update status. Reverting...");
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: currentStatus } : b));
+    } else {
+      toast.success(`Booking ${newStatus === 'active' ? 'Activated' : 'reverted to Pending'}!`, {
+        icon: newStatus === 'active' ? '⚡' : '🔄', duration: 3000
+      });
+    }
+    setActivatingId(null);
+  };
+
+  // 6. Filters — UPGRADE 2 (search) + UPGRADE 6 (extended statuses)
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(b => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q ||
+        b.booking_ref?.toLowerCase().includes(q) ||
+        b.units?.companies?.name?.toLowerCase().includes(q) ||
+        b.units?.unit_number?.toLowerCase().includes(q) ||
+        b.units?.building_name?.toLowerCase().includes(q);
+
+      const matchesCompany = !filterCompany || b.units?.companies?.name === filterCompany;
+      const matchesStatus = !filterStatus || b.status === filterStatus;
+
+      return matchesSearch && matchesCompany && matchesStatus;
+    });
+  }, [bookings, searchQuery, filterCompany, filterStatus]);
 
   const clearFilters = () => {
-    setFilterDate("");
+    setSearchQuery("");
     setFilterCompany("");
     setFilterStatus("");
   };
 
-  // 🚨 Group by Date
   const groupedBookings = useMemo(() => {
     const groups: Record<string, Booking[]> = {};
     filteredBookings.forEach(b => {
       if (!groups[b.cleaning_date]) groups[b.cleaning_date] = [];
       groups[b.cleaning_date].push(b);
     });
-    // 🚨 এরপর প্রতিটি গ্রুপের ভেতরের বুকিংগুলোকে created_at অনুযায়ী সর্ট করা হচ্ছে (নতুনটা উপরে)
     Object.keys(groups).forEach(date => {
       groups[date].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     });
-
     return groups;
   }, [filteredBookings]);
 
-  // Sort dates descending (Newest first)
   const sortedDates = Object.keys(groupedBookings).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   return (
     <div className="min-h-screen pb-10">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
+
       {/* Header (Original Design Preserved) */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div>
@@ -306,7 +329,19 @@ const handleDeleteBooking = (id: number) => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* UPGRADE 2: Always-visible Search Bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type="text"
+          placeholder="Search by Ref, Company, Unit or Building..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 transition-all"
+        />
+      </div>
+
+      {/* Filters Panel (Original design + UPGRADE 1: Date Range) */}
       <AnimatePresence>
         {showFilters && (
           <motion.div 
@@ -315,10 +350,17 @@ const handleDeleteBooking = (id: number) => {
             exit={{ opacity: 0, height: 0 }}
             className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              {/* UPGRADE 1: Date From */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date From</label>
                 <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
-                  value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
+                  value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              </div>
+              {/* UPGRADE 1: Date To */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date To</label>
+                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
+                  value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Company</label>
@@ -328,17 +370,20 @@ const handleDeleteBooking = (id: number) => {
                   {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
+              {/* UPGRADE 6: Extended status options */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Status</label>
                 <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500"
                   value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
-                  <option value="active">Active (In Progress)</option>
+                  <option value="active">Active (Live)</option>
+                  <option value="in_progress">In Progress</option>
                   <option value="completed">Completed</option>
+                  <option value="finalized">Finalized</option>
                 </select>
               </div>
-              <div>
+              <div className="md:col-span-4">
                 <button onClick={clearFilters} className="w-full py-2.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg font-bold flex justify-center items-center gap-2 transition-all">
                   <FilterX size={18} /> Clear Filters
                 </button>
@@ -348,23 +393,22 @@ const handleDeleteBooking = (id: number) => {
         )}
       </AnimatePresence>
 
-      {/* Bookings List (Grouped by Date) */}
+      {/* Bookings List (Grouped by Date) — Original design preserved */}
       {loading ? (
         <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
       ) : filteredBookings.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
           <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
           <h3 className="text-gray-500 font-bold">No bookings found</h3>
+          <p className="text-sm text-gray-400 mt-1">Try adjusting your dates or filters.</p>
         </div>
       ) : (
         <div className="space-y-8">
-{sortedDates.map(date => {
-            // Sort by created_at (Recent first) within the date group
-            const dayBookings = groupedBookings[date].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            
+          {sortedDates.map(date => {
+            const dayBookings = groupedBookings[date];
             return (
               <div key={date} className="space-y-4">
-                {/* Date Header using original styling format */}
+                {/* Date Header */}
                 <div className="flex items-center gap-3 pl-2">
                   <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar size={18} /></div>
                   <h2 className="text-lg font-bold text-gray-800">{format(parseISO(date), 'EEEE, dd MMM yyyy')}</h2>
@@ -383,13 +427,11 @@ const handleDeleteBooking = (id: number) => {
                         <Home size={24} />
                       </div>
                       <div className="overflow-hidden">
-                        {/* 🌟 Recently Added Time (Created At) */}
                         <div className="mb-2">
                           <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                             Added: {format(parseISO(booking.created_at), 'hh:mm a')}
                           </span>
                         </div>
-                        {/* Booking Ref Badge */}
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider">
                           {booking.booking_ref || `ID-${booking.id}`}
                         </span>
@@ -398,10 +440,10 @@ const handleDeleteBooking = (id: number) => {
                       </div>
                     </div>
 
-                    {/* 🚨 FINAL FIX: RIGHT SIDE (Perfectly aligned & responsive) */}
+                    {/* Right Side Info */}
                     <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-4 mt-4 md:mt-0 shrink-0">
-                      
-                      {/* 1. Time */}
+
+                      {/* Time */}
                       <div className="md:w-[80px] shrink-0">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time</p>
                         <p className="text-xs font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
@@ -409,7 +451,7 @@ const handleDeleteBooking = (id: number) => {
                         </p>
                       </div>
 
-                      {/* 2. Service & Checklist */}
+                      {/* Service & Checklist */}
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service</p>
                         <p className="text-sm font-semibold text-gray-900 truncate">{booking.service_type}</p>
@@ -422,7 +464,7 @@ const handleDeleteBooking = (id: number) => {
                         )}
                       </div>
 
-                      {/* 3. Assigned Team */}
+                      {/* Team */}
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Team</p>
                         {booking.teams ? (
@@ -430,67 +472,98 @@ const handleDeleteBooking = (id: number) => {
                             <Users size={14} className="shrink-0" /> <span className="truncate">{booking.teams.team_name}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit truncate">
+                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit">
                             <AlertCircle size={14} className="shrink-0" /> Unassigned
                           </span>
                         )}
                       </div>
 
-                      {/* 4. Price & Status Column */}
+                      {/* Price & Status */}
                       <div className="md:w-[90px] shrink-0 flex flex-col items-start md:items-end gap-2 col-span-2 md:col-span-1">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {/* UPGRADE 6: Extended status colors */}
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                          ['completed', 'finalized'].includes(booking.status) ? 'bg-green-100 text-green-700' :
+                          booking.status === 'in_progress' ? 'bg-violet-100 text-violet-700' :
+                          booking.status === 'active' ? 'bg-blue-100 text-blue-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
                           {booking.status}
                         </span>
-                        
+
                         {booking.price > 0 ? (
                           <p className="text-xs text-green-600 font-black tracking-wide truncate">AED {booking.price}</p>
                         ) : (
-                          <p className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1 truncate">
+                          <p className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1">
                             <AlertCircle size={10} className="shrink-0" /> No Price
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* 3 Dot Menu */}
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                        <MoreVertical size={20} />
-                      </button>
-                      
-                      {activeMenuId === booking.id && (
-                        <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
-                          <button 
-                            onClick={() => {
-                              const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
-                              setIsEditCustomService(isCustom);
-                              setEditData({ 
-                                id: booking.id, 
-                                company_id: booking.units?.company_id?.toString() || "",
-                                unit_id: booking.unit_id?.toString() || "",
-                                cleaning_date: booking.cleaning_date || "",
-                                cleaning_time: booking.cleaning_time || "",
-                                service_type: booking.service_type || "",
-                                price: booking.price?.toString() || "",
-                                assigned_team_id: booking.assigned_team_id?.toString() || "",
-                                checklist_template_id: booking.checklist_template_id?.toString() || "" 
-                              });
-                              setIsEditOpen(true);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
-                            <Edit2 size={16} /> Edit Details
-                          </button>
-
-                          <button 
-                            onClick={() => handleDeleteBooking(booking.id)}
-                            className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
-                            <Trash2 size={16} /> Delete
-                          </button>
-                        </div>
+                    {/* UPGRADE 4: Activate/Undo + 3-dot menu */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {booking.status === 'pending' && (
+                        <button
+                          onClick={() => handleToggleActivation(booking.id, 'pending')}
+                          disabled={activatingId === booking.id}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-70 active:scale-95"
+                        >
+                          {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <Zap size={14} className="fill-white"/>}
+                          Activate
+                        </button>
                       )}
+
+                      {booking.status === 'active' && (
+                        <button
+                          onClick={() => handleToggleActivation(booking.id, 'active')}
+                          disabled={activatingId === booking.id}
+                          className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95"
+                        >
+                          {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>}
+                          Active <RotateCcw size={11} className="ml-0.5 text-blue-400"/>
+                        </button>
+                      )}
+
+                      {/* 3 Dot Menu */}
+                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
+                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                          <MoreVertical size={20} />
+                        </button>
+
+                        {activeMenuId === booking.id && (
+                          <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
+                            <button 
+                              onClick={() => {
+                                const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
+                                setIsEditCustomService(isCustom);
+                                setEditData({ 
+                                  id: booking.id, 
+                                  company_id: booking.units?.company_id?.toString() || "",
+                                  unit_id: booking.unit_id?.toString() || "",
+                                  cleaning_date: booking.cleaning_date || "",
+                                  cleaning_time: booking.cleaning_time || "",
+                                  service_type: booking.service_type || "",
+                                  price: booking.price?.toString() || "",
+                                  assigned_team_id: booking.assigned_team_id?.toString() || "",
+                                  checklist_template_id: booking.checklist_template_id?.toString() || "" 
+                                });
+                                setIsEditOpen(true);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
+                              <Edit2 size={16} /> Edit Details
+                            </button>
+
+                            <button 
+                              onClick={() => handleDeleteBooking(booking.id)}
+                              className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
+                              <Trash2 size={16} /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -500,7 +573,7 @@ const handleDeleteBooking = (id: number) => {
         </div>
       )}
 
-      {/* --- ADD BOOKING MODAL (Original form preserved) --- */}
+      {/* --- ADD BOOKING MODAL --- */}
       <AnimatePresence>
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -520,16 +593,20 @@ const handleDeleteBooking = (id: number) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
-                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" onChange={(e) => setFormData({...formData, company_id: e.target.value})}>
+                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      onChange={(e) => setFormData({...formData, company_id: e.target.value, unit_id: ""})}>
                       <option value="">Select Company</option>
                       {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
-                    <select required disabled={!formData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium" onChange={(e) => setFormData({...formData, unit_id: e.target.value})}>
+                    <select required disabled={!formData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium"
+                      onChange={(e) => setFormData({...formData, unit_id: e.target.value})}>
                       <option value="">Select Unit</option>
-                      {units.filter(u => u.company_id.toString() === formData.company_id).map(u => <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>)}
+                      {units.filter(u => u.company_id.toString() === formData.company_id).map(u => (
+                        <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -537,17 +614,23 @@ const handleDeleteBooking = (id: number) => {
                 <div className="grid grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={formData.cleaning_date} onChange={(e) => setFormData({...formData, cleaning_date: e.target.value})} />
+                    {/* UPGRADE 7: Reset team on date change */}
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={formData.cleaning_date}
+                      onChange={(e) => setFormData({...formData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={formData.cleaning_time} onChange={(e) => setFormData({...formData, cleaning_time: e.target.value})} />
+                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={formData.cleaning_time} onChange={(e) => setFormData({...formData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={isCustomService ? "Other" : formData.service_type} onChange={(e) => {
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    value={isCustomService ? "Other" : formData.service_type}
+                    onChange={(e) => {
                       if (e.target.value === "Other") { setIsCustomService(true); setFormData({...formData, service_type: ""}); } 
                       else { setIsCustomService(false); setFormData({...formData, service_type: e.target.value}); }
                     }}>
@@ -559,52 +642,69 @@ const handleDeleteBooking = (id: number) => {
                   </select>
                   {isCustomService && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
-                      <input type="text" required={isCustomService} placeholder="Enter service name..." className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={formData.service_type} onChange={(e) => setFormData({...formData, service_type: e.target.value})} />
+                      <input type="text" required={isCustomService} placeholder="Enter service name..."
+                        className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                        value={formData.service_type} onChange={(e) => setFormData({...formData, service_type: e.target.value})} />
                     </motion.div>
                   )}
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
-                  <select 
-                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                     onChange={(e) => setFormData({...formData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                   </select>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Price (AED) - Optional</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign Team (Later)</label>
-                    <select 
-                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" 
-                      onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}
-                      value={formData.assigned_team_id}
-                    >
-                      <option value="">Unassigned</option>
-                      {activeTeams.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.team_name}{getTeamAssignmentAlert(t.id, formData.cleaning_date)}
-                        </option>
-                      ))}
-                    </select>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                   </div>
 
+                  {/* UPGRADE 5: Team filtered by selected date */}
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign Team</label>
+                    {formData.cleaning_date ? (
+                      availableTeamsForAddDate.length > 0 ? (
+                        <select
+                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          value={formData.assigned_team_id}
+                          onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}>
+                          <option value="">Unassigned (Pending)</option>
+                          {availableTeamsForAddDate.map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.team_name}{getTeamAssignmentAlert(t.id, formData.cleaning_date)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl mt-1 text-sm font-bold text-red-600">
+                          No active teams for {format(parseISO(formData.cleaning_date), 'dd MMM yyyy')}.
+                        </div>
+                      )
+                    ) : (
+                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-sm font-bold text-gray-400">
+                        Select a date first.
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all">Confirm Booking</button>
+                {/* UPGRADE 8: Saving state */}
+                <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-70">
+                  {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Confirm Booking"}
+                </button>
               </form>
             </motion.div>
-           </div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* --- EDIT BOOKING MODAL (Full Details Edit) --- */}
+      {/* --- EDIT BOOKING MODAL --- */}
       <AnimatePresence>
         {isEditOpen && editData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -619,16 +719,21 @@ const handleDeleteBooking = (id: number) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
-                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.company_id} onChange={(e) => setEditData({...editData, company_id: e.target.value, unit_id: ""})}>
+                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={editData.company_id}
+                      onChange={(e) => setEditData({...editData, company_id: e.target.value, unit_id: ""})}>
                       <option value="">Select Company</option>
                       {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
-                    <select required disabled={!editData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium" value={editData.unit_id} onChange={(e) => setEditData({...editData, unit_id: e.target.value})}>
+                    <select required disabled={!editData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium"
+                      value={editData.unit_id} onChange={(e) => setEditData({...editData, unit_id: e.target.value})}>
                       <option value="">Select Unit</option>
-                      {units.filter(u => u.company_id.toString() === editData.company_id).map(u => <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>)}
+                      {units.filter(u => u.company_id.toString() === editData.company_id).map(u => (
+                        <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -636,17 +741,23 @@ const handleDeleteBooking = (id: number) => {
                 <div className="grid grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.cleaning_date} onChange={(e) => setEditData({...editData, cleaning_date: e.target.value})} />
+                    {/* UPGRADE 7: Reset team on date change in edit form */}
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={editData.cleaning_date}
+                      onChange={(e) => setEditData({...editData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.cleaning_time} onChange={(e) => setEditData({...editData, cleaning_time: e.target.value})} />
+                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={editData.cleaning_time} onChange={(e) => setEditData({...editData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={isEditCustomService ? "Other" : editData.service_type} onChange={(e) => {
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    value={isEditCustomService ? "Other" : editData.service_type}
+                    onChange={(e) => {
                       if (e.target.value === "Other") { setIsEditCustomService(true); setEditData({...editData, service_type: ""}); } 
                       else { setIsEditCustomService(false); setEditData({...editData, service_type: e.target.value}); }
                     }}>
@@ -658,38 +769,62 @@ const handleDeleteBooking = (id: number) => {
                   </select>
                   {isEditCustomService && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
-                      <input type="text" required={isEditCustomService} placeholder="Enter service name..." className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.service_type} onChange={(e) => setEditData({...editData, service_type: e.target.value})} />
+                      <input type="text" required={isEditCustomService} placeholder="Enter service name..."
+                        className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                        value={editData.service_type} onChange={(e) => setEditData({...editData, service_type: e.target.value})} />
                     </motion.div>
                   )}
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                   </select>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Price (AED)</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                      value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
                   </div>
+
+                  {/* UPGRADE 5: Team filtered by selected date in edit form */}
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign / Change Team</label>
-                    <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium" value={editData.assigned_team_id} onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
-                      <option value="">Unassigned</option>
-                      {activeTeams.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.team_name}{getTeamAssignmentAlert(t.id, editData.cleaning_date, editData.id)}
-                        </option>
-                      ))}
-                    </select>
+                    {editData.cleaning_date ? (
+                      availableTeamsForEditDate.length > 0 ? (
+                        <select
+                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          value={editData.assigned_team_id}
+                          onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
+                          <option value="">Unassigned</option>
+                          {availableTeamsForEditDate.map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.team_name}{getTeamAssignmentAlert(t.id, editData.cleaning_date, editData.id)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl mt-1 text-sm font-bold text-red-600">
+                          No active teams for {format(parseISO(editData.cleaning_date), 'dd MMM yyyy')}.
+                        </div>
+                      )
+                    ) : (
+                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-sm font-bold text-gray-400">
+                        Select a date first.
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-blue-700 transition-all">Save Changes</button>
+                {/* UPGRADE 8: Saving state on edit button */}
+                <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70">
+                  {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Save Changes"}
+                </button>
               </form>
             </motion.div>
           </div>
