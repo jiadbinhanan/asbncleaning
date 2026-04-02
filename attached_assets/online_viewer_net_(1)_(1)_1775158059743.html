@@ -1,0 +1,175 @@
+১. এক্সপোর্ট সিস্টেম ও ডিজাইনের কোড (PDF & Excel)এই অংশে handleExportExcel এবং handleExportPDF এর লজিক ও ডিজাইন দেওয়া হলো, সাথে UI এর এক্সপোর্ট বাটনগুলোও যুক্ত আছে:// ─── Export Features (Excel & Premium PDF) ───────────────────────────────
+const handleExportExcel = () => {
+  if (filteredBookings.length === 0) return toast.error("No data to export!");
+
+  const headers = ["Booking Ref", "Date", "Time", "Company", "Unit", "Service Type", "Status", "Team Assigned", "Price (AED)"];
+  const csvContent = [
+    headers.join(","),
+    ...filteredBookings.map(b => [
+      `"${b.booking_ref || ''}"`,
+      `"${format(parseISO(b.cleaning_date), 'dd-MMM-yyyy')}"`,
+      `"${b.cleaning_time}"`,
+      `"${b.units?.companies?.name || ''}"`,
+      `"Unit ${b.units?.unit_number}"`,
+      `"${b.service_type}"`,
+      `"${b.status}"`,
+      `"${b.teams?.team_name || 'Unassigned'}"`,
+      `"${b.price}"`
+    ].join(","))
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `BTM_Bookings_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast.success("Excel (CSV) downloaded successfully!");
+};
+
+const handleExportPDF = () => {
+  if (filteredBookings.length === 0) return toast.error("No data to export!");
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return toast.error("Please allow popups to generate PDF.");
+
+  const tableRows = filteredBookings.map(b => `
+    <tr>
+      <td>${format(parseISO(b.cleaning_date), 'dd-MMM-yyyy')} <br/> <span style="color:#64748b; font-size:11px; font-weight:bold;">${b.cleaning_time}</span></td>
+      <td style="font-weight: 800; color: #3b82f6;">${b.booking_ref || 'N/A'}</td>
+      <td style="font-weight: 700;">${b.units?.companies?.name || 'N/A'}</td>
+      <td>Unit ${b.units?.unit_number}<br/><span style="color:#64748b; font-size:11px;">${b.units?.building_name}</span></td>
+      <td>${b.service_type}</td>
+      <td><span class="status ${b.status}">${b.status.toUpperCase()}</span></td>
+      <td style="font-weight: 600;">${b.teams?.team_name || '<span style="color:#94a3b8">Unassigned</span>'}</td>
+    </tr>
+  `).join('');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>BTM Cleaning Services - Booking Report</title>
+      <style>
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap)');
+        body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 30px; background: #fff; }
+        .header { text-align: center; padding: 25px 20px; background: #0f172a; color: white; border-radius: 8px; margin-bottom: 20px; -webkit-print-color-adjust: exact; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #f8fafc; }
+        .header p { margin: 6px 0 0; color: #cbd5e1; font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+        .meta-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 12px 20px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #475569; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 800; border-bottom: 2px solid #cbd5e1; -webkit-print-color-adjust: exact; }
+        td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; vertical-align: middle; }
+        tr:nth-child(even) { background-color: #f8fafc; -webkit-print-color-adjust: exact; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; border: 1px solid #e2e8f0; }
+        .status.pending { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .status.active { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+        .status.completed { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
+        .status.finalized { background: #ccfbf1; color: #0f766e; border-color: #99f6e4; }
+        .status.in_progress { background: #f3e8ff; color: #6d28d9; border-color: #e9d5ff; }
+        @page { size: landscape; margin: 10mm; }
+        @media print {
+          body { padding: 0; }
+          .header { border-radius: 0; padding: 15px; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>BTM CLEANING SERVICES</h1>
+        <p>BOOKING & OPERATIONS REPORT</p>
+      </div>
+      <div class="meta-info">
+        <span>DATE RANGE: ${format(parseISO(dateFrom), 'dd MMM yyyy')} to ${format(parseISO(dateTo), 'dd MMM yyyy')}</span>
+        <span>TOTAL BOOKINGS: ${filteredBookings.length}</span>
+        <span>GENERATED: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Schedule</th>
+            <th>Booking Ref</th>
+            <th>Company</th>
+            <th>Unit Details</th>
+            <th>Service Required</th>
+            <th>Status</th>
+            <th>Assigned Team</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+      <script>
+        window.onload = function() { setTimeout(() => window.print(), 500); }
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+};
+
+// ─── Export Buttons (UI part) ───
+<div className="flex items-center gap-2 w-full md:w-auto">
+  <button onClick={handleExportExcel} className="flex-1 md:flex-none px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2">
+    <FileSpreadsheet size={16}/> Export Excel
+  </button>
+  <button onClick={handleExportPDF} className="flex-1 md:flex-none px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2">
+    <Download size={16}/> Export PDF
+  </button>
+</div>
+২. হেডার ডিজাইনের কোডএই অংশে শুধু উপরের ডার্ক গ্রেডিয়েন্ট হেডার, ফিল্টার ও নতুন বুকিং এর বাটন এবং স্ট্যাটিস্টিকস কার্ডগুলোর ডিজাইন দেওয়া হলো:{/* ─── HEADER ───────────────────────────────────────────────────────── */}
+<div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-8 pb-12 md:pb-16 px-4 md:px-8 shadow-2xl relative z-10'>
+  <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
+  <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none'></div>
+
+  <div className='max-w-7xl mx-auto relative z-20'>
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+      <div>
+        <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2'>
+          <LayoutDashboard size={14}/> Operations Control
+        </p>
+        <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
+          <ClipboardList className='text-blue-500' size={28}/> Booking Management
+        </h1>
+      </div>
+
+      <div className="flex gap-3 w-full md:w-auto">
+        <button onClick={() => setShowFilters(!showFilters)} className={`px-5 py-3 rounded-xl font-black transition-all flex items-center justify-center gap-2 border w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
+          <Filter size={18}/> Filters {showFilters && <X size={14}/>}
+        </button>
+        <button onClick={openNewModal} className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 border border-blue-500/50 backdrop-blur-md w-full md:w-auto">
+          <Plus size={18} strokeWidth={3}/> New Booking
+        </button>
+      </div>
+    </div>
+
+    {/* Stats Cards */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Records</p>
+        <p className="text-xl font-black text-white">{stats.total}</p>
+      </div>
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 backdrop-blur-sm">
+        <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Pending Assignment</p>
+        <p className="text-xl font-black text-amber-50">{stats.pending}</p>
+      </div>
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm">
+        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Active (Live)</p>
+        <p className="text-xl font-black text-blue-50">{stats.active}</p>
+      </div>
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 backdrop-blur-sm">
+        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Completed Jobs</p>
+        <p className="text-xl font-black text-emerald-50">{stats.completed}</p>
+      </div>
+    </div>
+  </div>
+</div>
