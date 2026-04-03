@@ -214,7 +214,7 @@ export default function TeamDashboard() {
                                   {/* 🚨 Booking Ref Added */}
                                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">Ref: {booking.booking_ref || 'N/A'}</span>
                                 </div>
-                                <h3 className="font-black text-gray-900 text-lg mt-1 leading-tight">{booking.units?.companies?.name}</h3>
+                                <h3 className="font-black text-gray-900 text-lg mt-1 leading-tight">{booking.units?.building_name}</h3>
                                 <p className="text-sm font-bold text-gray-500 mt-0.5 flex items-center gap-1"><Building2 size={14}/> Unit {booking.units?.unit_number}</p>
                               </div>
                               
@@ -302,7 +302,7 @@ export default function TeamDashboard() {
                             {/* 🚨 Booking Ref Added */}
                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">Ref: {booking.booking_ref || 'N/A'}</span>
                           </div>
-                          <h3 className="font-black text-gray-900 text-lg mt-1 leading-tight">{booking.units?.companies?.name}</h3>
+                          <h3 className="font-black text-gray-900 text-lg mt-1 leading-tight">{booking.units?.building_name}</h3>
                           <p className="text-sm font-bold text-gray-500 mt-0.5 flex items-center gap-1"><Building2 size={14}/> Unit {booking.units?.unit_number}</p>
                         </div>
 
@@ -339,7 +339,7 @@ export default function TeamDashboard() {
                   {completedTasks.map(booking => (
                     <div key={booking.id} className="bg-gray-100 rounded-3xl p-5 border border-gray-200 flex items-center justify-between grayscale">
                       <div>
-                        <h4 className="text-base font-black text-gray-700 line-through decoration-gray-400">{booking.units?.companies?.name}</h4>
+                        <h4 className="text-base font-black text-gray-700 line-through decoration-gray-400">{booking.units?.building_name}</h4>
                         <p className="text-xs font-bold text-gray-500">Unit {booking.units?.unit_number} • Ref: {booking.booking_ref}</p>
                       </div>
                       <div className="bg-green-100 text-green-700 p-2 rounded-full"><CheckCircle2 size={20}/></div>
