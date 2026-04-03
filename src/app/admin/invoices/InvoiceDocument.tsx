@@ -101,7 +101,10 @@ const styles = StyleSheet.create({
   signatureBox: { width: '30%', alignItems: 'flex-end', position: 'relative' },
   stampImg: { height: 70, position: 'absolute', bottom: 15, right: 10, opacity: 0.9 },
   sigLine: { width: '100%', borderTop: `1pt solid ${colors.charcoal}`, marginBottom: 5, marginTop: 40 },
-  sigText: { fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: colors.charcoal }
+  sigText: { fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: colors.charcoal },
+
+  chargeRow: { backgroundColor: '#FFF5F5', borderLeft: `2pt solid #E57373` },
+  chargeLabel: { fontSize: 9, color: '#C62828', fontStyle: 'italic' },
 });
 
 export const InvoiceDocument = ({ data }: any) => {
@@ -210,6 +213,23 @@ export const InvoiceDocument = ({ data }: any) => {
                         <Text style={[styles.td, styles.colQty]}>{extra.quantity}</Text>
                         <Text style={[styles.td, styles.colRate, {fontWeight: invoiceMode === 'inventory_only' ? 600 : 500}]}>
                           {(Number(extra.total_price) || 0).toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+
+                    {/* Damage & Manual Charges */}
+                    {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extraCharges?.map((charge: any, cIdx: number) => (
+                      <View style={[styles.tdRow, styles.chargeRow]} key={`chg-${b.id}-${cIdx}`} wrap={false}>
+                        <Text style={[styles.td, styles.colDate]}>
+                          {invoiceMode === 'inventory_only' ? format(parseISO(b.cleaning_date), "dd-MMM-yyyy") : ''}
+                        </Text>
+                        <Text style={[styles.td, styles.colType, styles.chargeLabel]}>
+                          {invoiceMode === 'combined' ? '   ' : ''}
+                          {charge.charge_type === 'damage' ? '⚠ Damage: ' : '• '}{charge.item_name}
+                        </Text>
+                        <Text style={[styles.td, styles.colQty]}>1</Text>
+                        <Text style={[styles.td, styles.colRate, { fontWeight: 600, color: '#C62828' }]}>
+                          {(Number(charge.total_price) || 0).toFixed(2)}
                         </Text>
                       </View>
                     ))}
