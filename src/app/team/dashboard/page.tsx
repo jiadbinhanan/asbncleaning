@@ -57,7 +57,7 @@ export default function TeamDashboard() {
   const [teams, setTeams] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<Record<string, any>>({});
   const [bookings, setBookings] = useState<any[]>([]);
-  
+
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<any>(null);
 
@@ -68,30 +68,42 @@ export default function TeamDashboard() {
       if (!session) { router.push('/team/login'); return; }
       const userId = session.user.id;
 
+      // todayStr একবারই তৈরি করা হচ্ছে — সব filter-এ same value ব্যবহার হবে
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+
       // 1. Fetch Agent Profile
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
       setAgentProfile(profile);
 
-      // 2. Fetch User's Active Teams
+      // 2. ✅ FIX: শুধু আজকের shift_date থাকা teams fetch করা হচ্ছে।
+      //    আগে status='active' দিয়ে fetch হতো — তাই আগামীকাল বা পরের দিনের
+      //    active team-ও চলে আসত। এখন shift_date = today দিয়ে strictly filter।
       const { data: teamsData } = await supabase.from('teams')
         .select('*')
         .contains('member_ids', [userId])
-        .eq('status', 'active');
+        .eq('shift_date', todayStr);  // ← status-এর পরিবর্তে date দিয়ে filter
 
       if (teamsData && teamsData.length > 0) {
         setTeams(teamsData);
-        
+
         const allMemberIds = [...new Set(teamsData.flatMap(t => t.member_ids || []))];
         const teamIds = teamsData.map(t => t.id);
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        // 3. PARALLEL FETCH
+        // 3. ✅ FIX: Bookings fetch-এ দুটো কঠোর condition:
+        //    (a) cleaning_date = today  →  অন্য দিনের booking কখনোই আসবে না
+        //    (b) status = active / in_progress / completed
+        //        in_progress: resume button দেখানোর জন্য
+        //        completed: done section-এ দেখানোর জন্য
+        //    (c) assigned_team_id আজকের team-এর মধ্যে, অথবা null
+        //        null হলেও (a) নিশ্চিত করছে যে সেটা আজকের booking
+        //    আগে cleaning_date filter থাকলেও .or() এর null branch-এ
+        //    অন্য দিনের unassigned booking আসার ঝুঁকি ছিল — এখন বন্ধ।
         const [profilesRes, bookingsRes] = await Promise.all([
           supabase.from('profiles').select('id, full_name, avatar_url').in('id', allMemberIds),
           supabase.from('bookings')
             .select('*, units(unit_number, layout, door_code, building_name, companies(name)), checklist_templates(title), work_status')
-            .eq('cleaning_date', todayStr)
-            .in('status', ['active', 'completed'])
+            .eq('cleaning_date', todayStr)                           // ← primary date guard
+            .in('status', ['active', 'in_progress', 'completed'])   // ← in_progress যোগ করা হয়েছে
             .or(`assigned_team_id.in.(${teamIds.join(',')}),assigned_team_id.is.null`)
         ]);
 
@@ -117,9 +129,9 @@ export default function TeamDashboard() {
     if (!selectedBookingForAssign) return;
     const bookingId = selectedBookingForAssign.id;
     setAssigningId(bookingId);
-    
+
     const { error } = await supabase.from('bookings').update({ assigned_team_id: teamId }).eq('id', bookingId);
-    
+
     if (!error) {
       setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, assigned_team_id: teamId } : b));
       setSelectedBookingForAssign(null);
@@ -130,14 +142,14 @@ export default function TeamDashboard() {
   };
 
   // --- Filtered Data ---
-  const unassignedTasks = bookings.filter(b => !b.assigned_team_id && b.status === 'active');
+  const unassignedTasks = bookings.filter(b => !b.assigned_team_id && ['active', 'in_progress'].includes(b.status));
   const completedTasks = bookings.filter(b => b.status === 'completed');
 
   if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
-      
+
       {/* --- 1. AGENT HEADER (Old Color Restored) --- */}
       <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 shadow-2xl relative overflow-hidden rounded-b-[2.5rem]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
@@ -159,22 +171,22 @@ export default function TeamDashboard() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 -mt-10 relative z-20 space-y-8">
-        
+
         {teams.length === 0 ? (
            <div className="bg-white p-8 rounded-3xl text-center shadow-xl border border-gray-100">
              <Users size={48} className="mx-auto text-gray-300 mb-4"/>
              <h2 className="text-lg font-black text-gray-900">No Active Teams</h2>
-             <p className="text-sm font-bold text-gray-500 mt-2">You are not assigned to any active teams today. Please contact your supervisor.</p>
+             <p className="text-sm font-bold text-gray-500 mt-2">You have no shift scheduled for today. Please contact your supervisor.</p>
            </div>
         ) : (
           <>
             {/* --- SECTION 1: TEAM CARDS & ASSIGNED TASKS --- */}
             {teams.map(team => {
-              const teamTasks = bookings.filter(b => b.assigned_team_id === team.id && b.status === 'active');
-              
+              const teamTasks = bookings.filter(b => b.assigned_team_id === team.id && ['active', 'in_progress'].includes(b.status));
+
               return (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={team.id} className="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 overflow-hidden">
-                  
+
                   {/* 🚨 Highlighted Team Header with Names */}
                   <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 border-b border-indigo-100 flex flex-col">
                      <div className="flex justify-between items-center">
@@ -183,7 +195,7 @@ export default function TeamDashboard() {
                           <Users size={12} className="inline mr-1"/> {team.member_ids?.length || 0} Members
                        </span>
                      </div>
-                     
+
                      <div className="flex flex-wrap gap-2 mt-4">
                        {team.member_ids?.map((mId: string) => {
                          const member = teamMembers[mId];
@@ -206,7 +218,7 @@ export default function TeamDashboard() {
                         {teamTasks.map(booking => (
                           <div key={booking.id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-                            
+
                             <div className="flex justify-between items-start mb-3">
                               <div>
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -217,14 +229,14 @@ export default function TeamDashboard() {
                                 <h3 className="font-black text-gray-900 text-lg mt-1 leading-tight">{booking.units?.building_name}</h3>
                                 <p className="text-sm font-bold text-gray-500 mt-0.5 flex items-center gap-1"><Building2 size={14}/> Unit {booking.units?.unit_number}</p>
                               </div>
-                              
+
                               {/* 🚨 Cleaning Time Added */}
                               <div className="bg-blue-50/80 text-blue-700 p-2.5 rounded-xl border border-blue-100 flex flex-col items-center shadow-sm">
                                 <Clock size={16}/>
                                 <span className="text-[10px] font-black mt-1 whitespace-nowrap">{formatTime(booking.cleaning_time)}</span>
                               </div>
                             </div>
-                            
+
                             <ExtraDetails booking={booking} />
 
 {booking.work_status === 'in_progress' && (
@@ -294,7 +306,7 @@ export default function TeamDashboard() {
                   {unassignedTasks.map(booking => (
                     <div key={booking.id} className="bg-white rounded-3xl p-5 border border-orange-200 shadow-sm relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-400"></div>
-                      
+
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -373,7 +385,7 @@ export default function TeamDashboard() {
                        <p className="font-black text-gray-900 group-hover:text-blue-700 transition-colors">{team.team_name}</p>
                        <ArrowRight size={18} className="text-gray-300 group-hover:text-blue-500 transition-colors"/>
                      </div>
-                     
+
                      {/* 🚨 Members Names & DP inside Modal */}
                      <div className="flex flex-wrap gap-2">
                        {team.member_ids?.map((mId: string) => {
