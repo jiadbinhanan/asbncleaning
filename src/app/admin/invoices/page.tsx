@@ -92,6 +92,9 @@ export default function InvoiceManagement() {
           id, equipment_id, extra_provided_qty,
           supervisor_price, remarks,
           equipment_master ( item_name, item_type )
+        ),
+        booking_extra_added_charges (
+          id, charge_type, item_description, amount
         )
       `)
       .eq('status', 'finalized')
@@ -129,7 +132,14 @@ export default function InvoiceManagement() {
           remarks: i.remarks,
         };
       });
-      return { ...b, extras };
+
+      const extraCharges = (b.booking_extra_added_charges || []).map((c: any) => ({
+        item_name: c.item_description,
+        charge_type: c.charge_type,
+        total_price: Number(c.amount),
+      }));
+
+      return { ...b, extras, extraCharges };
     });
 
     // Only include bookings that have relevant data for the chosen mode
@@ -147,9 +157,10 @@ export default function InvoiceManagement() {
   const subtotal = useMemo(() => {
     return bookings.reduce((sum, b) => {
       const extrasTotal = b.extras?.reduce((acc: number, ex: any) => acc + Number(ex.total_price), 0) || 0;
+      const chargesTotal = b.extraCharges?.reduce((acc: number, c: any) => acc + Number(c.total_price), 0) || 0;
       if (invoiceMode === 'cleaning_only') return sum + Number(b.price);
-      if (invoiceMode === 'inventory_only') return sum + extrasTotal;
-      return sum + Number(b.price) + extrasTotal;
+      if (invoiceMode === 'inventory_only') return sum + extrasTotal + chargesTotal;
+      return sum + Number(b.price) + extrasTotal + chargesTotal;
     }, 0);
   }, [bookings, invoiceMode]);
 
@@ -436,6 +447,23 @@ export default function InvoiceManagement() {
                                       {ex.remarks && <span className="text-gray-400 font-normal ml-1">· {ex.remarks}</span>}
                                     </p>
                                     <p className="text-xs font-black text-indigo-700">AED {Number(ex.total_price).toFixed(2)}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Damage & Manual Charges */}
+                            {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extraCharges?.length > 0 && (
+                              <div className="space-y-1.5 p-3 bg-red-50/40 border-t border-red-100">
+                                {b.extraCharges.map((c: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center pl-4 pr-1">
+                                    <p className="text-xs font-bold text-red-800 flex items-center gap-1">
+                                      <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-black uppercase">
+                                        {c.charge_type === 'damage' ? '🔥 DMG' : '✏️'}
+                                      </span>
+                                      {c.item_name}
+                                    </p>
+                                    <p className="text-xs font-black text-red-700">AED {Number(c.total_price).toFixed(2)}</p>
                                   </div>
                                 ))}
                               </div>
