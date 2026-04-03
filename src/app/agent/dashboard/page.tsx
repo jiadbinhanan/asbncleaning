@@ -281,7 +281,7 @@ export default function AgentDashboard() {
                           </span>
                           <span className="text-sm font-black text-gray-700 flex items-center gap-1.5"><Clock size={14} className="text-indigo-500"/> {booking.cleaning_time}</span>
                         </div>
-                        <h3 className="text-lg font-black text-gray-900 mb-1">{booking.units?.companies?.name}</h3>
+                        <h3 className="text-lg font-black text-gray-900 mb-1">{booking.units?.building_name}</h3>
                         <p className="text-sm text-gray-600 font-bold flex items-center gap-1.5 mb-4"><MapPin size={16} className="text-gray-400"/> Unit {booking.units?.unit_number} • {booking.service_type}</p>
                         
                         {/* Unit Details Box */}
