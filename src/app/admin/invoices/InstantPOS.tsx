@@ -7,13 +7,17 @@ import {
   Store, UserCircle, Plus, Trash2, RefreshCw, 
   CheckCircle2, AlertCircle, ShoppingCart, 
   Building2, Receipt, Download, Banknote, Loader2, 
-  ArrowRight, Tag, Eye, Layers
+  ArrowRight, Tag, Eye, Layers, FileText, Search
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
+import { pdf } from '@react-pdf/renderer';
+import { InstantInvoiceDocument } from "./InstantInvoiceDocument";
+import { getInstantInvoiceUploadSignature } from "./actions";
+
 type Company = { id: number; name: string };
-type InventoryItem = { id: number; item_name: string; total_quantity: number };
+type InventoryItem = { id: number; item_name: string; current_stock: number; base_price: number };
 type InvoiceItem = {
   id: string;
   type: "inventory" | "custom";
@@ -27,13 +31,14 @@ type InvoiceItem = {
 export default function InstantPOS({ companies }: { companies: Company[] }) {
   const supabase = createClient();
 
-  // ─── States ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
   const [loading, setLoading] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [history, setHistory] = useState<any[]>([]);
 
-  // Create Bill States
+  // History Search State
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [invoiceNo, setInvoiceNo] = useState("");
   const [clientType, setClientType] = useState<"registered" | "walk_in">("walk_in");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
@@ -41,18 +46,21 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [discount, setDiscount] = useState<number>(0);
-  const [isPaid, setIsPaid] = useState<boolean>(true); // Default true
-  const [saving, setSaving] = useState(false);
+  const [isPaid, setIsPaid] = useState<boolean>(false);
 
-  // Bank Details States (Editable for PDF)
+  // 🚨 New: Track saving progress step-by-step
+  const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState("");
+
   const [bankDetails, setBankDetails] = useState({
-    bankName: "Emirates NBD",
-    accountName: "BTM Cleaning Services LLC",
-    accountNumber: "1012345678901",
-    iban: "AE12026000012345678901"
+    bankName: "EMIRATES NBD",
+    accountName: "BISHNU BAHADUR THAPA",
+    accountNumber: "125937795501",
+    iban: "AE83 0260 0001 2593 7795 501",
+    swift: "EBILAEAD",
+    routingNo: "302620000"
   });
 
-  // ─── Initialization ─────────────────────────────────────────────────────
   const generateInvoiceNo = () => {
     const formatted = format(new Date(), "ddMMyy-HHmm");
     setInvoiceNo(`BTM-INST-${formatted}`);
@@ -65,7 +73,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
   }, []);
 
   const fetchInventory = async () => {
-    const { data } = await supabase.from('equipment_master').select('id, item_name, total_quantity').order('item_name');
+    const { data } = await supabase.from('equipment_master').select('id, item_name, current_stock, base_price').order('item_name');
     if (data) setInventory(data);
   };
 
@@ -84,7 +92,6 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  // ─── Items Logic ────────────────────────────────────────────────────────
   const handleAddItem = (type: "inventory" | "custom") => {
     setItems([
       ...items,
@@ -101,22 +108,22 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
 
-        // Auto-fill description for inventory
         if (field === 'equipment_id' && item.type === 'inventory') {
-          const eq = inventory.find(inv => inv.id === Number(value));
-          if (eq) updatedItem.description = eq.item_name;
-        }
-
-        // Validate stock quantity
-        if (field === 'quantity' && item.type === 'inventory' && updatedItem.equipment_id) {
-          const eq = inventory.find(inv => inv.id === Number(updatedItem.equipment_id));
-          if (eq && value > eq.total_quantity) {
-            toast.error(`Only ${eq.total_quantity} left in stock!`);
-            updatedItem.quantity = eq.total_quantity;
+          const eq = inventory.find(inv => inv.id.toString() === value.toString());
+          if (eq) {
+            updatedItem.description = eq.item_name;
+            updatedItem.unit_price = Number(eq.base_price || 0);
           }
         }
 
-        // Auto calculate total
+        if (field === 'quantity' && item.type === 'inventory' && updatedItem.equipment_id) {
+          const eq = inventory.find(inv => inv.id.toString() === updatedItem.equipment_id?.toString());
+          if (eq && value > eq.current_stock) {
+            toast.error(`Only ${eq.current_stock} left in stock!`);
+            updatedItem.quantity = eq.current_stock;
+          }
+        }
+
         if (field === 'quantity' || field === 'unit_price') {
           updatedItem.total_price = Number(updatedItem.quantity) * Number(updatedItem.unit_price);
         }
@@ -126,68 +133,126 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
     }));
   };
 
-  // ─── Calculations ───────────────────────────────────────────────────────
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.total_price, 0), [items]);
   const totalAmount = subtotal - (Number(discount) || 0);
 
-  // ─── Submission ─────────────────────────────────────────────────────────
   const handleGenerateInvoice = async () => {
     if (items.length === 0) return toast.error("Please add at least one item.");
+
+    const hasEmptyDesc = items.some(i => !i.description || i.description.trim() === "");
+    if (hasEmptyDesc) return toast.error("Description cannot be empty for any item.");
+
     if (clientType === 'registered' && !selectedCompanyId) return toast.error("Select a registered client.");
     if (clientType === 'walk_in' && !walkInName.trim()) return toast.error("Enter customer name.");
 
     setSaving(true);
 
     try {
-      // 1. Deduct Inventory Stock immediately
-      for (const item of items) {
-        if (item.type === 'inventory' && item.equipment_id) {
-          const eq = inventory.find(i => i.id === item.equipment_id);
-          if (eq) {
-            const newQty = eq.total_quantity - item.quantity;
-            await supabase.from('equipment_master').update({ total_quantity: newQty }).eq('id', item.equipment_id);
-          }
-        }
-      }
+      setSaveProgress("Saving invoice to database...");
 
-      // 2. Insert into Database (JSON items)
       const payload = {
         invoice_no: invoiceNo,
         client_type: clientType,
         company_id: clientType === 'registered' ? parseInt(selectedCompanyId) : null,
         customer_name: clientType === 'walk_in' ? walkInName : null,
-        items: items, // Supabase automatically converts JS array to JSONB
+        items: items, 
         subtotal: subtotal,
         discount: Number(discount) || 0,
         total_amount: totalAmount,
         is_paid: isPaid,
-        // pdf_url: null -> Will be updated in the next step when PDF is integrated
+        merged_into_monthly: false
       };
 
-      const { data, error } = await supabase.from('instant_invoices').insert([payload]).select().single();
-      if (error) throw error;
+      const { data: invoiceDataDB, error } = await supabase.from('instant_invoices').insert([payload]).select().single();
+      if (error) throw new Error("Database Save Error: " + error.message);
 
-      toast.success("Instant Invoice Recorded Successfully!");
+      setSaveProgress("Updating inventory ledger...");
 
-      // 🚨 TODO: Trigger PDF Generation here using 'data' and 'bankDetails'
-      // Example: const pdfUrl = await generateInstantPDF(data, bankDetails);
-      // await supabase.from('instant_invoices').update({ pdf_url: pdfUrl }).eq('id', data.id);
+      // 🚨 PERFECT LEDGER UPDATE ACCORDING TO YOUR EXACT SCHEMA 🚨
+      for (const item of items) {
+        if (item.type === 'inventory' && item.equipment_id) {
+          const eq = inventory.find(i => i.id.toString() === item.equipment_id?.toString());
+          if (eq) {
+            const newQty = eq.current_stock - item.quantity;
 
-      // Reset Form
+            // 1. Deduct stock
+            const { error: eqErr } = await supabase.from('equipment_master').update({ current_stock: newQty }).eq('id', eq.id);
+            if (eqErr) throw new Error(`Stock Update Failed: ${eqErr.message}`);
+
+            // 2. Add to Ledger safely
+            const { error: ledgerErr } = await supabase.from('inventory_transaction_logs').insert([{
+              equipment_id: eq.id,
+              transaction_type: 'out',
+              quantity: item.quantity,
+              reference_type: 'sold', // Because instant bills are ad-hoc
+              balance_after: newQty,               // Required NOT NULL field
+              remarks: `Sold via Instant POS (Invoice: ${invoiceNo})`
+            }]);
+
+            if (ledgerErr) throw new Error(`Ledger Update Failed: ${ledgerErr.message}`);
+          }
+        }
+      }
+
+      setSaveProgress("Generating PDF document...");
+      const customerDispName = clientType === 'registered' ? companies.find(c => c.id === parseInt(selectedCompanyId))?.name : walkInName;
+
+      const invoiceData = {
+        invoiceNo,
+        date: new Date().toISOString(),
+        customerName: customerDispName || "Walk-In Customer",
+        items,
+        subtotal,
+        discountPercent: (discount > 0 && subtotal > 0) ? Number(((discount / subtotal) * 100).toFixed(1)) : 0,
+        discountValue: Number(discount) || 0,
+        finalTotal: totalAmount,
+        bankDetails
+      };
+
+      const blob = await pdf(<InstantInvoiceDocument data={invoiceData} />).toBlob();
+      const file = new File([blob], `${invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+
+      setSaveProgress("Uploading to secure cloud...");
+      const { signature, timestamp, apiKey, cloudName, folderPath } = await getInstantInvoiceUploadSignature(customerDispName || 'WalkIn', invoiceNo);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", apiKey!);
+      formData.append("timestamp", timestamp.toString());
+      formData.append("signature", signature);
+      formData.append("folder", folderPath);
+      formData.append("public_id", invoiceNo.replace(/\//g, "-"));
+
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok) throw new Error(`Cloud Upload Failed: ${uploadData.error?.message || 'Unknown'}`);
+
+      if (uploadData.secure_url) {
+        await supabase.from('instant_invoices').update({ pdf_url: uploadData.secure_url }).eq('id', invoiceDataDB.id);
+      }
+
+      toast.success("Instant Invoice Recorded & PDF Generated!", { duration: 4000 });
+
+      // Reset Form & Redirect
       setItems([]);
       setDiscount(0);
+      setIsPaid(false);
       generateInvoiceNo();
       if (clientType === 'walk_in') setWalkInName("");
-      fetchInventory(); // Refresh stock to get latest quantities
+      fetchInventory(); 
+
+      setActiveTab("history");
 
     } catch (error: any) {
-      toast.error("Error: " + error.message);
+      toast.error(error.message || "An unexpected error occurred.", { duration: 5000 });
+      console.error("Instant Invoice Error:", error);
     } finally {
       setSaving(false);
+      setSaveProgress("");
     }
   };
 
-  // ─── Mark as Paid Logic ─────────────────────────────────────────────────
   const handleMarkAsPaid = async (id: string) => {
     const { error } = await supabase.from('instant_invoices').update({ is_paid: true }).eq('id', id);
     if (!error) {
@@ -198,10 +263,38 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
     }
   };
 
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
+
+  // ─── Filtered History ───
+  const filteredHistory = useMemo(() => {
+    if (!searchQuery) return history;
+    const q = searchQuery.toLowerCase();
+    return history.filter((inv: any) => {
+      const dispName = inv.client_type === 'registered' ? inv.companies?.name : inv.customer_name;
+      return (
+        inv.invoice_no?.toLowerCase().includes(q) ||
+        dispName?.toLowerCase().includes(q) ||
+        inv.total_amount?.toString().includes(q) ||
+        format(new Date(inv.created_at), 'dd MMM yyyy').toLowerCase().includes(q)
+      );
+    });
+  }, [history, searchQuery]);
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-      {/* ─── TABS ─── */}
       <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 mb-8 max-w-md mx-auto">
         <button 
           onClick={() => setActiveTab('create')}
@@ -220,10 +313,8 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
       {activeTab === 'create' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          {/* ─── LEFT: BILLING FORM ─── */}
           <div className="lg:col-span-8 space-y-6">
 
-            {/* Invoice Meta */}
             <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between gap-6">
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Invoice Number</p>
@@ -250,7 +341,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                     <input 
                       type="text" placeholder="Enter customer name..." 
                       value={walkInName} onChange={(e) => setWalkInName(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 text-sm font-bold shadow-sm transition-all"
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 text-sm font-black text-gray-900 shadow-sm transition-all"
                     />
                   </div>
                 ) : (
@@ -258,7 +349,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                     <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
                     <select 
                       value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 text-sm font-bold appearance-none cursor-pointer shadow-sm transition-all"
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 text-sm font-black text-gray-900 appearance-none cursor-pointer shadow-sm transition-all"
                     >
                       <option value="">Select Registered Company...</option>
                       {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -268,7 +359,6 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
               </div>
             </div>
 
-            {/* Items List */}
             <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
               <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
                 <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
@@ -307,12 +397,12 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                             <select 
                               value={item.equipment_id || ""}
                               onChange={(e) => handleItemChange(item.id, 'equipment_id', e.target.value)}
-                              className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-400 cursor-pointer shadow-sm"
+                              className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 cursor-pointer shadow-sm"
                             >
                               <option value="">Select Product...</option>
                               {inventory.map(inv => (
-                                <option key={inv.id} value={inv.id} disabled={inv.total_quantity <= 0}>
-                                  {inv.item_name} ({inv.total_quantity > 0 ? `${inv.total_quantity} left` : 'Out of Stock'})
+                                <option key={inv.id} value={inv.id} disabled={inv.current_stock <= 0}>
+                                  {inv.item_name} ({inv.current_stock > 0 ? `${inv.current_stock} left` : 'Out of Stock'})
                                 </option>
                               ))}
                             </select>
@@ -320,7 +410,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                             <input 
                               type="text" placeholder="e.g. Sofa Deep Cleaning"
                               value={item.description} onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                              className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-400 shadow-sm"
+                              className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 shadow-sm"
                             />
                           )}
                         </div>
@@ -330,7 +420,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                           <input 
                             type="number" min="1"
                             value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                            className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-400 text-center shadow-sm"
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-center shadow-sm"
                           />
                         </div>
 
@@ -339,7 +429,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                           <input 
                             type="number" min="0" step="0.01"
                             value={item.unit_price} onChange={(e) => handleItemChange(item.id, 'unit_price', e.target.value)}
-                            className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-400 text-right shadow-sm"
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-right shadow-sm"
                           />
                         </div>
 
@@ -362,10 +452,8 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
             </div>
           </div>
 
-          {/* ─── RIGHT: SUMMARY & SETTINGS ─── */}
           <div className="lg:col-span-4 space-y-6">
 
-            {/* Billing Summary */}
             <div className="bg-gray-900 rounded-[2rem] p-6 md:p-8 shadow-xl text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl" />
               <h3 className="text-xl font-black flex items-center gap-2 mb-6">
@@ -381,7 +469,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                   <span className="text-gray-300">Discount (AED)</span>
                   <input 
                     type="number" min="0" value={discount} onChange={(e) => setDiscount(Number(e.target.value))}
-                    className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-right text-white font-bold outline-none focus:border-indigo-400 transition-all"
+                    className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-right text-white font-black outline-none focus:border-indigo-400 transition-all"
                   />
                 </div>
                 <div className="h-px bg-white/10 my-2" />
@@ -391,8 +479,13 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                 </div>
               </div>
 
-              {/* Payment Checkbox */}
               <label className="flex items-center gap-3 p-4 bg-white/10 border border-white/20 rounded-xl cursor-pointer hover:bg-white/20 transition-colors group mb-6">
+                <input 
+                  type="checkbox" 
+                  checked={isPaid} 
+                  onChange={(e) => setIsPaid(e.target.checked)}
+                  className="hidden" 
+                />
                 <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isPaid ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-400 text-transparent'}`}>
                   <CheckCircle2 size={16} strokeWidth={3}/>
                 </div>
@@ -406,32 +499,45 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                 onClick={handleGenerateInvoice} disabled={saving}
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
               >
-                {saving ? <Loader2 size={18} className="animate-spin"/> : <ArrowRight size={18}/>}
-                Generate Bill & PDF
+                {saving ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={18} className="animate-spin"/>
+                    <span className="text-sm">{saveProgress}</span>
+                  </div>
+                ) : (
+                  <><ArrowRight size={18}/> Generate Bill & PDF</>
+                )}
               </button>
             </div>
 
-            {/* Editable Bank Details */}
             <div className="bg-white rounded-[2rem] border border-gray-200 p-6 md:p-8 shadow-sm">
               <h3 className="text-sm font-black text-gray-800 flex items-center gap-2 mb-5 uppercase tracking-widest">
-                <Banknote size={16} className="text-indigo-600"/> Bank Details (For PDF)
+                <Banknote size={16} className="text-indigo-600"/> Bank Details
               </h3>
               <div className="space-y-3">
                 <div>
                   <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Bank Name</label>
-                  <input type="text" value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all" />
+                  <input type="text" value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Account Name</label>
-                  <input type="text" value={bankDetails.accountName} onChange={e => setBankDetails({...bankDetails, accountName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all" />
+                  <input type="text" value={bankDetails.accountName} onChange={e => setBankDetails({...bankDetails, accountName: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Account Number</label>
-                  <input type="text" value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all" />
+                  <input type="text" value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">IBAN</label>
-                  <input type="text" value={bankDetails.iban} onChange={e => setBankDetails({...bankDetails, iban: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all" />
+                  <input type="text" value={bankDetails.iban} onChange={e => setBankDetails({...bankDetails, iban: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">SWIFT Code</label>
+                  <input type="text" value={bankDetails.swift} onChange={e => setBankDetails({...bankDetails, swift: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Routing No</label>
+                  <input type="text" value={bankDetails.routingNo} onChange={e => setBankDetails({...bankDetails, routingNo: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 transition-all" />
                 </div>
               </div>
             </div>
@@ -443,19 +549,29 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
       {/* ─── HISTORY TAB ─── */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-[2.5rem] border border-gray-200 shadow-sm p-6 md:p-10">
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl font-black text-gray-900">Instant POS History</h2>
               <p className="text-sm font-bold text-gray-500 mt-1">View past bills, download PDFs, and mark pending payments.</p>
             </div>
             <div className="px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl font-black text-sm border border-indigo-100 flex items-center gap-2 shadow-sm">
-              <FileText size={18}/> {history.length} Bills Total
+              <FileText size={18}/> {filteredHistory.length} Bills Total
             </div>
+          </div>
+
+          {/* 🚨 SEARCH BAR 🚨 */}
+          <div className="mb-8 relative max-w-2xl">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
+            <input type="text" placeholder="Search by Invoice No, Customer Name, Amount or Date..."
+              value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              className="w-full p-4 pl-14 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-indigo-500 font-bold text-gray-900 shadow-sm transition-all"
+            />
           </div>
 
           {loading ? (
             <div className="py-20 flex justify-center"><Loader2 size={40} className="animate-spin text-indigo-600"/></div>
-          ) : history.length === 0 ? (
+          ) : filteredHistory.length === 0 ? (
             <div className="text-center py-20 border-2 border-dashed border-gray-200 rounded-[2rem]">
               <Receipt size={56} className="mx-auto text-gray-300 mb-4"/>
               <p className="text-xl font-black text-gray-800">No instant bills found.</p>
@@ -463,7 +579,7 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {history.map((inv) => (
+              {filteredHistory.map((inv: any) => (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   key={inv.id} 
@@ -491,7 +607,6 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Payment Checkbox from History */}
                       {!inv.is_paid && (
                         <button 
                           onClick={() => handleMarkAsPaid(inv.id)}
@@ -501,19 +616,20 @@ export default function InstantPOS({ companies }: { companies: Company[] }) {
                         </button>
                       )}
 
-                      {/* PDF Action Buttons */}
                       {inv.pdf_url ? (
                         <>
                           <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-200" title="View PDF">
                             <Eye size={20}/>
                           </a>
-                          <button className="p-3 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-md" title="Download PDF">
+                          <button 
+                            onClick={() => handleDownload(inv.pdf_url, `${inv.invoice_no.replace(/\//g, '-')}.pdf`)}
+                            className="p-3 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-md" title="Download PDF">
                             <Download size={20}/>
                           </button>
                         </>
                       ) : (
                         <button 
-                          onClick={() => toast('PDF Generation Coming Soon!', { icon: '📄' })}
+                          onClick={() => toast('PDF generation not available for old drafts.', { icon: '📄' })}
                           className="px-4 py-3 bg-gray-900 hover:bg-black text-white text-xs font-black rounded-xl transition-all shadow-md"
                         >
                           Generate PDF

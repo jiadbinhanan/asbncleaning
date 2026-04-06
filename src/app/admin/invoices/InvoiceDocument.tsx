@@ -31,14 +31,14 @@ const colors = {
 const styles = StyleSheet.create({
   // Page base with 5mm margin
   page: { padding: '5mm', backgroundColor: '#ffffff', fontFamily: 'Montserrat', position: 'relative' },
-  
+
   // FIXED BORDER & WATERMARK
   fixedBackground: { position: 'absolute', top: '5mm', left: '5mm', right: '5mm', bottom: '5mm', border: `1pt solid ${colors.gold}`, zIndex: -1 },
   watermark: { position: 'absolute', top: '30%', left: '15%', width: '70%', opacity: 0.05, zIndex: 1 },
-  
+
   // Content Wrapper
   content: { padding: '5mm 15mm 15mm 15mm', flex: 1 },
-  
+
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2pt solid ${colors.charcoal}`, paddingBottom: 10, marginBottom: 15 },
   brandWrapper: { flexDirection: 'row', gap: 10 },
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   compNameTitle: { fontFamily: 'Cinzel', fontSize: 16, fontWeight: 700, color: colors.charcoal, marginBottom: 2 },
   compInfoText: { fontSize: 10, color: colors.grayText, lineHeight: 1.4 },
   goldSpan: { color: colors.gold, fontWeight: 700 },
-  
+
   invoiceTitleBox: { alignItems: 'flex-end' },
   invoiceTitle: { fontFamily: 'Cinzel', fontSize: 30, color: colors.charcoal, letterSpacing: 3, marginBottom: 4 },
   invNumber: { fontSize: 11, fontWeight: 700, color: colors.gold, letterSpacing: 1 },
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   billToName: { fontSize: 15, fontFamily: 'Cinzel', fontWeight: 700, color: colors.charcoal },
   metaTable: { width: '30%', justifyContent: 'flex-end' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  
+
   metaLabel: { fontSize: 11, color: colors.grayText },
   metaValue: { fontSize: 11, fontWeight: 600, color: colors.charcoal },
 
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   td: { fontSize: 10, fontWeight: 500, color: colors.charcoal },
   unitRow: { backgroundColor: colors.goldLight, padding: 8, borderBottom: `1pt solid ${colors.gold}` },
   unitName: { fontFamily: 'Cinzel', fontSize: 11, fontWeight: 700, color: colors.charcoal },
- 
+
   // Columns Width
   colDate: { width: '20%' },
   colType: { width: '50%' },
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   bankRow: { flexDirection: 'row', marginBottom: 4 },
   bankLabel: { width: 80, fontSize: 10, color: colors.grayText },
   bankValue: { flex: 1, fontSize: 10, fontWeight: 700, color: colors.charcoal },
-  
+
   totalsBox: { width: '42%', backgroundColor: colors.goldLight, padding: 10, border: `1pt solid ${colors.gold}` },
   totalLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottom: `1pt solid ${colors.lineColor}` },
   totalLabel: { fontSize: 11, color: colors.grayText },
@@ -108,7 +108,8 @@ const styles = StyleSheet.create({
 });
 
 export const InvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, companyName, bookings, subtotal, 
+  // 🚨 NEW: Added instantBills to destructuring
+  const { invoiceNo, date, companyName, bookings, instantBills, subtotal, 
           discountPercent, discountValue, finalTotal,
           bankDetails, invoiceMode } = data || {};
 
@@ -126,18 +127,18 @@ export const InvoiceDocument = ({ data }: any) => {
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap>
-        
-        {/* 🚨 FIXED BORDER & WATERMARK */}
+
+        {/* FIXED BORDER & WATERMARK */}
         <View style={styles.fixedBackground} fixed>
-          <Image src="/watermark_btm.png" style={styles.watermark} />
+          <Image src="/watermark_btm_invoice.png" style={styles.watermark} />
         </View>
 
         <View style={styles.content}>
-          
+
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.brandWrapper}>
-              <Image src="/logo_btm.png" style={styles.logoImg} />
+              <Image src="/logo_btm_invoice.png" style={styles.logoImg} />
               <View style={styles.companyDetails}>
                 <Text style={styles.compNameTitle}>B T M Cleaning Service</Text>
                 <Text style={styles.compInfoText}><Text style={styles.goldSpan}>Phone:</Text> +971-544-374231</Text>
@@ -148,7 +149,6 @@ export const InvoiceDocument = ({ data }: any) => {
             <View style={styles.invoiceTitleBox}>
               <Text style={styles.invoiceTitle}>INVOICE</Text>
               <Text style={styles.invNumber}>{invoiceNo}</Text>
-              {/* Date range page.tsx থেকে আসে না, তাই শুধু Date দেখানো হলো */}
               <Text style={styles.invDateRange}>DATE: {issueDate}</Text>
             </View>
           </View>
@@ -173,7 +173,7 @@ export const InvoiceDocument = ({ data }: any) => {
 
           {/* Table */}
           <View style={styles.table}>
-            
+
             {/* Table Header */}
             <View style={styles.thRow} fixed>
               <Text style={[styles.th, styles.colDate]}>Date</Text>
@@ -190,7 +190,7 @@ export const InvoiceDocument = ({ data }: any) => {
                 </View>
                 {unitBookings.map((b: any) => (
                   <React.Fragment key={b.id}>
-                    
+
                     {/* Main Booking Row */}
                     {invoiceMode !== 'inventory_only' && (
                       <View style={styles.tdRow} wrap={false}>
@@ -238,6 +238,24 @@ export const InvoiceDocument = ({ data }: any) => {
                 ))}
               </React.Fragment>
             ))}
+
+            {/* 🚨 NEW: INSTANT BILLS (DUES) ROWS 🚨 */}
+            {instantBills && instantBills.length > 0 && (
+              <React.Fragment>
+                <View style={styles.unitRow}>
+                  <Text style={styles.unitName}>PREVIOUS INSTANT DUES</Text>
+                </View>
+                {instantBills.map((ib: any, iIdx: number) => (
+                  <View style={styles.tdRow} key={`ib-${iIdx}`} wrap={false}>
+                    <Text style={[styles.td, styles.colDate]}>{format(parseISO(ib.created_at), "dd-MMM-yyyy")}</Text>
+                    <Text style={[styles.td, styles.colType]}>Instant POS Bill - {ib.invoice_no}</Text>
+                    <Text style={[styles.td, styles.colQty]}>1</Text>
+                    <Text style={[styles.td, styles.colRate, {fontWeight: 600, color: '#C62828'}]}>{(Number(ib.total_amount) || 0).toFixed(2)}</Text>
+                  </View>
+                ))}
+              </React.Fragment>
+            )}
+
           </View>
 
           {/* Bottom Section & Footer */}
@@ -286,7 +304,7 @@ export const InvoiceDocument = ({ data }: any) => {
                 Please retain for your records. Thank you for choosing B T M Cleaning Service.
               </Text>
               <View style={styles.signatureBox}>
-                <Image src="/stamp_btm.png" style={styles.stampImg} />
+                <Image src="/stamp_btm_invoice.png" style={styles.stampImg} />
                 <View style={styles.sigLine}></View>
                 <Text style={styles.sigText}>Authorized Stamp</Text>
               </View>

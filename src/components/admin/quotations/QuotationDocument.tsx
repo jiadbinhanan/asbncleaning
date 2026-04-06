@@ -318,7 +318,7 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
           
           <View style={styles.header}>
             <View style={styles.logoBox}>
-              <Image src="/logo_btm.png" style={styles.logo} /> 
+              <Image src="/logo_btm_invoice.png" style={styles.logo} /> 
               <Text style={styles.quoteBadge}>Quotation</Text>
             </View>
             <View style={styles.companyInfo}>
@@ -449,7 +449,7 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
             </View>
             <View style={styles.sigBlock}>
                <View style={styles.stampArea}>
-                  <Image src="/stamp_btm.png" style={styles.stampImg} />
+                  <Image src="/stamp_btm_invoice.png" style={styles.stampImg} />
                </View>
                <View style={styles.sigLine}></View>
                <Text style={styles.sigText}>AUTHORIZED SIGNATORY</Text>

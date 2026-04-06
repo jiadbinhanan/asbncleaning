@@ -1,7 +1,7 @@
 'use client';
 import { 
   LayoutDashboard, Users, Building2, CalendarCheck, 
-  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, 
+  FileText, User, LogOut, X, ChevronLeft, ChevronRight, Contact, DollarSign,
   ClipboardList, FileDigit, FileCheck, Package, ClipboardCheck, WashingMachine
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ const menuItems = [
   { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
   { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
   { name: 'Invoices', icon: FileDigit, path: '/admin/invoices' },
+  { name: 'Revenue', icon: DollarSign, path: '/admin/revenue' },
   { name: 'Companies', icon: Building2, path: '/admin/companies' },
   { name: 'Employees', icon: Contact, path: '/admin/employees' },
   { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
