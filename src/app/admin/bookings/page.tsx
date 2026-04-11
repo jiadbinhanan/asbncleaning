@@ -5,10 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Home, Users, CheckCircle2, AlertCircle, 
   Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList,
-  Search, Zap, RotateCcw, Download, FileSpreadsheet, LayoutDashboard
+  Search, Zap, RotateCcw, Download, FileSpreadsheet, LayoutDashboard,
+  ShieldCheck
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import toast, { Toaster } from 'react-hot-toast';
+
+import AdminDutyModal from './AdminDutyModal'; 
 
 // --- Types ---
 type Booking = {
@@ -53,16 +56,16 @@ export default function BookingManagement() {
 
   // UI States
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
-  // UPGRADE 4: Activate/Undo loading state
   const [activatingId, setActivatingId] = useState<number | null>(null);
-  // UPGRADE 8: Save button loading state
   const [saving, setSaving] = useState(false);
+
+  // --- Duty Modal States ---
+  const [isDutyModalOpen, setIsDutyModalOpen] = useState(false);
+  const [selectedBookingIdForDuty, setSelectedBookingIdForDuty] = useState<string | null>(null);
 
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
-  // UPGRADE 2: Search bar state
   const [searchQuery, setSearchQuery] = useState("");
-  // UPGRADE 1: Date range (replaces single filterDate)
   const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [filterCompany, setFilterCompany] = useState("");
@@ -98,7 +101,6 @@ export default function BookingManagement() {
     checklist_template_id: string
   } | null>(null);
 
-  // UPGRADE 3: Fetch ALL static data once on mount
   useEffect(() => {
     const fetchStaticData = async () => {
       const [companiesRes, unitsRes, checklistsRes, teamsRes] = await Promise.all([
@@ -116,7 +118,6 @@ export default function BookingManagement() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // UPGRADE 1: Fetch bookings by date range
   const fetchBookings = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -140,7 +141,6 @@ export default function BookingManagement() {
     setLoading(false);
   };
 
-  // Re-fetch when date range changes
   useEffect(() => {
     if (dateFrom && dateTo) fetchBookings();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,7 +152,6 @@ export default function BookingManagement() {
     return () => window.removeEventListener('click', handleClickOutside);
   }, [activeMenuId]);
 
-  // UPGRADE 5: Team availability check
   const getTeamAssignmentAlert = (teamId: number, date: string, currentBookingId?: number) => {
     const isBusy = bookings.some(b => 
       b.assigned_team_id === teamId && 
@@ -163,19 +162,16 @@ export default function BookingManagement() {
     return isBusy ? " (Assigned with another booking)" : "";
   };
 
-  // UPGRADE 5: Teams available for selected add-form date
   const availableTeamsForAddDate = useMemo(() => {
     if (!formData.cleaning_date) return [];
     return activeTeams.filter(t => t.shift_date === formData.cleaning_date);
   }, [activeTeams, formData.cleaning_date]);
 
-  // UPGRADE 5: Teams available for selected edit-form date
   const availableTeamsForEditDate = useMemo(() => {
     if (!editData?.cleaning_date) return [];
     return activeTeams.filter(t => t.shift_date === editData.cleaning_date);
   }, [activeTeams, editData?.cleaning_date]);
 
-  // 3. Add Booking
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -201,7 +197,6 @@ export default function BookingManagement() {
     setSaving(false);
   };
 
-  // 4. Update Booking
   const handleUpdateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editData) return;
@@ -227,7 +222,6 @@ export default function BookingManagement() {
     setSaving(false);
   };
 
-  // 5. Delete Booking
   const handleDeleteBooking = (id: number) => {
     toast((t) => (
       <div className="flex flex-col gap-3">
@@ -248,7 +242,6 @@ export default function BookingManagement() {
     ), { duration: 8000 });
   };
 
-  // UPGRADE 4: Toggle Activation with Optimistic UI
   const handleToggleActivation = async (id: number, currentStatus: string) => {
     const newStatus = currentStatus === 'pending' ? 'active' : 'pending';
     setActivatingId(id);
@@ -266,7 +259,6 @@ export default function BookingManagement() {
     setActivatingId(null);
   };
 
-  // 6. Filters — UPGRADE 2 (search) + UPGRADE 6 (extended statuses)
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
       const q = searchQuery.toLowerCase().trim();
@@ -303,7 +295,6 @@ export default function BookingManagement() {
 
   const sortedDates = Object.keys(groupedBookings).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
-  // Stats Calculation
   const stats = useMemo(() => ({
     total: bookings.length,
     pending: bookings.filter(b => b.status === 'pending').length,
@@ -311,7 +302,6 @@ export default function BookingManagement() {
     completed: bookings.filter(b => b.status === 'completed' || b.status === 'finalized').length,
   }), [bookings]);
 
-  // Export Functions
   const handleExportExcel = () => {
     if (filteredBookings.length === 0) return toast.error("No data to export!");
     const headers = ["Booking Ref", "Date", "Time", "Company", "Unit", "Service Type", "Status", "Team Assigned", "Price (AED)"];
@@ -476,7 +466,6 @@ export default function BookingManagement() {
         </div>
       </div>
 
-      {/* UPGRADE 2: Always-visible Search Bar */}
       <div className="relative mb-4">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
@@ -488,7 +477,6 @@ export default function BookingManagement() {
         />
       </div>
 
-      {/* Filters Panel (Original design + UPGRADE 1: Date Range) */}
       <AnimatePresence>
         {showFilters && (
           <motion.div 
@@ -497,13 +485,11 @@ export default function BookingManagement() {
             exit={{ opacity: 0, height: 0 }}
             className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              {/* UPGRADE 1: Date From */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date From</label>
                 <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
               </div>
-              {/* UPGRADE 1: Date To */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date To</label>
                 <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
@@ -517,7 +503,6 @@ export default function BookingManagement() {
                   {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
-              {/* UPGRADE 6: Extended status options */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Status</label>
                 <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
@@ -540,7 +525,6 @@ export default function BookingManagement() {
         )}
       </AnimatePresence>
 
-      {/* Bookings List (Grouped by Date) — Original design preserved */}
       {loading ? (
         <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
       ) : filteredBookings.length === 0 ? (
@@ -587,10 +571,7 @@ export default function BookingManagement() {
                       </div>
                     </div>
 
-                    {/* Right Side Info */}
                     <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-4 mt-4 md:mt-0 shrink-0">
-
-                      {/* Time */}
                       <div className="md:w-[80px] shrink-0">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time</p>
                         <p className="text-xs font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
@@ -598,7 +579,6 @@ export default function BookingManagement() {
                         </p>
                       </div>
 
-                      {/* Service & Checklist */}
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service</p>
                         <p className="text-sm font-semibold text-gray-900 truncate">{booking.service_type}</p>
@@ -611,7 +591,6 @@ export default function BookingManagement() {
                         )}
                       </div>
 
-                      {/* Team */}
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Team</p>
                         {booking.teams ? (
@@ -625,9 +604,7 @@ export default function BookingManagement() {
                         )}
                       </div>
 
-                      {/* Price & Status */}
                       <div className="md:w-[90px] shrink-0 flex flex-col items-start md:items-end gap-2 col-span-2 md:col-span-1">
-                        {/* UPGRADE 6: Extended status colors */}
                         <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
                           ['completed', 'finalized'].includes(booking.status) ? 'bg-green-100 text-green-700' :
                           booking.status === 'in_progress' ? 'bg-violet-100 text-violet-700' :
@@ -647,7 +624,6 @@ export default function BookingManagement() {
                       </div>
                     </div>
 
-                    {/* UPGRADE 4: Activate/Undo + 3-dot menu */}
                     <div className="flex items-center gap-2 shrink-0">
                       {booking.status === 'pending' && (
                         <button
@@ -680,7 +656,38 @@ export default function BookingManagement() {
                         </button>
 
                         {activeMenuId === booking.id && (
-                          <div className="absolute right-0 top-10 w-48 bg-white border border-gray-100 shadow-xl rounded-xl z-20 overflow-hidden">
+                          <div className="absolute right-0 top-10 w-56 bg-white border border-gray-100 shadow-2xl rounded-xl z-20 overflow-hidden">
+
+                            {/* --- SEPARATE CONDITIONS FOR SUBMIT AND EDIT --- */}
+                            {['completed', 'finalized'].includes(booking.status) ? (
+                              <button
+                                onClick={() => {
+                                  alert("এডিট মোডাল এর কাজ পরবর্তীতে করা হবে।");
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-purple-700 hover:bg-purple-50 flex items-center gap-3 text-sm font-bold border-b border-gray-100 transition-all group"
+                              >
+                                <div className="p-1.5 bg-purple-100 rounded-md text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                  <Edit2 size={16} />
+                                </div>
+                                Edit Work Log
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedBookingIdForDuty(booking.id.toString());
+                                  setIsDutyModalOpen(true);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-indigo-700 hover:bg-indigo-50 flex items-center gap-3 text-sm font-bold border-b border-gray-100 transition-all group"
+                              >
+                                <div className="p-1.5 bg-indigo-100 rounded-md text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                  <ShieldCheck size={16} />
+                                </div>
+                                Manage Duty
+                              </button>
+                            )}
+
                             <button 
                               onClick={() => {
                                 const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
@@ -699,14 +706,14 @@ export default function BookingManagement() {
                                 setIsEditOpen(true);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm font-medium border-b border-gray-100">
-                              <Edit2 size={16} /> Edit Details
+                              className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm font-medium border-b border-gray-100 transition-colors">
+                              <Edit2 size={16} className="text-gray-400" /> Edit Details
                             </button>
 
                             <button 
                               onClick={() => handleDeleteBooking(booking.id)}
-                              className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm font-medium">
-                              <Trash2 size={16} /> Delete
+                              className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm font-medium transition-colors">
+                              <Trash2 size={16} className="text-red-400" /> Delete
                             </button>
                           </div>
                         )}
@@ -761,7 +768,6 @@ export default function BookingManagement() {
                 <div className="grid grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    {/* UPGRADE 7: Reset team on date change */}
                     <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={formData.cleaning_date}
                       onChange={(e) => setFormData({...formData, cleaning_date: e.target.value, assigned_team_id: ""})} />
@@ -812,7 +818,6 @@ export default function BookingManagement() {
                       value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                   </div>
 
-                  {/* UPGRADE 5: Team filtered by selected date */}
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign Team</label>
                     {formData.cleaning_date ? (
@@ -841,7 +846,6 @@ export default function BookingManagement() {
                   </div>
                 </div>
 
-                {/* UPGRADE 8: Saving state */}
                 <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-70">
                   {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Confirm Booking"}
                 </button>
@@ -888,7 +892,6 @@ export default function BookingManagement() {
                 <div className="grid grid-cols-2 gap-5">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    {/* UPGRADE 7: Reset team on date change in edit form */}
                     <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={editData.cleaning_date}
                       onChange={(e) => setEditData({...editData, cleaning_date: e.target.value, assigned_team_id: ""})} />
@@ -939,7 +942,6 @@ export default function BookingManagement() {
                       value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
                   </div>
 
-                  {/* UPGRADE 5: Team filtered by selected date in edit form */}
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign / Change Team</label>
                     {editData.cleaning_date ? (
@@ -968,7 +970,6 @@ export default function BookingManagement() {
                   </div>
                 </div>
 
-                {/* UPGRADE 8: Saving state on edit button */}
                 <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70">
                   {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Save Changes"}
                 </button>
@@ -977,6 +978,21 @@ export default function BookingManagement() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* --- ADMIN DUTY MODAL --- */}
+      {isDutyModalOpen && selectedBookingIdForDuty && (
+        <AdminDutyModal 
+          isOpen={isDutyModalOpen} 
+          bookingId={selectedBookingIdForDuty}
+          onClose={() => {
+            setIsDutyModalOpen(false);
+            setSelectedBookingIdForDuty(null);
+          }}
+          onSuccess={() => {
+             fetchBookings();
+          }}
+        />
+      )}
 
     </div>
   );

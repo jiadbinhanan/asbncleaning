@@ -289,7 +289,7 @@ export default function RevenueDashboard() {
       <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"/>
 
-        <div className="max-w-7xl mx-auto relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="w-full relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
               <TrendingUp className="text-blue-500" size={36}/> Revenue Analytics
@@ -335,7 +335,7 @@ export default function RevenueDashboard() {
       </div>
 
       {/* ── MAIN CONTENT (Overlap Header) ── */}
-      <div className={`max-w-7xl mx-auto px-4 md:px-8 -mt-20 relative z-30 space-y-8 transition-opacity duration-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`w-full mx-auto px-4 md:px-8 -mt-20 relative z-30 space-y-8 transition-opacity duration-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
 
         {isRefreshing && (
           <div className="absolute inset-0 z-50 flex items-start justify-center pt-20 pointer-events-none">

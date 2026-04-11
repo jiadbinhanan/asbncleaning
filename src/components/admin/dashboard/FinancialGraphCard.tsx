@@ -1,148 +1,135 @@
 'use client';
 import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { TrendingUp, CircleDollarSign } from 'lucide-react';
+import { TrendingUp, DollarSign } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { motion } from 'framer-motion';
 
-// Custom Tooltip Component for better visual breakdown
 const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-100">
-        <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">{label}</p>
-        <div className="space-y-2">
-          {payload.map((p: any, idx: number) => (
-            <div key={idx} className="flex justify-between gap-6 items-center text-xs">
-              <span className="font-bold flex items-center gap-1.5" style={{ color: p.color }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-                {p.name === 'cleaning' ? 'Cleaning Service' : 'Extra Inventory'}
-              </span>
-              <span className="font-black text-gray-900">AED {p.value}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between gap-6 items-center">
-          <span className="text-xs font-black text-gray-800">Total</span>
-          <span className="text-sm font-black text-blue-600">
-            AED {payload.reduce((sum: number, p: any) => sum + p.value, 0)}
-          </span>
-        </div>
+  if (!active || !payload?.length) return null;
+  const total = payload.reduce((s: number, p: any) => s + p.value, 0);
+  return (
+    <div className="bg-slate-800/95 backdrop-blur border border-slate-700/80 rounded-2xl p-4 shadow-xl min-w-[180px]">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-700">{label}</p>
+      <div className="space-y-1.5">
+        {payload.map((p: any, i: number) => (
+          <div key={i} className="flex justify-between items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5 font-semibold" style={{ color: p.color }}>
+              <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+              {p.name === 'cleaning' ? 'Cleaning' : p.name === 'inventory' ? 'Inventory' : 'Instant POS'}
+            </span>
+            <span className="font-black text-white">AED {Number(p.value).toLocaleString()}</span>
+          </div>
+        ))}
       </div>
-    );
-  }
-  return null;
+      <div className="mt-3 pt-2 border-t border-slate-700 flex justify-between">
+        <span className="text-xs font-black text-slate-300">Total</span>
+        <span className="text-sm font-black text-emerald-400">AED {total.toLocaleString()}</span>
+      </div>
+    </div>
+  );
 };
 
 export default function FinancialGraphCard({ bookings }: { bookings: any[] }) {
-  
+
   const { chartData, totals } = useMemo(() => {
-    const map: Record<string, { dateObj: Date, cleaning: number, inventory: number }> = {};
-    let tCleaning = 0;
-    let tInventory = 0;
-    
+    const map: Record<string, { dateObj: Date; cleaning: number; inventory: number; pos: number }> = {};
+    let tC = 0, tI = 0, tP = 0;
+
     bookings.forEach(b => {
       const dateObj = parseISO(b.cleaning_date);
-      const dateStr = format(dateObj, 'yyyy-MM-dd'); // 🚨 Use proper date string for accurate grouping
-      
-      if (!map[dateStr]) map[dateStr] = { dateObj, cleaning: 0, inventory: 0 };
-      
-      const cleanPrice = Number(b.price) || 0;
-      const invPrice = b.booking_extra_inventory?.reduce((acc:any, ex:any) => acc + Number(ex.total_price), 0) || 0;
-      
-      map[dateStr].cleaning += cleanPrice;
-      map[dateStr].inventory += invPrice;
-
-      tCleaning += cleanPrice;
-      tInventory += invPrice;
+      const key = format(dateObj, 'yyyy-MM-dd');
+      if (!map[key]) map[key] = { dateObj, cleaning: 0, inventory: 0, pos: 0 };
+      const c = Number(b.price) || 0;
+      const inv = b.booking_extra_inventory?.reduce((acc: number, ex: any) => acc + Number(ex.total_price), 0) || 0;
+      map[key].cleaning += c;
+      map[key].inventory += inv;
+      tC += c; tI += inv;
     });
 
-    // 🚨 FIXED: Sort by actual date timestamp to fix chronological order, then format for UI
-    const sortedChartData = Object.values(map)
+    const sorted = Object.values(map)
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .map(item => ({
-         date: format(item.dateObj, 'dd MMM'),
-         cleaning: item.cleaning,
-         inventory: item.inventory
-      }));
+      .map(item => ({ date: format(item.dateObj, 'dd MMM'), cleaning: item.cleaning, inventory: item.inventory, pos: item.pos }));
 
-    return { 
-      chartData: sortedChartData, 
-      totals: { cleaning: tCleaning, inventory: tInventory, combined: tCleaning + tInventory } 
-    };
+    return { chartData: sorted, totals: { cleaning: tC, inventory: tI, pos: tP, combined: tC + tI + tP } };
   }, [bookings]);
 
+  const summaries = [
+    { label: 'Cleaning', value: totals.cleaning, color: '#6366f1', bg: 'bg-indigo-500/10 border-indigo-500/20' },
+    { label: 'Inventory', value: totals.inventory, color: '#f59e0b', bg: 'bg-amber-500/10 border-amber-500/20' },
+    { label: 'Instant POS', value: totals.pos, color: '#06b6d4', bg: 'bg-cyan-500/10 border-cyan-500/20' },
+  ];
+
   return (
-    <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 h-full flex flex-col hover:shadow-md transition-shadow">
-      
-      {/* Header and Legend */}
-      <div className="flex justify-between items-start mb-4">
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 h-full flex flex-col border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
         <div>
-          <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-            <TrendingUp className="text-blue-500" size={20}/> Financial Activity
-          </h2>
-          <p className="text-xs font-bold text-gray-400 mt-1">Cleaning revenue vs Extra inventory sales</p>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-indigo-500/20 rounded-lg">
+              <TrendingUp size={16} className="text-indigo-400" />
+            </div>
+            <h2 className="text-sm font-black text-white tracking-tight">Financial Performance</h2>
+          </div>
+          <p className="text-[10px] text-slate-500 uppercase tracking-widest">Revenue by category</p>
         </div>
-        
-        {/* Mini Legend */}
-        <div className="flex gap-4 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div> Cleaning
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-500">
-            <div className="w-2 h-2 rounded-full bg-amber-400"></div> Inventory
-          </div>
+        {/* Combined total */}
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-2 text-right">
+          <p className="text-[9px] text-emerald-500 uppercase tracking-widest font-bold">Total Revenue</p>
+          <p className="text-xl font-black text-emerald-400">AED {totals.combined.toLocaleString()}</p>
         </div>
       </div>
 
-      {/* 🚨 NEW: 3 Summarized Prices Row (Compact Design) */}
-      <div className="flex flex-wrap items-center gap-6 mb-6">
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Cleaning</p>
-          <p className="text-sm font-black text-blue-600">AED {totals.cleaning.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Inventory</p>
-          <p className="text-sm font-black text-amber-500">AED {totals.inventory.toLocaleString()}</p>
-        </div>
-        <div className="pl-6 border-l border-gray-100">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Combined Price</p>
-          <p className="text-base font-black text-emerald-600">AED {totals.combined.toLocaleString()}</p>
-        </div>
+      {/* Summary pills */}
+      <div className="flex gap-3 mb-5 flex-wrap">
+        {summaries.map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+            className={`flex-1 min-w-[100px] rounded-xl p-3 border ${s.bg}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</span>
+            </div>
+            <p className="text-sm font-black" style={{ color: s.color }}>AED {s.value.toLocaleString()}</p>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Recharts Area Chart */}
-      <div className="flex-1 w-full min-h-[180px]">
+      {/* Chart */}
+      <div className="flex-1 min-h-[160px]">
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorCleaning" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                <linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="colorInventory" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                <linearGradient id="gi" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF', fontWeight: 'bold' }} dy={10}/>
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF', fontWeight: 'bold' }} dx={-10}/>
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 1, strokeDasharray: '4 4' }} />
-              
-              <Area type="monotone" dataKey="cleaning" stackId="2" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorCleaning)" />
-              <Area type="monotone" dataKey="inventory" stackId="1" stroke="#F59E0B" strokeWidth={3} fillOpacity={1} fill="url(#colorInventory)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#475569', fontWeight: 700 }} dy={8} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#475569', fontWeight: 700 }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Area type="monotone" dataKey="cleaning" stroke="#6366f1" strokeWidth={2.5} fill="url(#gc)" dot={false} activeDot={{ r: 5, fill: '#6366f1', strokeWidth: 0 }} />
+              <Area type="monotone" dataKey="inventory" stroke="#f59e0b" strokeWidth={2.5} fill="url(#gi)" dot={false} activeDot={{ r: 5, fill: '#f59e0b', strokeWidth: 0 }} />
+              <Area type="monotone" dataKey="pos" stroke="#06b6d4" strokeWidth={2.5} fill="url(#gp)" dot={false} activeDot={{ r: 5, fill: '#06b6d4', strokeWidth: 0 }} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-            <CircleDollarSign size={40} className="mb-2 opacity-50"/>
-            <span className="font-bold text-sm">No financial data for this range</span>
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-600">
+            <DollarSign size={36} className="mb-2 opacity-40" />
+            <span className="text-xs font-bold">No financial data for this range</span>
           </div>
         )}
       </div>
-
     </div>
   );
 }
