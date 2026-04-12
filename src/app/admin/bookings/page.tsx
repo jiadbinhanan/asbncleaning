@@ -443,7 +443,7 @@ export default function BookingManagement() {
               <button onClick={() => setShowFilters(!showFilters)} className={`px-5 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-2 border text-xs w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
                 <Filter size={18}/> Filters {showFilters && <X size={14}/>}
               </button>
-              <button onClick={() => setIsAddOpen(true)} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 border border-blue-500/50 backdrop-blur-md w-full md:w-auto text-xs">
+              <button onClick={() => setIsAddOpen(true)} className="px-6 py-2 bg-blue-600 hover:bg-blue-50 text-white rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 border border-blue-500/50 backdrop-blur-md w-full md:w-auto text-xs">
                 <Plus size={18} strokeWidth={3}/> New Booking
               </button>
             </div>
@@ -656,73 +656,88 @@ export default function BookingManagement() {
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <button 
                           onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                          className={`p-2 rounded-xl transition-colors ${activeMenuId === booking.id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-400'}`}>
                           <MoreVertical size={20} />
                         </button>
 
-                        {activeMenuId === booking.id && (
-                          <div className="absolute right-0 top-10 w-56 bg-white border border-gray-100 shadow-2xl rounded-xl z-20 overflow-hidden">
+                        <AnimatePresence>
+                          {activeMenuId === booking.id && (
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                              transition={{ duration: 0.15, ease: "easeOut" }}
+                              className="absolute left-0 sm:left-auto sm:right-0 top-12 w-60 bg-white border border-gray-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] rounded-2xl z-30 p-2 flex flex-col gap-1"
+                            >
+                              {/* --- SEPARATE CONDITIONS FOR SUBMIT AND EDIT --- */}
+                              {['completed', 'finalized'].includes(booking.status) ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedBookingIdForEditLog(booking.id.toString());
+                                    setIsEditLogModalOpen(true);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-3 text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
+                                >
+                                  <div className="p-1.5 bg-purple-100/50 rounded-lg text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors shadow-sm">
+                                    <Edit2 size={16} />
+                                  </div>
+                                  Edit Work Log
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setSelectedBookingIdForDuty(booking.id.toString());
+                                    setIsDutyModalOpen(true);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-3 text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
+                                >
+                                  <div className="p-1.5 bg-indigo-100/50 rounded-lg text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">
+                                    <ShieldCheck size={16} />
+                                  </div>
+                                  Manage Duty
+                                </button>
+                              )}
 
-                            {/* --- SEPARATE CONDITIONS FOR SUBMIT AND EDIT --- */}
-                            {['completed', 'finalized'].includes(booking.status) ? (
-                              <button
+                              <div className="h-px bg-gray-100 my-1 mx-2"></div>
+
+                              <button 
                                 onClick={() => {
-                                  setSelectedBookingIdForEditLog(booking.id.toString()); // <-- Added State Trigger
-                                  setIsEditLogModalOpen(true);                           // <-- Added State Trigger
+                                  const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
+                                  setIsEditCustomService(isCustom);
+                                  setEditData({ 
+                                    id: booking.id, 
+                                    company_id: booking.units?.company_id?.toString() || "",
+                                    unit_id: booking.unit_id?.toString() || "",
+                                    cleaning_date: booking.cleaning_date || "",
+                                    cleaning_time: booking.cleaning_time || "",
+                                    service_type: booking.service_type || "",
+                                    price: booking.price?.toString() || "",
+                                    assigned_team_id: booking.assigned_team_id?.toString() || "",
+                                    checklist_template_id: booking.checklist_template_id?.toString() || "" 
+                                  });
+                                  setIsEditOpen(true);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full text-left px-4 py-3 text-purple-700 hover:bg-purple-50 flex items-center gap-3 text-sm font-bold border-b border-gray-100 transition-all group"
-                              >
-                                <div className="p-1.5 bg-purple-100 rounded-md text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                className="w-full text-left px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
+                                <div className="p-1.5 text-gray-400 group-hover:text-blue-500 transition-colors">
                                   <Edit2 size={16} />
                                 </div>
-                                Edit Work Log
+                                Edit Details
                               </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setSelectedBookingIdForDuty(booking.id.toString());
-                                  setIsDutyModalOpen(true);
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full text-left px-4 py-3 text-indigo-700 hover:bg-indigo-50 flex items-center gap-3 text-sm font-bold border-b border-gray-100 transition-all group"
-                              >
-                                <div className="p-1.5 bg-indigo-100 rounded-md text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                  <ShieldCheck size={16} />
+
+                              <button 
+                                onClick={() => handleDeleteBooking(booking.id)}
+                                className="w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
+                                <div className="p-1.5 text-red-400 group-hover:text-red-600 transition-colors">
+                                  <Trash2 size={16} />
                                 </div>
-                                Manage Duty
+                                Delete Booking
                               </button>
-                            )}
-
-                            <button 
-                              onClick={() => {
-                                const isCustom = !["Check-out Cleaning", "Deep Cleaning", "General Cleaning", "Sofa Bed setup"].includes(booking.service_type);
-                                setIsEditCustomService(isCustom);
-                                setEditData({ 
-                                  id: booking.id, 
-                                  company_id: booking.units?.company_id?.toString() || "",
-                                  unit_id: booking.unit_id?.toString() || "",
-                                  cleaning_date: booking.cleaning_date || "",
-                                  cleaning_time: booking.cleaning_time || "",
-                                  service_type: booking.service_type || "",
-                                  price: booking.price?.toString() || "",
-                                  assigned_team_id: booking.assigned_team_id?.toString() || "",
-                                  checklist_template_id: booking.checklist_template_id?.toString() || "" 
-                                });
-                                setIsEditOpen(true);
-                                setActiveMenuId(null);
-                              }}
-                              className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 flex items-center gap-3 text-sm font-medium border-b border-gray-100 transition-colors">
-                              <Edit2 size={16} className="text-gray-400" /> Edit Details
-                            </button>
-
-                            <button 
-                              onClick={() => handleDeleteBooking(booking.id)}
-                              className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm font-medium transition-colors">
-                              <Trash2 size={16} className="text-red-400" /> Delete
-                            </button>
-                          </div>
-                        )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </motion.div>

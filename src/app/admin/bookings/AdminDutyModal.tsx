@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, UploadCloud, CheckCircle2, ShieldCheck,
   AlertTriangle, Loader2, Camera, Trash2, ChevronDown, ChevronUp, Package,
-  Eye, Clock, Calendar
+  Eye, Clock, Calendar, Users
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -54,12 +54,14 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   const [isChecklistDone, setIsChecklistDone] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
   const [showEquipment, setShowEquipment] = useState(false);
+
   const [equipmentData, setEquipmentData] = useState<any[]>([]);
 
   // --- Fetch Initial Data ---
   useEffect(() => {
     if (!isOpen || !bookingId) return;
     fetchInitialData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, bookingId]);
 
   const fetchInitialData = async () => {
@@ -92,7 +94,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
           setLostFoundPhotos(log.lost_found_items.photos || []);
           setLostFoundRemarks(log.lost_found_items.remarks || "");
         }
-        if (log.checklist_data && log.checklist_data.isDone) setIsChecklistDone(true);
+        setIsChecklistDone(true);
       } else {
         setIsEditMode(false);
       }
@@ -103,11 +105,28 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
     }
   };
 
+  // --- Fetch Teams & Profiles Based on Selected Date ---
   useEffect(() => {
     if (!selectedDate) return;
     const fetchTeamsForDate = async () => {
-      const { data } = await supabase.from('teams').select('id, team_name, status, members').eq('shift_date', selectedDate).order('status');
-      if (data) setTeams(data);
+      const [teamsRes, profilesRes] = await Promise.all([
+        supabase.from('teams').select('*').eq('shift_date', selectedDate).order('status'),
+        supabase.from('profiles').select('id, full_name')
+      ]);
+
+      if (teamsRes.data && profilesRes.data) {
+        const profileMap = new Map();
+        profilesRes.data.forEach(p => profileMap.set(p.id, p.full_name));
+
+        const formattedTeams = teamsRes.data.map(t => {
+          const names = (t.member_ids || [])
+            .map((id: string) => profileMap.get(id))
+            .filter(Boolean)
+            .join(', ');
+          return { ...t, membersStr: names };
+        });
+        setTeams(formattedTeams);
+      }
     };
     fetchTeamsForDate();
   }, [selectedDate]);
@@ -119,15 +138,20 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
       const [h, m] = val.split(':').map(Number);
       const date = new Date();
       date.setHours(h, m, 0);
-      date.setMinutes(date.getMinutes() + 73); // Add exactly 73 minutes
+      date.setMinutes(date.getMinutes() + 73); 
       const endH = String(date.getHours()).padStart(2, '0');
       const endM = String(date.getMinutes()).padStart(2, '0');
       setEndTime(`${endH}:${endM}`);
     }
   };
 
-  // --- JSquash MozJPEG Image Compression ---
+  // --- Exact 120-180KB Compression Logic ---
   const compressImageJSquash = async (file: File): Promise<File> => {
+    // 1. If originally < 180kb, do NOT compress.
+    if (file.size <= 180 * 1024) {
+      return file; 
+    }
+
     try {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(file);
@@ -140,14 +164,22 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
       ctx.drawImage(img, 0, 0);
       const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-      const MAX_SIZE = 1280;
+      // 2. Max dimensions: 1200x1600 (or 1600x1200 based on orientation)
+      const MAX_W = 1200, MAX_H = 1600;
       let { width, height } = imageData;
-      if (width > height && width > MAX_SIZE) {
-        height = Math.round((height * MAX_SIZE) / width);
-        width = MAX_SIZE;
-      } else if (height > MAX_SIZE) {
-        width = Math.round((width * MAX_SIZE) / height);
-        height = MAX_SIZE;
+
+      if (width > height) {
+         if (width > MAX_H || height > MAX_W) {
+            const ratio = Math.min(MAX_H / width, MAX_W / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+         }
+      } else {
+         if (width > MAX_W || height > MAX_H) {
+            const ratio = Math.min(MAX_W / width, MAX_H / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+         }
       }
 
       let resizedImageData = imageData;
@@ -155,13 +187,43 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         resizedImageData = await resize(imageData, { width, height });
       }
 
-      // Quality 75 targets exactly 120-180kb range for 1280px resolution
-      const rawBuffer = await encodeJpeg(resizedImageData, { quality: 75 });
-      const blob = new Blob([rawBuffer], { type: 'image/jpeg' });
+      // 3. Binary Search Loop: Guarantee strictly <= 180KB, target 120-180KB
+      let minQ = 5, maxQ = 90, quality = 70;
+      let bestBuffer: ArrayBuffer | null = null;
+      let bestSizeKB = 0;
+
+      for (let i = 0; i < 8; i++) {
+         let rawBuffer = await encodeJpeg(resizedImageData, { quality });
+         let sizeKB = rawBuffer.byteLength / 1024;
+
+         if (sizeKB >= 120 && sizeKB <= 180) {
+             bestBuffer = rawBuffer; 
+             break;
+         }
+
+         if (sizeKB < 180) {
+             if (!bestBuffer || sizeKB > bestSizeKB) {
+                 bestBuffer = rawBuffer;
+                 bestSizeKB = sizeKB;
+             }
+             minQ = quality + 1; 
+         } else {
+             maxQ = quality - 1; 
+         }
+
+         quality = Math.floor((minQ + maxQ) / 2);
+         if (minQ > maxQ) break;
+      }
+
+      if (!bestBuffer) {
+         bestBuffer = await encodeJpeg(resizedImageData, { quality: 15 });
+      }
+
+      const blob = new Blob([bestBuffer], { type: 'image/jpeg' });
       return new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
     } catch (e) {
       console.error("Compression failed, uploading original:", e);
-      return file;
+      return file; 
     }
   };
 
@@ -169,7 +231,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   const handleSubmit = async () => {
     const noPhotos = beforePhotos.length === 0 && afterPhotos.length === 0;
     if (noPhotos && !isChecklistDone) {
-      if (!window.confirm("No photos and no checklist done. Submit anyway?")) return;
+      if (!window.confirm("No photos uploaded and checklist not marked. Submit anyway?")) return;
     }
 
     setSubmitting(true);
@@ -190,10 +252,10 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
           if (typeof p === 'string') {
             urls.push(p);
           } else {
-            const compressedFile = await compressImageJSquash(p);
+            const finalFileToUpload = await compressImageJSquash(p);
 
             const formData = new FormData();
-            formData.append("file", compressedFile);
+            formData.append("file", finalFileToUpload);
             formData.append("api_key", sigParams!.apiKey!);
             formData.append("timestamp", sigParams!.timestamp.toString());
             formData.append("signature", sigParams!.signature);
@@ -217,56 +279,79 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
       const uploadedDamaged = await processAndUpload(damagedPhotos);
       const uploadedLostFound = await processAndUpload(lostFoundPhotos);
 
-      const startDateTime = startTime ? `${selectedDate}T${startTime}:00` : new Date().toISOString();
-      const endDateTime = endTime ? `${selectedDate}T${endTime}:00` : new Date().toISOString();
+      const startDT = startTime ? `${selectedDate}T${startTime}:00` : new Date().toISOString();
+      const endDT = endTime ? `${selectedDate}T${endTime}:00` : new Date().toISOString();
 
+      // 1. Insert/Update Work Logs
       const logPayload = {
         booking_id: parseInt(bookingId),
         team_id: selectedTeam ? parseInt(selectedTeam) : null,
-        start_time: startDateTime,
-        end_time: endDateTime,
+        start_time: startDT,
+        end_time: endDT,
         before_photos: uploadedBefore,
         photo_urls: uploadedAfter,
         damaged_items: (uploadedDamaged.length > 0 || damagedRemarks) ? { photos: uploadedDamaged, remarks: damagedRemarks } : null,
         lost_found_items: (uploadedLostFound.length > 0 || lostFoundRemarks) ? { photos: uploadedLostFound, remarks: lostFoundRemarks } : null,
-        checklist_data: { isDone: isChecklistDone, completedAt: new Date().toISOString() },
-        status: 'submitted',
       };
 
       if (isEditMode) {
-        await supabase.from('work_logs').update({
+        const { error: editErr } = await supabase.from('work_logs').update({
           ...logPayload, edited_by: user?.id, edited_at: new Date().toISOString()
         }).eq('booking_id', bookingId);
+        if (editErr) throw editErr;
       } else {
-        await supabase.from('work_logs').insert({ ...logPayload, submitted_by: user?.id });
+        const { error: insertErr } = await supabase.from('work_logs').insert({ 
+          ...logPayload, submitted_by: user?.id 
+        });
+        if (insertErr) throw insertErr;
       }
 
-      await supabase.from('bookings').update({
+      // 2. Update Bookings Status
+      const { error: bookErr } = await supabase.from('bookings').update({
         assigned_team_id: selectedTeam ? parseInt(selectedTeam) : null,
         cleaning_date: selectedDate,
         work_status: 'work_done',
         status: 'completed'
       }).eq('id', bookingId);
+      if (bookErr) throw bookErr;
 
+      // 3. Insert Inventory Logs (100% matched with Schema, no remarks)
       if (equipmentData.length > 0) {
         await supabase.from('booking_inventory_logs').delete().eq('booking_id', bookingId);
-        const invPayload = equipmentData.map(item => ({
-          booking_id: bookingId,
-          unit_id: booking?.units?.id,
-          equipment_id: item.equipment_id,
-          action_type: 'used',
-          quantity: item.total_placed || item.standard_qty,
-          logged_by: user?.id,
-          remarks: 'Admin duty submission'
-        }));
-        await supabase.from('booking_inventory_logs').insert(invPayload);
+
+        const invPayload = equipmentData.map(item => {
+          const base = item.base_provide ?? item.standard_qty ?? 0;
+          const extra = item.extra_provide ?? 0;
+          const finalProv = base + extra;
+
+          // Target is 0 for consumables
+          const target = item.item_type !== 'consumable' ? (item.target_collect ?? 0) : 0;
+          const coll = item.collected ?? 0;
+
+          return {
+            booking_id: parseInt(bookingId),
+            unit_id: booking?.units?.id,
+            equipment_id: item.equipment_id,
+            base_provide_qty: base,
+            extra_provided_qty: extra,
+            final_provided_qty: finalProv,
+            target_collect_qty: target,
+            collected_qty: coll,
+            shortage_qty: Math.max(0, target - coll),
+            qc_status: item.item_type === 'returnable' ? 'pending' : 'completed'
+            // 'remarks' has been removed as per strict instructions
+          };
+        });
+
+        const { error: invErr } = await supabase.from('booking_inventory_logs').insert(invPayload);
+        if (invErr) throw invErr;
       }
 
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Submission error:", error);
-      alert("Error submitting data. Please check console.");
+      alert("Error submitting data: " + error.message);
       setSubmitting(false);
     }
   };
@@ -280,7 +365,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-8 py-6 border-b border-gray-100 bg-gray-50/80 shrink-0">
+        <div className="flex justify-between items-center px-6 md:px-8 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
           <div>
             <h2 className="text-2xl font-black text-gray-900 tracking-tight">
               {isEditMode ? "Edit Duty Log" : "Manage Duty"}
@@ -294,8 +379,8 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
           </button>
         </div>
 
-        {/* Scrollable Body (Responsive Grid for Wide Monitors) */}
-        <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
+        {/* Scrollable Body (Responsive Grid: 2 cols on lg, 1 col on mobile) */}
+        <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-32 text-gray-400">
               <Loader2 className="animate-spin mb-4" size={40} />
@@ -304,25 +389,35 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
           ) : (
             <div className="flex flex-col lg:flex-row gap-8">
 
-              {/* --- LEFT COLUMN: Settings & Checklist --- */}
-              <div className="flex-1 space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+              {/* --- LEFT COLUMN: Settings, Checklist, Equipment --- */}
+              <div className="flex-1 space-y-6">
+                {/* Schedule & Team Settings */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-blue-50/40 p-5 md:p-6 rounded-2xl border border-blue-100 shadow-sm">
                   <div>
                     <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Calendar size={14} className="inline mr-1"/> Shift Date</label>
                     <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
                       className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest">Assigned Team</label>
+                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Users size={14} className="inline mr-1"/> Assigned Team</label>
                     <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
                       className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all cursor-pointer">
                       <option value="" className="text-gray-400">Unassigned</option>
+                      {teams.length === 0 && <option disabled>No teams found for this date</option>}
                       {teams.map(t => (
                         <option key={t.id} value={t.id} className="font-bold">
-                          {t.team_name} ({t.status}) {t.members ? ` - [${t.members.join(', ')}]` : ''}
+                          {t.team_name} ({t.status})
                         </option>
                       ))}
                     </select>
+                    {selectedTeam && (() => {
+                      const team = teams.find(t => t.id.toString() === selectedTeam);
+                      return team?.membersStr ? (
+                        <p className="mt-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-lg border border-indigo-100">
+                          👥 {team.membersStr}
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
                   <div>
                     <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> Start Time</label>
@@ -336,33 +431,33 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
                   </div>
                 </div>
 
-                {/* Checklist */}
+                {/* Checklist Panel */}
                 <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setShowChecklist(!showChecklist)}>
                     <div className="flex items-center gap-2 font-black text-gray-800 text-lg">
                       <CheckCircle2 size={22} className="text-emerald-500" /> Task Checklist
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <button onClick={(e) => { e.stopPropagation(); setIsChecklistDone(!isChecklistDone); }}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                        {isChecklistDone && <CheckCircle2 size={18}/>} {isChecklistDone ? "All Done" : "Mark All Done"}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                        {isChecklistDone && <CheckCircle2 size={16}/>} {isChecklistDone ? "All Done" : "Mark All Done"}
                       </button>
                       {showChecklist ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
                     </div>
                   </div>
-                  <AnimatePresence>
-                    {showChecklist && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                        <div className="p-5 text-sm font-bold text-gray-500 bg-white border-t border-gray-100">
-                          (Admin Mode) Checking the button above marks all tasks as completed for this log.
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <motion.div 
+                    initial={false} 
+                    animate={{ height: showChecklist ? 'auto' : 0 }} 
+                    className="overflow-hidden"
+                  >
+                    <div className="p-5 text-sm font-bold text-gray-500 bg-white border-t border-gray-100">
+                      (Admin Mode) Checking the button above marks all tasks as completed for this log. No need to check individually.
+                    </div>
+                  </motion.div>
                 </div>
 
-                {/* Equipment Tracker */}
+                {/* Equipment Tracker Panel (ALWAYS MOUNTED FOR DATA PERSISTENCE) */}
                 <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setShowEquipment(!showEquipment)}>
@@ -371,25 +466,26 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
                     </div>
                     {showEquipment ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
                   </div>
-                  <AnimatePresence>
-                    {showEquipment && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-white">
-                        <div className="p-5 border-t border-gray-100">
-                          {booking?.units?.id ? (
-                            <EquipmentTracker bookingId={bookingId} unitId={booking.units.id} onDataChange={setEquipmentData} />
-                          ) : (
-                            <p className="text-sm font-bold text-red-600 py-4 text-center bg-red-50 rounded-xl">Unit information missing.</p>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+
+                  <motion.div 
+                    initial={false} 
+                    animate={{ height: showEquipment ? 'auto' : 0 }} 
+                    className="overflow-hidden bg-white"
+                  >
+                    <div className="p-5 border-t border-gray-100">
+                      {booking?.units?.id ? (
+                        <EquipmentTracker bookingId={bookingId} unitId={booking.units.id} onDataChange={setEquipmentData} />
+                      ) : (
+                        <p className="text-sm font-bold text-red-600 py-4 text-center bg-red-50 rounded-xl">Unit information missing.</p>
+                      )}
+                    </div>
+                  </motion.div>
                 </div>
               </div>
 
-              {/* --- RIGHT COLUMN: Media & Evidence --- */}
+              {/* --- RIGHT COLUMN: Media & Evidence (Drag & Drop) --- */}
               <div className="flex-1 space-y-6">
-                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                <div className="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
                   <h3 className="font-black text-gray-900 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg"><Camera size={22} className="text-blue-500"/> Photo Evidence</h3>
                   <DragDropPhotoSection title="Before Work Photos" photos={beforePhotos} setPhotos={setBeforePhotos} />
                   <div className="h-px bg-gray-200" />
@@ -466,7 +562,7 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
 
       <div 
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
+        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
         onDrop={handleDrop}
         className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 scale-[1.02]' : 'border-dashed border-gray-200 bg-white'}`}
       >
@@ -484,14 +580,14 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
         })}
 
         {hiddenCount > 0 && !expanded && (
-          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm">
+          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
             <span className="font-black text-xl">+{hiddenCount}</span>
             <span className="text-[9px] font-bold uppercase tracking-widest mt-1">View All</span>
           </button>
         )}
 
         {expanded && photos.length > 4 && (
-          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm">
+          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
             <Eye size={20} className="mb-1" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Show Less</span>
           </button>
