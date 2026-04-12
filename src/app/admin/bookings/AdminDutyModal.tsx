@@ -5,9 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, UploadCloud, CheckCircle2, ShieldCheck,
   AlertTriangle, Loader2, Camera, Trash2, ChevronDown, ChevronUp, Package,
-  Eye
+  Eye, Clock, Calendar
 } from "lucide-react";
-// আপনার প্রজেক্টের সঠিক পাথ অনুযায়ী ইম্পোর্ট ঠিক করে নেবেন
+import { format, parseISO } from "date-fns";
+
+// --- JSquash Imports ---
+import encodeJpeg from '@jsquash/jpeg/encode';
+import resize from '@jsquash/resize';
+
 import { getWorkPhotoUploadSignature } from "@/app/team/duty/[id]/actions"; 
 import EquipmentTracker from "@/app/team/duty/[id]/EquipmentTracker";
 
@@ -24,6 +29,8 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   // --- States ---
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Data States
   const [booking, setBooking] = useState<any>(null);
@@ -32,21 +39,21 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   // Form States
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   // Photo States
-  const [beforePhotos, setBeforePhotos] = useState<File[]>([]);
-  const [afterPhotos, setAfterPhotos] = useState<File[]>([]);
-  const [damagedPhotos, setDamagedPhotos] = useState<File[]>([]);
-  const [lostFoundPhotos, setLostFoundPhotos] = useState<File[]>([]);
+  const [beforePhotos, setBeforePhotos] = useState<(File | string)[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<(File | string)[]>([]);
+  const [damagedPhotos, setDamagedPhotos] = useState<(File | string)[]>([]);
+  const [lostFoundPhotos, setLostFoundPhotos] = useState<(File | string)[]>([]);
 
   const [damagedRemarks, setDamagedRemarks] = useState("");
   const [lostFoundRemarks, setLostFoundRemarks] = useState("");
 
-  // Toggles & Sections
   const [isChecklistDone, setIsChecklistDone] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
   const [showEquipment, setShowEquipment] = useState(false);
-
   const [equipmentData, setEquipmentData] = useState<any[]>([]);
 
   // --- Fetch Initial Data ---
@@ -58,19 +65,36 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // 🚨 Fix: Correctly joined units and companies matching the team duty page logic
-      const { data: bData, error } = await supabase
-        .from('bookings')
-        .select(`*, units ( id, unit_number, building_name, companies(name) )`)
-        .eq('id', bookingId)
-        .single();
+      const [bookingRes, workLogRes] = await Promise.all([
+        supabase.from('bookings').select(`*, units ( id, unit_number, building_name, companies(name) )`).eq('id', bookingId).single(),
+        supabase.from('work_logs').select('*').eq('booking_id', bookingId).maybeSingle()
+      ]);
 
-      if (error) throw error;
+      if (bookingRes.data) {
+        setBooking(bookingRes.data);
+        setSelectedDate(bookingRes.data.cleaning_date || "");
+        setSelectedTeam(bookingRes.data.assigned_team_id?.toString() || "");
+      }
 
-      if (bData) {
-        setBooking(bData);
-        setSelectedDate(bData.cleaning_date || "");
-        setSelectedTeam(bData.assigned_team_id?.toString() || "");
+      if (workLogRes.data) {
+        setIsEditMode(true);
+        const log = workLogRes.data;
+        if (log.start_time) setStartTime(format(parseISO(log.start_time), "HH:mm"));
+        if (log.end_time) setEndTime(format(parseISO(log.end_time), "HH:mm"));
+
+        setBeforePhotos(log.before_photos || []);
+        setAfterPhotos(log.photo_urls || []);
+        if (log.damaged_items) {
+          setDamagedPhotos(log.damaged_items.photos || []);
+          setDamagedRemarks(log.damaged_items.remarks || "");
+        }
+        if (log.lost_found_items) {
+          setLostFoundPhotos(log.lost_found_items.photos || []);
+          setLostFoundRemarks(log.lost_found_items.remarks || "");
+        }
+        if (log.checklist_data && log.checklist_data.isDone) setIsChecklistDone(true);
+      } else {
+        setIsEditMode(false);
       }
     } catch (error) {
       console.error("Error fetching admin duty data:", error);
@@ -79,102 +103,144 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
     }
   };
 
-  // --- Fetch Teams & Profiles Based on Selected Date ---
   useEffect(() => {
     if (!selectedDate) return;
-
     const fetchTeamsForDate = async () => {
-      try {
-        // Fetch teams and profiles simultaneously
-        const [teamsRes, profilesRes] = await Promise.all([
-          supabase.from('teams').select('*').eq('shift_date', selectedDate).order('status'),
-          supabase.from('profiles').select('id, full_name')
-        ]);
-
-        if (teamsRes.data) {
-          const profilesMap = new Map();
-          if (profilesRes.data) {
-            profilesRes.data.forEach(p => profilesMap.set(p.id, p.full_name));
-          }
-
-          const formattedTeams = teamsRes.data.map(t => {
-            const memberNames = (t.member_ids || [])
-              .map((id: string) => profilesMap.get(id) || 'Unknown')
-              .join(', ');
-            return { ...t, membersStr: memberNames || 'No members' };
-          });
-
-          setTeams(formattedTeams);
-        }
-      } catch (error) {
-        console.error("Error fetching teams by date:", error);
-      }
+      const { data } = await supabase.from('teams').select('id, team_name, status, members').eq('shift_date', selectedDate).order('status');
+      if (data) setTeams(data);
     };
-
     fetchTeamsForDate();
   }, [selectedDate]);
 
-  // --- Photo Upload Logic ---
-  const uploadPhotos = async (photos: File[]) => {
-    if (photos.length === 0) return [];
-    try {
-      const sigParams = await getWorkPhotoUploadSignature();
-      const uploadPromises = photos.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("api_key", sigParams.apiKey!);
-        formData.append("timestamp", sigParams.timestamp.toString());
-        formData.append("signature", sigParams.signature);
-        formData.append("folder", "work-photos");
-
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${sigParams.cloudName}/image/upload`, {
-          method: "POST", body: formData,
-        });
-        const data = await res.json();
-        return data.secure_url;
-      });
-
-      return await Promise.all(uploadPromises);
-    } catch (error) {
-      console.error("Photo upload failed:", error);
-      throw error;
+  // --- Auto Calculate End Time (+73 mins) ---
+  const handleStartTimeChange = (val: string) => {
+    setStartTime(val);
+    if (val) {
+      const [h, m] = val.split(':').map(Number);
+      const date = new Date();
+      date.setHours(h, m, 0);
+      date.setMinutes(date.getMinutes() + 73); // Add exactly 73 minutes
+      const endH = String(date.getHours()).padStart(2, '0');
+      const endM = String(date.getMinutes()).padStart(2, '0');
+      setEndTime(`${endH}:${endM}`);
     }
   };
 
-  // --- Final Submit ---
+  // --- JSquash MozJPEG Image Compression ---
+  const compressImageJSquash = async (file: File): Promise<File> => {
+    try {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      await new Promise((resolve) => (img.onload = resolve));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error("Canvas context failed");
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+      const MAX_SIZE = 1280;
+      let { width, height } = imageData;
+      if (width > height && width > MAX_SIZE) {
+        height = Math.round((height * MAX_SIZE) / width);
+        width = MAX_SIZE;
+      } else if (height > MAX_SIZE) {
+        width = Math.round((width * MAX_SIZE) / height);
+        height = MAX_SIZE;
+      }
+
+      let resizedImageData = imageData;
+      if (width !== imageData.width || height !== imageData.height) {
+        resizedImageData = await resize(imageData, { width, height });
+      }
+
+      // Quality 75 targets exactly 120-180kb range for 1280px resolution
+      const rawBuffer = await encodeJpeg(resizedImageData, { quality: 75 });
+      const blob = new Blob([rawBuffer], { type: 'image/jpeg' });
+      return new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+    } catch (e) {
+      console.error("Compression failed, uploading original:", e);
+      return file;
+    }
+  };
+
+  // --- Process and Upload ---
   const handleSubmit = async () => {
     const noPhotos = beforePhotos.length === 0 && afterPhotos.length === 0;
     if (noPhotos && !isChecklistDone) {
-      const confirmed = window.confirm("কোনো ছবি আপলোড করা হয়নি এবং চেকলিস্টও সম্পন্ন করা হয়নি। আপনি কি নিশ্চিত সাবমিট করতে চান?");
-      if (!confirmed) return;
+      if (!window.confirm("No photos and no checklist done. Submit anyway?")) return;
     }
 
     setSubmitting(true);
+    setUploadProgress(0);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      const uploadedBefore = await uploadPhotos(beforePhotos);
-      const uploadedAfter = await uploadPhotos(afterPhotos);
-      const uploadedDamaged = await uploadPhotos(damagedPhotos);
-      const uploadedLostFound = await uploadPhotos(lostFoundPhotos);
+      const allFiles = [...beforePhotos, ...afterPhotos, ...damagedPhotos, ...lostFoundPhotos].filter(p => typeof p !== 'string') as File[];
+      const totalFiles = allFiles.length;
+      let processedCount = 0;
 
-      // 1. Insert into work_logs
+      const sigParams = totalFiles > 0 ? await getWorkPhotoUploadSignature() : null;
+
+      const processAndUpload = async (photos: (File | string)[]) => {
+        const urls: string[] = [];
+        for (const p of photos) {
+          if (typeof p === 'string') {
+            urls.push(p);
+          } else {
+            const compressedFile = await compressImageJSquash(p);
+
+            const formData = new FormData();
+            formData.append("file", compressedFile);
+            formData.append("api_key", sigParams!.apiKey!);
+            formData.append("timestamp", sigParams!.timestamp.toString());
+            formData.append("signature", sigParams!.signature);
+            formData.append("folder", "work-photos");
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${sigParams!.cloudName}/image/upload`, { method: "POST", body: formData });
+            const data = await res.json();
+            urls.push(data.secure_url);
+
+            processedCount++;
+            setUploadProgress(Math.round((processedCount / totalFiles) * 100));
+          }
+        }
+        return urls;
+      };
+
+      if (totalFiles === 0) setUploadProgress(100);
+
+      const uploadedBefore = await processAndUpload(beforePhotos);
+      const uploadedAfter = await processAndUpload(afterPhotos);
+      const uploadedDamaged = await processAndUpload(damagedPhotos);
+      const uploadedLostFound = await processAndUpload(lostFoundPhotos);
+
+      const startDateTime = startTime ? `${selectedDate}T${startTime}:00` : new Date().toISOString();
+      const endDateTime = endTime ? `${selectedDate}T${endTime}:00` : new Date().toISOString();
+
       const logPayload = {
         booking_id: parseInt(bookingId),
         team_id: selectedTeam ? parseInt(selectedTeam) : null,
-        start_time: new Date().toISOString(),
-        end_time: new Date().toISOString(),
+        start_time: startDateTime,
+        end_time: endDateTime,
         before_photos: uploadedBefore,
         photo_urls: uploadedAfter,
         damaged_items: (uploadedDamaged.length > 0 || damagedRemarks) ? { photos: uploadedDamaged, remarks: damagedRemarks } : null,
         lost_found_items: (uploadedLostFound.length > 0 || lostFoundRemarks) ? { photos: uploadedLostFound, remarks: lostFoundRemarks } : null,
         checklist_data: { isDone: isChecklistDone, completedAt: new Date().toISOString() },
-        submitted_by: user?.id,
+        status: 'submitted',
       };
 
-      await supabase.from('work_logs').insert(logPayload);
+      if (isEditMode) {
+        await supabase.from('work_logs').update({
+          ...logPayload, edited_by: user?.id, edited_at: new Date().toISOString()
+        }).eq('booking_id', bookingId);
+      } else {
+        await supabase.from('work_logs').insert({ ...logPayload, submitted_by: user?.id });
+      }
 
-      // 2. Update bookings table
       await supabase.from('bookings').update({
         assigned_team_id: selectedTeam ? parseInt(selectedTeam) : null,
         cleaning_date: selectedDate,
@@ -182,22 +248,16 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         status: 'completed'
       }).eq('id', bookingId);
 
-      // 3. Update Equipment Logs
       if (equipmentData.length > 0) {
         await supabase.from('booking_inventory_logs').delete().eq('booking_id', bookingId);
-
         const invPayload = equipmentData.map(item => ({
-          booking_id: parseInt(bookingId),
+          booking_id: bookingId,
           unit_id: booking?.units?.id,
           equipment_id: item.equipment_id,
-          standard_qty: item.standard_provide,
-          extra_provided_qty: item.extra_provide || 0,
-          final_provided_qty: (item.base_provide || item.standard_provide) + (item.extra_provide || 0),
-          target_collect_qty: item.target_collect || 0,
-          collected_qty: item.collected || 0,
-          shortage_qty: Math.max(0, (item.target_collect || 0) - (item.collected || 0)),
-          qc_status: item.item_type === 'returnable' ? 'pending' : 'completed',
-          remarks: 'Admin manual duty submission'
+          action_type: 'used',
+          quantity: item.total_placed || item.standard_qty,
+          logged_by: user?.id,
+          remarks: 'Admin duty submission'
         }));
         await supabase.from('booking_inventory_logs').insert(invPayload);
       }
@@ -207,7 +267,6 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
     } catch (error) {
       console.error("Submission error:", error);
       alert("Error submitting data. Please check console.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -215,173 +274,168 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 md:p-8">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+        className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b bg-gray-50/50">
+        <div className="flex justify-between items-center px-8 py-6 border-b border-gray-100 bg-gray-50/80 shrink-0">
           <div>
-            <h2 className="text-xl font-black text-gray-900">Manage Duty</h2>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+              {isEditMode ? "Edit Duty Log" : "Manage Duty"}
+            </h2>
             <p className="text-sm text-gray-500 font-bold mt-1">
               Unit {booking?.units?.unit_number} • {booking?.units?.companies?.name}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-red-100 hover:text-red-600 rounded-full text-gray-600 transition">
-            <X size={20} />
+          <button onClick={onClose} className="p-3 bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 rounded-full text-gray-600 transition shadow-sm">
+            <X size={22} />
           </button>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
-
+        {/* Scrollable Body (Responsive Grid for Wide Monitors) */}
+        <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-              <Loader2 className="animate-spin mb-4" size={32} />
-              <p className="font-bold">Fetching details...</p>
+            <div className="flex flex-col items-center justify-center py-32 text-gray-400">
+              <Loader2 className="animate-spin mb-4" size={40} />
+              <p className="font-bold text-lg uppercase tracking-widest">Loading details...</p>
             </div>
           ) : (
-            <>
-              {/* Settings: Date & Team */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-blue-50/50 p-5 rounded-xl border border-blue-100">
-                <div>
-                  <label className="text-xs font-black text-gray-500 uppercase mb-2 block tracking-wider">Shift Date</label>
-                  <input 
-                    type="date" 
-                    value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-gray-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 font-black shadow-sm transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-black text-gray-500 uppercase mb-2 block tracking-wider">Assigned Team</label>
-                  <select 
-                    value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-gray-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-900 font-black shadow-sm transition-all cursor-pointer"
-                  >
-                    <option value="" className="text-gray-400">Select Team (Optional)</option>
-                    {teams.length === 0 && <option disabled>No teams found for this date</option>}
-                    {teams.map(t => (
-                      <option key={t.id} value={t.id} className="font-bold text-gray-800">
-                        {t.team_name} ({t.status}) {t.membersStr ? ` - [${t.membersStr}]` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div className="flex flex-col lg:flex-row gap-8">
 
-              {/* Before Photos */}
-              <PhotoSection 
-                title="Before Work Photos" icon={<Camera size={18}/>}
-                photos={beforePhotos} setPhotos={setBeforePhotos}
-              />
-
-              {/* Checklist (Minimal) */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <div 
-                  className="p-4 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setShowChecklist(!showChecklist)}
-                >
-                  <div className="flex items-center gap-2 font-black text-gray-800">
-                    <CheckCircle2 size={20} className="text-blue-500" />
-                    Work Checklist
+              {/* --- LEFT COLUMN: Settings & Checklist --- */}
+              <div className="flex-1 space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Calendar size={14} className="inline mr-1"/> Shift Date</label>
+                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
                   </div>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setIsChecklistDone(!isChecklistDone); }}
-                      className={`px-5 py-2 rounded-lg text-sm font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-white border border-gray-300 text-gray-900 hover:bg-gray-50'}`}
-                    >
-                      {isChecklistDone && <CheckCircle2 size={16}/>}
-                      {isChecklistDone ? "All Done" : "Mark All Done"}
-                    </button>
-                    {showChecklist ? <ChevronUp size={20} className="text-gray-400"/> : <ChevronDown size={20} className="text-gray-400"/>}
+                  <div>
+                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest">Assigned Team</label>
+                    <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
+                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all cursor-pointer">
+                      <option value="" className="text-gray-400">Unassigned</option>
+                      {teams.map(t => (
+                        <option key={t.id} value={t.id} className="font-bold">
+                          {t.team_name} ({t.status}) {t.members ? ` - [${t.members.join(', ')}]` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> Start Time</label>
+                    <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)}
+                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> End Time</label>
+                    <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
                   </div>
                 </div>
-                <AnimatePresence>
-                  {showChecklist && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                      <div className="p-4 text-sm font-bold text-gray-500 bg-white border-t border-gray-100">
-                        (Admin Mode) Checking the button above marks all items as completed. You don't need to check items individually unless required.
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
-              {/* Damaged / Lost & Found */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4 bg-red-50/50 p-5 rounded-xl border border-red-100 shadow-sm">
-                  <h4 className="font-black text-red-800 flex items-center gap-2"><AlertTriangle size={18}/> Damaged Items</h4>
-                  <textarea 
-                    placeholder="Enter remarks..." value={damagedRemarks} onChange={e => setDamagedRemarks(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-red-200 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 font-black resize-none transition-all shadow-sm" rows={2}
-                  />
-                  <PhotoSection minimal title="" photos={damagedPhotos} setPhotos={setDamagedPhotos} />
-                </div>
-                <div className="space-y-4 bg-purple-50/50 p-5 rounded-xl border border-purple-100 shadow-sm">
-                  <h4 className="font-black text-purple-800 flex items-center gap-2"><Package size={18}/> Lost & Found</h4>
-                  <textarea 
-                    placeholder="Enter remarks..." value={lostFoundRemarks} onChange={e => setLostFoundRemarks(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-purple-200 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-white text-gray-900 font-black resize-none transition-all shadow-sm" rows={2}
-                  />
-                  <PhotoSection minimal title="" photos={lostFoundPhotos} setPhotos={setLostFoundPhotos} />
-                </div>
-              </div>
-
-              {/* After Photos */}
-              <PhotoSection 
-                title="After Work Photos" icon={<Camera size={18}/>}
-                photos={afterPhotos} setPhotos={setAfterPhotos}
-              />
-
-              {/* Equipment Tracker (Collapsible) */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <div 
-                  className="p-4 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setShowEquipment(!showEquipment)}
-                >
-                  <div className="flex items-center gap-2 font-black text-gray-800">
-                    <ShieldCheck size={20} className="text-orange-500" />
-                    Equipment & Inventory Tracker
+                {/* Checklist */}
+                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setShowChecklist(!showChecklist)}>
+                    <div className="flex items-center gap-2 font-black text-gray-800 text-lg">
+                      <CheckCircle2 size={22} className="text-emerald-500" /> Task Checklist
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button onClick={(e) => { e.stopPropagation(); setIsChecklistDone(!isChecklistDone); }}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                        {isChecklistDone && <CheckCircle2 size={18}/>} {isChecklistDone ? "All Done" : "Mark All Done"}
+                      </button>
+                      {showChecklist ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
+                    </div>
                   </div>
-                  {showEquipment ? <ChevronUp size={20} className="text-gray-400"/> : <ChevronDown size={20} className="text-gray-400"/>}
+                  <AnimatePresence>
+                    {showChecklist && (
+                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                        <div className="p-5 text-sm font-bold text-gray-500 bg-white border-t border-gray-100">
+                          (Admin Mode) Checking the button above marks all tasks as completed for this log.
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <AnimatePresence>
-                  {showEquipment && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-white">
-                      <div className="p-4 border-t border-gray-100">
-                        {booking?.units?.id ? (
-                          <EquipmentTracker 
-                            bookingId={bookingId} 
-                            unitId={booking.units.id} 
-                            onDataChange={(data) => setEquipmentData(data)}
-                          />
-                        ) : (
-                          <div className="text-center py-6 bg-red-50 rounded-xl border border-red-100">
-                            <AlertTriangle size={24} className="text-red-400 mx-auto mb-2" />
-                            <p className="text-sm font-bold text-red-600">Unit information missing for this booking.</p>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
+                {/* Equipment Tracker */}
+                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setShowEquipment(!showEquipment)}>
+                    <div className="flex items-center gap-2 font-black text-gray-800 text-lg">
+                      <ShieldCheck size={22} className="text-indigo-500" /> Equipment Tracker
+                    </div>
+                    {showEquipment ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
+                  </div>
+                  <AnimatePresence>
+                    {showEquipment && (
+                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-white">
+                        <div className="p-5 border-t border-gray-100">
+                          {booking?.units?.id ? (
+                            <EquipmentTracker bookingId={bookingId} unitId={booking.units.id} onDataChange={setEquipmentData} />
+                          ) : (
+                            <p className="text-sm font-bold text-red-600 py-4 text-center bg-red-50 rounded-xl">Unit information missing.</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </>
+
+              {/* --- RIGHT COLUMN: Media & Evidence --- */}
+              <div className="flex-1 space-y-6">
+                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                  <h3 className="font-black text-gray-900 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg"><Camera size={22} className="text-blue-500"/> Photo Evidence</h3>
+                  <DragDropPhotoSection title="Before Work Photos" photos={beforePhotos} setPhotos={setBeforePhotos} />
+                  <div className="h-px bg-gray-200" />
+                  <DragDropPhotoSection title="After Work Photos" photos={afterPhotos} setPhotos={setAfterPhotos} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100 shadow-sm space-y-4">
+                    <h4 className="font-black text-red-800 flex items-center gap-2"><AlertTriangle size={18}/> Damaged Items</h4>
+                    <textarea placeholder="Enter remarks..." value={damagedRemarks} onChange={e => setDamagedRemarks(e.target.value)} rows={2}
+                      className="w-full p-3.5 rounded-xl border border-red-200 text-sm outline-none focus:border-red-400 font-black bg-white resize-none shadow-sm" />
+                    <DragDropPhotoSection minimal title="" photos={damagedPhotos} setPhotos={setDamagedPhotos} />
+                  </div>
+                  <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm space-y-4">
+                    <h4 className="font-black text-amber-800 flex items-center gap-2"><Package size={18}/> Lost & Found</h4>
+                    <textarea placeholder="Enter remarks..." value={lostFoundRemarks} onChange={e => setLostFoundRemarks(e.target.value)} rows={2}
+                      className="w-full p-3.5 rounded-xl border border-amber-200 text-sm outline-none focus:border-amber-400 font-black bg-white resize-none shadow-sm" />
+                    <DragDropPhotoSection minimal title="" photos={lostFoundPhotos} setPhotos={setLostFoundPhotos} />
+                  </div>
+                </div>
+              </div>
+
+            </div>
           )}
-
         </div>
 
-        {/* Footer */}
-        <div className="p-5 border-t bg-white">
+        {/* Footer with Progress Bar */}
+        <div className="p-6 md:px-8 border-t border-gray-100 bg-white shrink-0">
           <button 
             onClick={handleSubmit} disabled={loading || submitting}
-            className="w-full py-4 bg-gray-900 text-white font-black rounded-xl shadow-xl hover:bg-black transition-all flex justify-center items-center gap-2 disabled:opacity-70 text-lg"
+            className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative"
           >
             {submitting ? (
-              <><Loader2 className="animate-spin" size={24} /> Submitting Log...</>
+              <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="animate-spin text-emerald-400" size={24} />
+                  <span className="text-lg tracking-wide">Processing & Uploading... {uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mt-1 shadow-inner">
+                  <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
             ) : (
-              <><UploadCloud size={24}/> Submit Duty Log</>
+              <div className="flex items-center gap-3 text-lg tracking-wide">
+                <UploadCloud size={24}/> {isEditMode ? "Save Changes to Duty Log" : "Submit Duty Log & Process Photos"}
+              </div>
             )}
           </button>
         </div>
@@ -391,64 +445,70 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   );
 }
 
-// --- Helper Component for Photo Upload Grid (with Expand/Collapse) ---
-function PhotoSection({ title, icon, photos, setPhotos, minimal = false }: any) {
+// --- Helper Component: Drag & Drop Photo Grid (Shows 4 default) ---
+function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any) {
   const [expanded, setExpanded] = useState(false);
-  const displayPhotos = expanded ? photos : photos.slice(0, 3);
-  const hiddenCount = photos.length - 3;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const displayPhotos = expanded ? photos : photos.slice(0, 4);
+  const hiddenCount = photos.length - 4;
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setPhotos((prev: any) => [...prev, ...Array.from(e.dataTransfer.files!)]);
+    }
+  };
 
   return (
-    <div className={minimal ? "" : "space-y-4"}>
-      {!minimal && <h3 className="font-black text-gray-900 flex items-center gap-2">{icon} {title}</h3>}
-      <div className="flex flex-wrap gap-3">
+    <div className={minimal ? "" : "space-y-3"}>
+      {!minimal && <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{title}</h4>}
+
+      <div 
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 scale-[1.02]' : 'border-dashed border-gray-200 bg-white'}`}
+      >
         {displayPhotos.map((p: any, i: number) => {
           const src = typeof p === 'string' ? p : URL.createObjectURL(p);
           return (
-            <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 group shadow-sm">
+            <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
               <img src={src} alt="Upload" className="w-full h-full object-cover" />
-              <button 
-                onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
-                className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50"
-              >
+              <button onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
+                className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50">
                 <Trash2 size={14}/>
               </button>
             </div>
           );
         })}
 
-        {/* View All Button */}
         {hiddenCount > 0 && !expanded && (
-          <button 
-            onClick={() => setExpanded(true)}
-            className="w-24 h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm"
-          >
-            <span className="font-black text-lg">+{hiddenCount}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest mt-1">View All</span>
+          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm">
+            <span className="font-black text-xl">+{hiddenCount}</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest mt-1">View All</span>
           </button>
         )}
 
-        {/* Show Less Button */}
-        {expanded && photos.length > 3 && (
-          <button 
-            onClick={() => setExpanded(false)}
-            className="w-24 h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm"
-          >
+        {expanded && photos.length > 4 && (
+          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm">
             <Eye size={20} className="mb-1" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Show Less</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Show Less</span>
           </button>
         )}
 
-        {/* Add Photo Button */}
-        <label className="w-24 h-24 rounded-xl border-2 border-dashed border-blue-300 flex flex-col items-center justify-center text-blue-500 cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition bg-white shadow-sm">
+        <label className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-blue-300 flex flex-col items-center justify-center text-blue-500 cursor-pointer hover:bg-blue-50 transition bg-white shadow-sm shrink-0">
           <UploadCloud size={24} className="mb-1" />
-          <span className="text-[10px] font-black uppercase tracking-wider">Add</span>
+          <span className="text-[9px] font-black uppercase tracking-widest">Add Files</span>
           <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
-             if (e.target.files) {
-               const filesArray = Array.from(e.target.files);
-               setPhotos((prev: any) => [...prev, ...filesArray]);
-             }
+             if (e.target.files) setPhotos((prev: any) => [...prev, ...Array.from(e.target.files!)]);
           }} />
         </label>
+
+        {photos.length === 0 && !isDragging && (
+          <span className="text-xs font-bold text-gray-400 ml-2 hidden md:inline">Drag & Drop images here</span>
+        )}
+        {isDragging && <span className="text-sm font-black text-blue-500 ml-2">Drop it like it's hot! 🔥</span>}
       </div>
     </div>
   );

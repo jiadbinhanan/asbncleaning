@@ -12,6 +12,7 @@ import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import toast, { Toaster } from 'react-hot-toast';
 
 import AdminDutyModal from './AdminDutyModal'; 
+import AdminEditLogModal from './AdminEditLogModal'; // <-- Added Import
 
 // --- Types ---
 type Booking = {
@@ -62,6 +63,10 @@ export default function BookingManagement() {
   // --- Duty Modal States ---
   const [isDutyModalOpen, setIsDutyModalOpen] = useState(false);
   const [selectedBookingIdForDuty, setSelectedBookingIdForDuty] = useState<string | null>(null);
+
+  // --- Edit Log Modal States --- // <-- Added States
+  const [isEditLogModalOpen, setIsEditLogModalOpen] = useState(false);
+  const [selectedBookingIdForEditLog, setSelectedBookingIdForEditLog] = useState<string | null>(null);
 
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
@@ -662,7 +667,8 @@ export default function BookingManagement() {
                             {['completed', 'finalized'].includes(booking.status) ? (
                               <button
                                 onClick={() => {
-                                  alert("এডিট মোডাল এর কাজ পরবর্তীতে করা হবে।");
+                                  setSelectedBookingIdForEditLog(booking.id.toString()); // <-- Added State Trigger
+                                  setIsEditLogModalOpen(true);                           // <-- Added State Trigger
                                   setActiveMenuId(null);
                                 }}
                                 className="w-full text-left px-4 py-3 text-purple-700 hover:bg-purple-50 flex items-center gap-3 text-sm font-bold border-b border-gray-100 transition-all group"
@@ -987,6 +993,21 @@ export default function BookingManagement() {
           onClose={() => {
             setIsDutyModalOpen(false);
             setSelectedBookingIdForDuty(null);
+          }}
+          onSuccess={() => {
+             fetchBookings();
+          }}
+        />
+      )}
+
+      {/* --- ADMIN EDIT LOG MODAL --- */}
+      {isEditLogModalOpen && selectedBookingIdForEditLog && (
+        <AdminEditLogModal 
+          isOpen={isEditLogModalOpen} 
+          bookingId={selectedBookingIdForEditLog}
+          onClose={() => {
+            setIsEditLogModalOpen(false);
+            setSelectedBookingIdForEditLog(null);
           }}
           onSuccess={() => {
              fetchBookings();
