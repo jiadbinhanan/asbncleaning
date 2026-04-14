@@ -265,15 +265,16 @@ export default function InvoiceManagement() {
       const blob = await pdf(<InvoiceDocument data={invoiceData} />).toBlob();
       const file = new File([blob], `${invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
 
-      const { signature, timestamp, apiKey, cloudName } = await getInvoiceUploadSignature(compName, invoiceNo);
+      // AFTER (fixed) — uses folderPath and publicId returned from the signature function
+const { signature, timestamp, apiKey, cloudName, folderPath, publicId } = await getInvoiceUploadSignature(compName, invoiceNo);
 
-      const formData = new FormData();
-      formData.append("file", file); 
-      formData.append("api_key", apiKey!);
-      formData.append("timestamp", timestamp.toString()); 
-      formData.append("signature", signature);
-      formData.append("folder", `invoices/${compName.replace(/[^a-zA-Z0-9]/g, "_")}`);
-      formData.append("public_id", invoiceNo.replace(/\//g, "-"));
+const formData = new FormData();
+formData.append("file", file);
+formData.append("api_key", apiKey!);
+formData.append("timestamp", timestamp.toString());
+formData.append("signature", signature);
+formData.append("folder", folderPath);    // ✅ matches what was signed
+formData.append("public_id", publicId);   // ✅ matches what was signed
 
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData });
       const uploadData = await uploadRes.json();
