@@ -3,25 +3,25 @@
  * AdminEditLogModal
  *
  * READ FROM:
- *   • bookings                     → booking info, unit, company, assigned team
- *   • units                        → unit_number, building_name
- *   • companies                    → name
- *   • work_logs                    → existing log (photos, times, damaged/lost)
- *   • booking_extra_added_charges  → extra charges list
- *   • profiles                     → team member names
- *   • teams                        → team list for selected date
- *   (inventory data read by AdminEditEquipmentTracker child component)
+ * • bookings                     → booking info, unit, company, assigned team
+ * • units                        → unit_number, building_name
+ * • companies                    → name
+ * • work_logs                    → existing log (photos, times, damaged/lost)
+ * • booking_extra_added_charges  → extra charges list
+ * • profiles                     → team member names
+ * • teams                        → team list for selected date
+ * (inventory data read by AdminEditEquipmentTracker child component)
  *
  * WRITES (only on BULK SAVE):
- *   • bookings                     → cleaning_date, cleaning_time, assigned_team_id, price
- *   • work_logs                    → UPDATE existing or INSERT new row
- *   • booking_inventory_logs       → UPSERT per item (safe — NOT delete-all-then-insert)
- *   • booking_extra_added_charges  → delete + re-insert (charges only, no ledger effect)
+ * • bookings                     → cleaning_date, cleaning_time, assigned_team_id, price, status
+ * • work_logs                    → UPDATE existing or INSERT new row
+ * • booking_inventory_logs       → UPSERT per item (safe — NOT delete-all-then-insert)
+ * • booking_extra_added_charges  → delete + re-insert (charges only, no ledger effect)
  *
  * NOT TOUCHED:
- *   • inventory_transaction_logs   (ledger — unaffected by this admin edit)
- *   • unit_inventory_balances      (not written here)
- *   • checklist_data               (column removed from work_logs — not saved)
+ * • inventory_transaction_logs   (ledger — unaffected by this admin edit)
+ * • unit_inventory_balances      (not written here)
+ * • checklist_data               (column removed from work_logs — not saved)
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -30,7 +30,7 @@ import { motion } from "framer-motion";
 import {
   X, Clock, Camera, FileCheck, CircleDollarSign,
   Calendar, Layers, AlertTriangle, Edit3, Loader2,
-  Search, Trash2, UploadCloud, Save, Eye,ChevronLeft, ChevronRight
+  Search, Trash2, UploadCloud, Save, Eye, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import encodeJpeg from '@jsquash/jpeg/encode';
@@ -180,10 +180,11 @@ function PhotoLightbox({ photos, startIndex, onClose }: { photos: string[]; star
   );
 }
 
-// ─── DragDropPhotoSection from AdminDutyModal — verbatim, renamed EditablePhotoGrid ──
+// ─── EditablePhotoGrid ──
 function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
   const [expanded, setExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const displayPhotos = expanded ? photos : photos.slice(0, 4);
   const hiddenCount = photos.length - 4;
@@ -209,7 +210,12 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
           const src = typeof p === 'string' ? p : URL.createObjectURL(p);
           return (
             <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
-              <img src={src} alt="Upload" className="w-full h-full object-cover" />
+              <img 
+                src={src} 
+                alt="Upload" 
+                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
+                onClick={() => setLightboxIndex(i)}
+              />
               <button onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
                 className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50">
                 <Trash2 size={14}/>
@@ -245,6 +251,14 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
         )}
         {isDragging && <span className="text-sm font-black text-blue-500 ml-2">Drop it like it's hot! 🔥</span>}
       </div>
+
+      {lightboxIndex !== null && (
+        <PhotoLightbox 
+          photos={photos.map((p: any) => typeof p === 'string' ? p : URL.createObjectURL(p))} 
+          startIndex={lightboxIndex} 
+          onClose={() => setLightboxIndex(null)} 
+        />
+      )}
     </div>
   );
 }
@@ -293,7 +307,7 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 60) switchTab(diff > 0 ? Math.min(tabIndex + 1, TABS.length - 1) : Math.max(tabIndex - 1, 0));
+    if (Math.abs(diff) > 60) switchTab(diff > 0 ? Math.min(tabIndex + 1, TABS.length - 1) : Math.max(tabIndex - 0, 0));
     touchStartX.current = null;
   };
   const switchTab = (i: number) => { setTabIndex(i); setActiveTab(TABS[i].key); };
@@ -362,7 +376,7 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
   }, [selectedDate]);
 
   // ─── BULK SAVE — SAFE UPSERT (no blind DELETE on inventory) ──────────────
-  const handleBulkSave = async () => {
+  const handleBulkSave = async (statusToSave: "completed" | "finalized") => {
     setSaving(true);
     setUploadProgress(0);
 
@@ -416,6 +430,7 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
         cleaning_time:    selectedTime,
         assigned_team_id: selectedTeam ? parseInt(selectedTeam) : null,
         price:            parseFloat(priceInput) || 0,
+        status:           statusToSave,
       }).eq("id", bookingId);
 
       // WRITE: work_logs — no checklist_data (column removed)
@@ -544,12 +559,19 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
               </h2>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* Save button in header */}
-              <button onClick={handleBulkSave} disabled={saving || loading}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50">
-                {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                {saving ? "Saving…" : "Save"}
-              </button>
+              {/* Save buttons in header */}
+              <div className="hidden sm:flex items-center gap-2 mr-2 pr-2 border-r border-white/20">
+                <button onClick={() => handleBulkSave("completed")} disabled={saving || loading}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-green-500/80 hover:bg-green-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50">
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  Completed
+                </button>
+                <button onClick={() => handleBulkSave("finalized")} disabled={saving || loading}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/80 hover:bg-purple-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50">
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  Finalized
+                </button>
+              </div>
               <button onClick={onClose} className="p-2 bg-white/10 hover:bg-red-500/80 rounded-full text-white/70 hover:text-white transition-colors">
                 <X size={18} />
               </button>
@@ -749,12 +771,18 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
                   </div>
                 </div>
 
-                {/* Save button */}
+                {/* Save buttons */}
                 <div>
-                  <button onClick={handleBulkSave} disabled={saving}
-                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-indigo-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70">
-                    {saving ? <><Loader2 className="animate-spin" size={22} /> Saving & Uploading… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><Save size={22} /> BULK SAVE ALL EDITS</>}
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onClick={() => handleBulkSave("completed")} disabled={saving}
+                      className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-green-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70">
+                      {saving ? <><Loader2 className="animate-spin" size={22} /> Saving… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><FileCheck size={22} /> SAVE AS COMPLETED</>}
+                    </button>
+                    <button onClick={() => handleBulkSave("finalized")} disabled={saving}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-indigo-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70">
+                      {saving ? <><Loader2 className="animate-spin" size={22} /> Saving… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><Save size={22} /> SAVE AS FINALIZED</>}
+                    </button>
+                  </div>
                   <p className="text-center text-[10px] font-bold text-gray-400 mt-3 uppercase tracking-widest">
                     Saves Execution · Inventory · Pricing together
                   </p>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, UploadCloud, CheckCircle2, ShieldCheck,
   AlertTriangle, Loader2, Camera, Trash2, ChevronDown, ChevronUp, Package,
-  Eye, Clock, Calendar, Users
+  Eye, Clock, Calendar, Users, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -23,12 +23,45 @@ interface AdminDutyModalProps {
   onSuccess: () => void;
 }
 
+// ─── Photo Lightbox ───────────────────────────────────────────────────────────
+function PhotoLightbox({ photos, startIndex, onClose }: { photos: string[]; startIndex: number; onClose: () => void }) {
+  const [idx, setIdx] = useState(startIndex);
+  const prev = () => setIdx(i => (i - 1 + photos.length) % photos.length);
+  const next = () => setIdx(i => (i + 1) % photos.length);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowLeft") prev(); if (e.key === "ArrowRight") next(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  });
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/92 flex items-center justify-center" onClick={onClose}>
+      <div className="relative w-full h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/25 rounded-full text-white transition"><X size={20} /></button>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-[11px] font-black uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full select-none">
+          {idx + 1} / {photos.length}
+        </div>
+        {photos.length > 1 && <button onClick={prev} className="absolute left-3 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition"><ChevronLeft size={22} /></button>}
+        <img src={photos[idx]} alt={`Photo ${idx + 1}`} className="max-h-[85vh] max-w-[88vw] object-contain rounded-2xl shadow-2xl select-none" draggable={false} />
+        {photos.length > 1 && <button onClick={next} className="absolute right-3 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition"><ChevronRight size={22} /></button>}
+        {photos.length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+            {photos.map((_, i) => <button key={i} onClick={() => setIdx(i)} className={`w-2 h-2 rounded-full transition-all ${i === idx ? "bg-white scale-125" : "bg-white/35"}`} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }: AdminDutyModalProps) {
   const supabase = createClient();
 
   // --- States ---
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitType, setSubmitType] = useState<"completed" | "finalized" | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -228,13 +261,14 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
   };
 
   // --- Process and Upload ---
-  const handleSubmit = async () => {
+  const handleSubmit = async (statusToSave: "completed" | "finalized") => {
     const noPhotos = beforePhotos.length === 0 && afterPhotos.length === 0;
     if (noPhotos && !isChecklistDone) {
       if (!window.confirm("No photos uploaded and checklist not marked. Submit anyway?")) return;
     }
 
     setSubmitting(true);
+    setSubmitType(statusToSave);
     setUploadProgress(0);
 
     try {
@@ -311,7 +345,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         assigned_team_id: selectedTeam ? parseInt(selectedTeam) : null,
         cleaning_date: selectedDate,
         work_status: 'work_done',
-        status: 'completed'
+        status: statusToSave
       }).eq('id', bookingId);
       if (bookErr) throw bookErr;
 
@@ -353,6 +387,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
       console.error("Submission error:", error);
       alert("Error submitting data: " + error.message);
       setSubmitting(false);
+      setSubmitType(null);
     }
   };
 
@@ -512,28 +547,51 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
           )}
         </div>
 
-        {/* Footer with Progress Bar */}
+        {/* Footer with Progress Bar & Buttons */}
         <div className="p-6 md:px-8 border-t border-gray-100 bg-white shrink-0">
-          <button 
-            onClick={handleSubmit} disabled={loading || submitting}
-            className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative"
-          >
-            {submitting ? (
-              <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="animate-spin text-emerald-400" size={24} />
-                  <span className="text-lg tracking-wide">Processing & Uploading... {uploadProgress}%</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button 
+              onClick={() => handleSubmit("completed")} disabled={loading || submitting}
+              className="w-full py-5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative"
+            >
+              {submitting && submitType === "completed" ? (
+                <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="animate-spin text-white" size={24} />
+                    <span className="text-lg tracking-wide">Processing... {uploadProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden mt-1 shadow-inner">
+                    <div className="h-full bg-white transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mt-1 shadow-inner">
-                  <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
+              ) : (
+                <div className="flex items-center gap-3 text-lg tracking-wide">
+                  <CheckCircle2 size={24}/> {isEditMode ? "Save as Completed" : "Submit as Completed"}
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 text-lg tracking-wide">
-                <UploadCloud size={24}/> {isEditMode ? "Save Changes to Duty Log" : "Submit Duty Log & Process Photos"}
-              </div>
-            )}
-          </button>
+              )}
+            </button>
+
+            <button 
+              onClick={() => handleSubmit("finalized")} disabled={loading || submitting}
+              className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative"
+            >
+              {submitting && submitType === "finalized" ? (
+                <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="animate-spin text-white" size={24} />
+                    <span className="text-lg tracking-wide">Processing... {uploadProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden mt-1 shadow-inner">
+                    <div className="h-full bg-white transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-lg tracking-wide">
+                  <UploadCloud size={24}/> {isEditMode ? "Save as Finalized" : "Submit as Finalized"}
+                </div>
+              )}
+            </button>
+          </div>
         </div>
 
       </motion.div>
@@ -545,6 +603,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
 function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any) {
   const [expanded, setExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const displayPhotos = expanded ? photos : photos.slice(0, 4);
   const hiddenCount = photos.length - 4;
@@ -570,7 +629,12 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
           const src = typeof p === 'string' ? p : URL.createObjectURL(p);
           return (
             <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
-              <img src={src} alt="Upload" className="w-full h-full object-cover" />
+              <img 
+                src={src} 
+                alt="Upload" 
+                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
+                onClick={() => setLightboxIndex(i)}
+              />
               <button onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
                 className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50">
                 <Trash2 size={14}/>
@@ -606,6 +670,14 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
         )}
         {isDragging && <span className="text-sm font-black text-blue-500 ml-2">Drop it like it's hot! 🔥</span>}
       </div>
+
+      {lightboxIndex !== null && (
+        <PhotoLightbox 
+          photos={photos.map((p: any) => typeof p === 'string' ? p : URL.createObjectURL(p))} 
+          startIndex={lightboxIndex} 
+          onClose={() => setLightboxIndex(null)} 
+        />
+      )}
     </div>
   );
 }
