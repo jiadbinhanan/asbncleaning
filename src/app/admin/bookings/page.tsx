@@ -1,18 +1,18 @@
 'use client';
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Home, Users, CheckCircle2, AlertCircle, 
   Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList,
   Search, Zap, RotateCcw, Download, FileSpreadsheet, LayoutDashboard,
-  ShieldCheck
+  ShieldCheck, ChevronDown
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import toast, { Toaster } from 'react-hot-toast';
 
 import AdminDutyModal from './AdminDutyModal'; 
-import AdminEditLogModal from './AdminEditLogModal'; // <-- Added Import
+import AdminEditLogModal from './AdminEditLogModal'; 
 
 // --- Types ---
 type Booking = {
@@ -44,6 +44,150 @@ type Team = {
   shift_date: string;
 };
 
+// --- Custom Combobox Component (Searchable Dropdown with Keyboard Nav) ---
+function CustomCombobox({ options, value, onChange, placeholder, clearText = "Select Option", disabled = false }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter options and add a "Clear / Select..." option at the top
+  const filteredOptions = useMemo(() => {
+    const filtered = options.filter((opt: any) => opt.label.toLowerCase().includes(searchTerm.toLowerCase()));
+    return [{ id: "", label: `-- ${clearText} --` }, ...filtered];
+  }, [options, searchTerm, clearText]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    // Reset highlight when search changes or opens
+    setHighlightedIndex(0);
+  }, [searchTerm, isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setIsOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (filteredOptions[highlightedIndex]) {
+          onChange(filteredOptions[highlightedIndex].id.toString());
+          setIsOpen(false);
+          setSearchTerm("");
+          inputRef.current?.blur();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        inputRef.current?.blur();
+        break;
+    }
+  };
+
+  const selectedOption = options.find((opt: any) => opt.id.toString() === value.toString());
+
+  return (
+    <div className="relative w-full" ref={wrapperRef}>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          disabled={disabled}
+          className="w-full p-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium disabled:opacity-50 transition-all cursor-text"
+          placeholder={placeholder}
+          value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : "")}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            if (!isOpen) setIsOpen(true);
+          }}
+          onFocus={() => {
+            setIsOpen(true);
+            setSearchTerm(""); // Allow fresh search
+          }}
+          onClick={() => {
+            if (!isOpen) setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          disabled={disabled}
+          onClick={() => {
+            if (!disabled) {
+              setIsOpen(!isOpen);
+              if (!isOpen) inputRef.current?.focus();
+            }
+          }}
+          className="absolute right-0 top-0 h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50 outline-none"
+        >
+          <ChevronDown 
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} 
+            size={18} 
+          />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] max-h-60 overflow-y-auto"
+          >
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt: any, index: number) => (
+                <div
+                  key={opt.id === "" ? "clear-opt" : opt.id}
+                  onClick={() => {
+                    onChange(opt.id.toString());
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={`p-3 cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
+                    index === highlightedIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                  } ${opt.id === "" ? 'text-gray-400 italic bg-gray-50/50 hover:bg-gray-100' : ''}`}
+                >
+                  {opt.label}
+                </div>
+              ))
+            ) : (
+              <div className="p-3 text-sm text-gray-400 text-center font-medium">No results found</div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function BookingManagement() {
   const supabase = createClient();
 
@@ -64,7 +208,7 @@ export default function BookingManagement() {
   const [isDutyModalOpen, setIsDutyModalOpen] = useState(false);
   const [selectedBookingIdForDuty, setSelectedBookingIdForDuty] = useState<string | null>(null);
 
-  // --- Edit Log Modal States --- // <-- Added States
+  // --- Edit Log Modal States ---
   const [isEditLogModalOpen, setIsEditLogModalOpen] = useState(false);
   const [selectedBookingIdForEditLog, setSelectedBookingIdForEditLog] = useState<string | null>(null);
 
@@ -195,7 +339,7 @@ export default function BookingManagement() {
       toast.success("Booking recorded!");
       fetchBookings();
       setIsAddOpen(false);
-      setFormData({ ...formData, unit_id: "", assigned_team_id: "", price: "", checklist_template_id: "" });
+      setFormData({ ...formData, unit_id: "", company_id: "", assigned_team_id: "", price: "", checklist_template_id: "" });
     } else {
       toast.error("Error creating: " + error.message);
     }
@@ -413,6 +557,40 @@ export default function BookingManagement() {
     printWindow.document.close();
   };
 
+  // --- Dynamic Styling Helpers (Soft Aura & Borders) ---
+  const getCardStyle = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-white border-amber-200 shadow-[0_0_20px_-5px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_-5px_rgba(251,191,36,0.4)]';
+      case 'active': return 'bg-white border-blue-200 shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(59,130,246,0.4)]';
+      case 'in_progress': return 'bg-white border-violet-200 shadow-[0_0_20px_-5px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(139,92,246,0.4)]';
+      case 'completed': return 'bg-white border-teal-200 shadow-[0_0_20px_-5px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)]';
+      case 'finalized': return 'bg-white border-green-200 shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_-5px_rgba(34,197,94,0.4)]';
+      default: return 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md';
+    }
+  };
+
+  const getBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-amber-100 text-amber-700';
+      case 'active': return 'bg-blue-100 text-blue-700';
+      case 'in_progress': return 'bg-violet-100 text-violet-700';
+      case 'completed': return 'bg-teal-100 text-teal-700';
+      case 'finalized': return 'bg-green-100 text-green-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getIconColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'text-amber-500 bg-amber-50';
+      case 'active': return 'text-blue-500 bg-blue-50';
+      case 'in_progress': return 'text-violet-500 bg-violet-50';
+      case 'completed': return 'text-teal-500 bg-teal-50';
+      case 'finalized': return 'text-green-600 bg-green-50';
+      default: return 'text-gray-500 bg-gray-50';
+    }
+  };
+
   return (
     <div className="min-h-screen pb-10">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
@@ -556,10 +734,10 @@ export default function BookingManagement() {
                     key={booking.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-shadow relative"
+                    className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all relative ${getCardStyle(booking.status)}`}
                   >
                     <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${booking.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/50 shadow-sm ${getIconColor(booking.status)}`}>
                         <Home size={24} />
                       </div>
                       <div className="overflow-hidden">
@@ -568,11 +746,11 @@ export default function BookingManagement() {
                             Added: {format(parseISO(booking.created_at), 'hh:mm a')}
                           </span>
                         </div>
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider">
+                        <span className="px-2 py-0.5 bg-gray-50 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider border border-gray-100">
                           {booking.booking_ref || `ID-${booking.id}`}
                         </span>
                         <h3 className="font-bold text-gray-800 text-lg leading-tight truncate">Unit {booking.units?.unit_number}</h3>
-                        <p className="text-sm text-gray-500 mt-0.5 truncate">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
+                        <p className="text-sm text-gray-500 mt-0.5 truncate font-medium">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
                       </div>
                     </div>
 
@@ -592,35 +770,30 @@ export default function BookingManagement() {
                             <ClipboardList size={10} className="shrink-0" /> <span className="truncate">{booking.checklist_templates.title}</span>
                           </p>
                         ) : (
-                          <p className="text-[11px] text-orange-500 italic mt-0.5">No checklist</p>
+                          <p className="text-[11px] text-orange-500 font-medium italic mt-0.5">No checklist</p>
                         )}
                       </div>
 
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Team</p>
                         {booking.teams ? (
-                          <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800 truncate">
+                          <span className="text-sm font-medium bg-gray-50 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800 truncate border border-gray-100">
                             <Users size={14} className="shrink-0" /> <span className="truncate">{booking.teams.team_name}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-orange-500 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit">
+                          <span className="text-xs text-orange-600 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit border border-orange-100">
                             <AlertCircle size={14} className="shrink-0" /> Unassigned
                           </span>
                         )}
                       </div>
 
                       <div className="md:w-[90px] shrink-0 flex flex-col items-start md:items-end gap-2 col-span-2 md:col-span-1">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
-                          ['completed', 'finalized'].includes(booking.status) ? 'bg-green-100 text-green-700' :
-                          booking.status === 'in_progress' ? 'bg-violet-100 text-violet-700' :
-                          booking.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {booking.status}
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-white/50 ${getBadgeStyle(booking.status)}`}>
+                          {booking.status.replace('_', ' ')}
                         </span>
 
                         {booking.price > 0 ? (
-                          <p className="text-xs text-green-600 font-black tracking-wide truncate">AED {booking.price}</p>
+                          <p className="text-xs text-green-700 font-black tracking-wide truncate">AED {booking.price}</p>
                         ) : (
                           <p className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1">
                             <AlertCircle size={10} className="shrink-0" /> No Price
@@ -645,7 +818,7 @@ export default function BookingManagement() {
                         <button
                           onClick={() => handleToggleActivation(booking.id, 'active')}
                           disabled={activatingId === booking.id}
-                          className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95"
+                          className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95 shadow-sm"
                         >
                           {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>}
                           Active <RotateCcw size={11} className="ml-0.5 text-blue-400"/>
@@ -656,7 +829,7 @@ export default function BookingManagement() {
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <button 
                           onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
-                          className={`p-2 rounded-xl transition-colors ${activeMenuId === booking.id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-400'}`}>
+                          className={`p-2 rounded-xl transition-colors ${activeMenuId === booking.id ? 'bg-gray-100 shadow-sm text-blue-600' : 'hover:bg-gray-50 text-gray-400'}`}>
                           <MoreVertical size={20} />
                         </button>
 
@@ -767,42 +940,64 @@ export default function BookingManagement() {
               <form onSubmit={handleAddBooking} className="p-6 space-y-5 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
-                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
-                      onChange={(e) => setFormData({...formData, company_id: e.target.value, unit_id: ""})}>
-                      <option value="">Select Company</option>
-                      {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Client / Company</label>
+                    <CustomCombobox
+                      clearText="Clear Selection"
+                      options={companies.map(c => ({ id: c.id, label: c.name }))}
+                      value={formData.company_id}
+                      onChange={(val: string) => setFormData({...formData, company_id: val, unit_id: ""})}
+                      placeholder="Type to search company..."
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
-                    <select required disabled={!formData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium"
-                      onChange={(e) => setFormData({...formData, unit_id: e.target.value})}>
-                      <option value="">Select Unit</option>
-                      {units.filter(u => u.company_id.toString() === formData.company_id).map(u => (
-                        <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>
-                      ))}
-                    </select>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Unit Number</label>
+                    <CustomCombobox
+                      clearText="Clear Selection"
+                      options={units.filter(u => formData.company_id ? u.company_id.toString() === formData.company_id : true).map(u => {
+                        const comp = companies.find(c => c.id === u.company_id);
+                        return {
+                          id: u.id,
+                          label: `${u.unit_number} - ${u.building_name} ${!formData.company_id && comp ? `(${comp.name})` : ''}`
+                        };
+                      })}
+                      value={formData.unit_id}
+                      onChange={(val: string) => {
+                        const selectedUnitId = val;
+                        if (!selectedUnitId) {
+                          setFormData({...formData, unit_id: ""});
+                        } else {
+                          const selectedUnit = units.find(u => u.id.toString() === selectedUnitId);
+                          if (selectedUnit) {
+                            setFormData({
+                              ...formData, 
+                              unit_id: selectedUnitId, 
+                              company_id: selectedUnit.company_id.toString() // Auto-fill company
+                            });
+                          }
+                        }
+                      }}
+                      placeholder="Type to search unit..."
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Date</label>
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={formData.cleaning_date}
                       onChange={(e) => setFormData({...formData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Time</label>
+                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={formData.cleaning_time} onChange={(e) => setFormData({...formData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Service Type</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                     value={isCustomService ? "Other" : formData.service_type}
                     onChange={(e) => {
                       if (e.target.value === "Other") { setIsCustomService(true); setFormData({...formData, service_type: ""}); } 
@@ -824,8 +1019,8 @@ export default function BookingManagement() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Assign Checklist</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                     onChange={(e) => setFormData({...formData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -834,17 +1029,17 @@ export default function BookingManagement() {
 
                 <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Price (AED) - Optional</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Price (AED) - Optional</label>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign Team</label>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Assign Team</label>
                     {formData.cleaning_date ? (
                       availableTeamsForAddDate.length > 0 ? (
                         <select
-                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
                           value={formData.assigned_team_id}
                           onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}>
                           <option value="">Unassigned (Pending)</option>
@@ -855,12 +1050,12 @@ export default function BookingManagement() {
                           ))}
                         </select>
                       ) : (
-                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl mt-1 text-sm font-bold text-red-600">
+                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm font-bold text-red-600">
                           No active teams for {format(parseISO(formData.cleaning_date), 'dd MMM yyyy')}.
                         </div>
                       )
                     ) : (
-                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-sm font-bold text-gray-400">
+                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-400">
                         Select a date first.
                       </div>
                     )}
@@ -890,43 +1085,64 @@ export default function BookingManagement() {
               <form onSubmit={handleUpdateBooking} className="p-6 space-y-5 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client / Company</label>
-                    <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Client / Company</label>
+                    <CustomCombobox
+                      clearText="Clear Selection"
+                      options={companies.map(c => ({ id: c.id, label: c.name }))}
                       value={editData.company_id}
-                      onChange={(e) => setEditData({...editData, company_id: e.target.value, unit_id: ""})}>
-                      <option value="">Select Company</option>
-                      {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                      onChange={(val: string) => setEditData({...editData, company_id: val, unit_id: ""})}
+                      placeholder="Type to search company..."
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unit Number</label>
-                    <select required disabled={!editData.company_id} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-gray-900 font-medium"
-                      value={editData.unit_id} onChange={(e) => setEditData({...editData, unit_id: e.target.value})}>
-                      <option value="">Select Unit</option>
-                      {units.filter(u => u.company_id.toString() === editData.company_id).map(u => (
-                        <option key={u.id} value={u.id}>{u.unit_number} - {u.building_name}</option>
-                      ))}
-                    </select>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Unit Number</label>
+                    <CustomCombobox
+                      clearText="Clear Selection"
+                      options={units.filter(u => editData.company_id ? u.company_id.toString() === editData.company_id : true).map(u => {
+                        const comp = companies.find(c => c.id === u.company_id);
+                        return {
+                          id: u.id,
+                          label: `${u.unit_number} - ${u.building_name} ${!editData.company_id && comp ? `(${comp.name})` : ''}`
+                        };
+                      })}
+                      value={editData.unit_id}
+                      onChange={(val: string) => {
+                        const selectedUnitId = val;
+                        if (!selectedUnitId) {
+                          setEditData({...editData, unit_id: ""});
+                        } else {
+                          const selectedUnit = units.find(u => u.id.toString() === selectedUnitId);
+                          if (selectedUnit) {
+                            setEditData({
+                              ...editData, 
+                              unit_id: selectedUnitId, 
+                              company_id: selectedUnit.company_id.toString() // Auto-fill company
+                            });
+                          }
+                        }
+                      }}
+                      placeholder="Type to search unit..."
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Date</label>
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={editData.cleaning_date}
                       onChange={(e) => setEditData({...editData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Time</label>
+                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={editData.cleaning_time} onChange={(e) => setEditData({...editData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Service Type</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                     value={isEditCustomService ? "Other" : editData.service_type}
                     onChange={(e) => {
                       if (e.target.value === "Other") { setIsEditCustomService(true); setEditData({...editData, service_type: ""}); } 
@@ -948,8 +1164,8 @@ export default function BookingManagement() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Assign Checklist</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Assign Checklist</label>
+                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                     value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -958,17 +1174,17 @@ export default function BookingManagement() {
 
                 <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Price (AED)</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Price (AED)</label>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                       value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">Assign / Change Team</label>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Assign / Change Team</label>
                     {editData.cleaning_date ? (
                       availableTeamsForEditDate.length > 0 ? (
                         <select
-                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
                           value={editData.assigned_team_id}
                           onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
                           <option value="">Unassigned</option>
@@ -979,12 +1195,12 @@ export default function BookingManagement() {
                           ))}
                         </select>
                       ) : (
-                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl mt-1 text-sm font-bold text-red-600">
+                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm font-bold text-red-600">
                           No active teams for {format(parseISO(editData.cleaning_date), 'dd MMM yyyy')}.
                         </div>
                       )
                     ) : (
-                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl mt-1 text-sm font-bold text-gray-400">
+                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-400">
                         Select a date first.
                       </div>
                     )}

@@ -5,10 +5,10 @@ import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
-  PieChart, Pie, Cell, RadialBarChart, RadialBar,
-  ScatterChart, Scatter, FunnelChart, Funnel, LabelList,
+  PieChart, Pie, Cell, ScatterChart, Scatter,
+  FunnelChart, Funnel, LabelList,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PolarAngleAxis, Legend,
+  Legend,
 } from 'recharts';
 import {
   CalendarDays, TrendingUp, Users, FileText, ShieldCheck,
@@ -77,18 +77,21 @@ const Tip = ({ active, payload, label }: any) => {
   );
 };
 
-function StatChip({ label, value, bg, color }: any) {
-  return (
-    <div className="rounded-2xl p-2.5 text-center" style={{ background: bg }}>
-      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>{label}</p>
-      <p className="text-xl font-black" style={{ color }}>{value}</p>
-    </div>
-  );
+/* helper: safely get team from booking (Supabase returns object, not array) */
+function getTeam(b: any) {
+  if (!b.teams) return null;
+  return Array.isArray(b.teams) ? b.teams[0] : b.teams;
+}
+
+/* helper: get extra charges total for a booking */
+function getExtraTotal(b: any): number {
+  const charges = b.booking_extra_added_charges;
+  if (!charges || !Array.isArray(charges)) return 0;
+  return charges.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
 }
 
 /* ═══════════════════════════════════════════════════════════
    A — TODAY'S OPERATIONS
-   White card, same height as Range & QC (set by grid rows)
 ═══════════════════════════════════════════════════════════ */
 function TodayBookingsCard({ bookings }: { bookings: any[] }) {
   const s = useMemo(() => {
@@ -126,7 +129,6 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
             </div>
           }
         />
-        {/* Big total */}
         <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 mb-3 text-white shadow-lg">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total Bookings</p>
@@ -136,7 +138,6 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
             <Target size={22} className="text-white"/>
           </div>
         </div>
-        {/* 3 chips */}
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="rounded-2xl p-2.5 text-white text-center shadow" style={{ background:'linear-gradient(135deg,#3B82F6,#6366F1)' }}>
             <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">Active</p>
@@ -156,8 +157,7 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
         </div>
       </div>
 
-      {/* Hourly bar */}
-      <div className="px-4 flex-1 min-h-0">
+      <div className="px-4 flex-1 min-h-0" style={{minHeight:80}}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={hoursData} barSize={7} margin={{top:2,right:2,left:-30,bottom:0}}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9"/>
@@ -170,7 +170,6 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Assignment */}
       <div className="px-5 pb-5 pt-3 flex-shrink-0">
         <div className="rounded-2xl p-3" style={{ background:'#F8FAFC', border:'1px solid #E2E8F0' }}>
           <div className="flex justify-between items-center mb-1.5">
@@ -188,7 +187,7 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   B — RANGE ANALYTICS  (premium warm coral-rose gradient)
+   B — RANGE ANALYTICS
 ═══════════════════════════════════════════════════════════ */
 function DateRangeCard({ bookings }: { bookings: any[] }) {
   const s = useMemo(()=>{
@@ -213,7 +212,6 @@ function DateRangeCard({ bookings }: { bookings: any[] }) {
           title={<span className="text-white">Range Analytics</span>}
           subtitle={<span style={{color:'#FECDD3'}}>Selected period lifecycle</span>}
         />
-        {/* Compact 2-row stats — smaller padding to condense */}
         <div className="grid grid-cols-2 gap-1.5 mb-1.5">
           {[
             {l:'Total',     v:s.total,     bg:'rgba(255,255,255,0.18)', c:'#fff'},
@@ -233,7 +231,6 @@ function DateRangeCard({ bookings }: { bookings: any[] }) {
         </div>
       </div>
 
-      {/* Funnel takes all remaining space — no fixed height */}
       <div className="flex-1 px-4 pb-4 min-h-0 flex flex-col">
         <p className="text-[9px] font-bold uppercase tracking-widest mb-1 flex-shrink-0" style={{color:'#FECDD3'}}>Conversion Funnel</p>
         <div className="flex-1 min-h-0">
@@ -252,8 +249,8 @@ function DateRangeCard({ bookings }: { bookings: any[] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   C — QC ANALYTICS  (vibrant teal-green)
-   Only returnable items (item_type = 'returnable')
+   C — QC ANALYTICS
+   Count distinct booking_ids, not rows
 ═══════════════════════════════════════════════════════════ */
 function QCAnalyticsCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
   const supabase = createClient();
@@ -263,25 +260,50 @@ function QCAnalyticsCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string 
   useEffect(()=>{
     (async()=>{
       setL(true);
-      // Only returnable items: join equipment_master to filter item_type = 'returnable'
+
+      // Get returnable equipment IDs first (avoids RLS join issues)
+      const { data: returnableEquip } = await supabase
+        .from('equipment_master')
+        .select('id')
+        .eq('item_type', 'returnable');
+
+      const equipIds = (returnableEquip || []).map((e:any) => e.id);
+
+      if (equipIds.length === 0) { setL(false); return; }
+
+      // Get bookings in date range
+      const { data: bookingsInRange } = await supabase
+        .from('bookings')
+        .select('id')
+        .gte('cleaning_date', dateFrom)
+        .lte('cleaning_date', dateTo);
+
+      const bookingIds = (bookingsInRange || []).map((b:any) => b.id);
+      if (bookingIds.length === 0) { setL(false); return; }
+
+      // Fetch inventory logs for those bookings + returnable equipment only
       const { data: logs } = await supabase
         .from('booking_inventory_logs')
-        .select(`
-          qc_good_qty, qc_bad_qty, qc_damage_qty, qc_status,
-          equipment:equipment_master!inner(item_type),
-          bookings!inner(cleaning_date)
-        `)
-        .eq('equipment_master.item_type','returnable')
-        .gte('bookings.cleaning_date', dateFrom)
-        .lte('bookings.cleaning_date', dateTo);
+        .select('booking_id, qc_good_qty, qc_bad_qty, qc_damage_qty, qc_status')
+        .in('equipment_id', equipIds)
+        .in('booking_id', bookingIds);
 
       if(logs){
-        let good=0,bad=0,damaged=0,done=0,pend=0;
+        let good=0,bad=0,damaged=0;
+        // Count DISTINCT booking_ids for done/pending
+        const doneBids = new Set<number>();
+        const pendBids = new Set<number>();
+
         logs.forEach((l:any)=>{
-          good+=l.qc_good_qty||0; bad+=l.qc_bad_qty||0; damaged+=l.qc_damage_qty||0;
-          if(l.qc_status==='completed') done++; else pend++;
+          good+=l.qc_good_qty||0;
+          bad+=l.qc_bad_qty||0;
+          damaged+=l.qc_damage_qty||0;
+          if(l.qc_status==='completed') doneBids.add(l.booking_id);
+          else pendBids.add(l.booking_id);
         });
-        setD({good,bad,damaged,qcDone:done,qcPending:pend});
+        // A booking is pending if not all its logs are done
+        const purelyPending = new Set([...pendBids].filter(id => !doneBids.has(id)));
+        setD({good,bad,damaged,qcDone:doneBids.size,qcPending:purelyPending.size});
       }
       setL(false);
     })();
@@ -385,8 +407,8 @@ function QCAnalyticsCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string 
 }
 
 /* ═══════════════════════════════════════════════════════════
-   D — FINANCIAL PERFORMANCE  (white, spans below the 3 cards)
-   POS data from instant_invoices table, date-keyed correctly
+   D — FINANCIAL PERFORMANCE
+   FIX: use booking_extra_added_charges.amount (not booking_extra_inventory.total_price)
 ═══════════════════════════════════════════════════════════ */
 function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFrom:string; dateTo:string }) {
   const supabase = createClient();
@@ -394,7 +416,6 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
 
   useEffect(()=>{
     (async()=>{
-      // Fetch instant_invoices using created_at date range
       const { data } = await supabase
         .from('instant_invoices')
         .select('total_amount, created_at')
@@ -403,7 +424,6 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
       if(data){
         const m: Record<string,number>={};
         data.forEach((d:any)=>{
-          // Key by yyyy-MM-dd to match booking date keys exactly
           const day = format(parseISO(d.created_at),'yyyy-MM-dd');
           m[day]=(m[day]||0)+Number(d.total_amount);
         });
@@ -415,17 +435,17 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
   const {chartData,totals} = useMemo(()=>{
     const map: Record<string,{dateObj:Date;cleaning:number;inventory:number}>={};
     let tc=0,ti=0;
-    // Only finalized bookings count for cleaning revenue
+    // Only finalized bookings for cleaning revenue
     bookings.filter(b=>b.status==='finalized').forEach(b=>{
       const dObj=parseISO(b.cleaning_date);
       const dStr=format(dObj,'yyyy-MM-dd');
       if(!map[dStr]) map[dStr]={dateObj:dObj,cleaning:0,inventory:0};
       const cp=Number(b.price)||0;
-      const ip=b.booking_extra_inventory?.reduce((a:number,e:any)=>a+Number(e.total_price),0)||0;
+      // FIX: use booking_extra_added_charges not booking_extra_inventory
+      const ip=getExtraTotal(b);
       map[dStr].cleaning+=cp; map[dStr].inventory+=ip; tc+=cp; ti+=ip;
     });
 
-    // Build chart from ALL dates in map + posMap union
     const allKeys=new Set([...Object.keys(map),...Object.keys(posMap)]);
     const sorted=Array.from(allKeys)
       .sort()
@@ -467,7 +487,7 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
           ))}
         </div>
       </div>
-      <div className="flex-1 px-3 pb-4 min-h-0">
+      <div className="flex-1 px-3 pb-4 min-h-0" style={{minHeight:100}}>
         {chartData.length===0?(
           <div className="flex flex-col items-center justify-center h-full text-slate-300">
             <CircleDollarSign size={30} className="mb-2 opacity-40"/><span className="text-sm">No data</span>
@@ -499,29 +519,38 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
 }
 
 /* ═══════════════════════════════════════════════════════════
-   E — LIVE FEED  (double-height, bright dark-blue redesign)
+   E — LIVE FEED
+   FIX: work_logs has no created_at — filter/sort by start_time
 ═══════════════════════════════════════════════════════════ */
 function LiveFeedCard() {
   const supabase = createClient();
   const [events,setEvents] = useState<any[]>([]);
   const [loading,setLoading] = useState(true);
 
-  const fetch = useCallback(async()=>{
+  const fetchData = useCallback(async()=>{
     setLoading(true);
+    // FIX: order by start_time (no created_at column in work_logs)
     const {data} = await supabase
       .from('work_logs')
-      .select('id,start_time,end_time,teams(team_name),agent:profiles!work_logs_submitted_by_fkey(full_name),bookings(units(companies(name)))')
-      .order('id',{ascending:false}).limit(20);
+      .select(`
+        id, start_time, end_time,
+        team:teams(team_name),
+        agent:profiles!work_logs_submitted_by_fkey(full_name),
+        booking:bookings(unit:units(company:companies(name)))
+      `)
+      .order('id',{ascending:false})
+      .limit(20);
+
     if(data){
       let evs: any[]=[];
       (data as any[]).forEach(log=>{
-        const teamName = Array.isArray(log.teams)?log.teams[0]?.team_name:log.teams?.team_name;
-        const agentName= Array.isArray(log.agent)?log.agent[0]?.full_name:log.agent?.full_name;
-        const booking  = Array.isArray(log.bookings)?log.bookings[0]:log.bookings;
-        const unit     = Array.isArray(booking?.units)?booking.units[0]:booking?.units;
-        const company  = Array.isArray(unit?.companies)?unit.companies[0]?.name:unit?.companies?.name;
-        if(log.end_time)   evs.push({id:`e-${log.id}`,time:log.end_time,   title:'Task Completed',desc:`${teamName||'Team'} finished for ${company||'Client'}`,agent:agentName||'Agent',type:'done'});
-        if(log.start_time) evs.push({id:`s-${log.id}`,time:log.start_time, title:'Shift Started',  desc:`${teamName||'Team'} began at ${company||'Client'}`,agent:agentName||'Agent',type:'start'});
+        // team and agent returned as object (not array) from Supabase
+        const teamName  = log.team?.team_name || 'Team';
+        const agentName = log.agent?.full_name || 'Agent';
+        const company   = log.booking?.unit?.company?.name || 'Client';
+
+        if(log.end_time)   evs.push({id:`e-${log.id}`,time:log.end_time,   title:'Task Completed',desc:`${teamName} finished for ${company}`,agent:agentName,type:'done'});
+        if(log.start_time) evs.push({id:`s-${log.id}`,time:log.start_time, title:'Shift Started',  desc:`${teamName} began at ${company}`,  agent:agentName,type:'start'});
       });
       evs.sort((a,b)=>new Date(b.time).getTime()-new Date(a.time).getTime());
       setEvents(evs.slice(0,15));
@@ -529,7 +558,7 @@ function LiveFeedCard() {
     setLoading(false);
   },[supabase]);
 
-  useEffect(()=>{fetch();},[fetch]);
+  useEffect(()=>{fetchData();},[fetchData]);
 
   const ago=(t:string)=>{
     const m=Math.floor((Date.now()-new Date(t).getTime())/60000);
@@ -541,7 +570,6 @@ function LiveFeedCard() {
     <motion.div {...fadeUp} className="rounded-3xl overflow-hidden flex flex-col h-full"
       style={{ background:'linear-gradient(160deg,#0F172A 0%,#1E3A5F 50%,#0C2340 100%)', border:'1.5px solid rgba(56,189,248,0.2)', boxShadow:'0 4px 32px rgba(56,189,248,0.15)' }}>
 
-      {/* Header */}
       <div className="p-5 flex-shrink-0" style={{ borderBottom:'1px solid rgba(56,189,248,0.15)' }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -558,14 +586,13 @@ function LiveFeedCard() {
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#38BDF8'}}/>
               <span className="text-[9px] font-black uppercase tracking-widest" style={{color:'#38BDF8'}}>Live</span>
             </div>
-            <button onClick={fetch} disabled={loading}
+            <button onClick={fetchData} disabled={loading}
               className="p-1.5 rounded-xl transition-all disabled:opacity-40"
               style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}>
               <RefreshCw size={12} className={`text-white ${loading?'animate-spin':''}`}/>
             </button>
           </div>
         </div>
-        {/* Mini stats */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-2xl p-2.5 text-center" style={{background:'rgba(14,165,233,0.15)',border:'1px solid rgba(14,165,233,0.25)'}}>
             <p className="text-[9px] font-bold text-sky-300 uppercase tracking-widest">Completed</p>
@@ -578,7 +605,6 @@ function LiveFeedCard() {
         </div>
       </div>
 
-      {/* Timeline — scrollable, fills remaining height */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0"
         style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(56,189,248,0.3) transparent' }}>
         {loading&&events.length===0?(
@@ -624,7 +650,8 @@ function LiveFeedCard() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   F — FINANCIAL AUDIT  (amber — unchanged)
+   F — FINANCIAL AUDIT
+   FIX: use booking_extra_added_charges.amount
 ═══════════════════════════════════════════════════════════ */
 function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:any[]; rangeBookings:any[] }) {
   const calc=(bookings:any[])=>{
@@ -632,8 +659,8 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
     const audited=aud.filter(b=>b.status==='finalized').length;
     const pending=aud.filter(b=>['active','in_progress','completed'].includes(b.status)).length;
     const revenue=aud.filter(b=>b.status==='finalized').reduce((sum,b)=>{
-      const ex=b.booking_extra_inventory?.reduce((a:number,e:any)=>a+Number(e.total_price),0)||0;
-      return sum+Number(b.price)+ex;
+      // FIX: use getExtraTotal (booking_extra_added_charges.amount)
+      return sum+Number(b.price)+getExtraTotal(b);
     },0);
     return {audited,pending,revenue,total:aud.length};
   };
@@ -688,7 +715,7 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
           </div>
         </div>
       </div>
-      <div className="flex-1 px-4 pb-4 min-h-0">
+      <div className="flex-1 px-4 pb-4 min-h-0" style={{minHeight:80}}>
         <p className="text-[9px] font-bold uppercase tracking-widest text-amber-600 mb-1">Approved Revenue Trend</p>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trendData} margin={{top:4,right:6,left:-24,bottom:0}}>
@@ -705,16 +732,18 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
 }
 
 /* ═══════════════════════════════════════════════════════════
-   G — TEAM PROGRESS  (white, same height as audit)
+   G — TEAM PROGRESS
+   FIX: getTeam helper (teams returned as object not array)
 ═══════════════════════════════════════════════════════════ */
 function TeamProgressCard({ bookings, profilesMap }: { bookings:any[]; profilesMap:Record<string,any> }) {
   const teams=useMemo(()=>{
     const map: Record<string,any>={};
     bookings.forEach(b=>{
-      const t=Array.isArray(b.teams)?b.teams[0]:b.teams; if(!t) return;
-      if(!map[t.id]) map[t.id]={id:t.id,name:t.team_name,members:t.member_ids||[],target:0,completed:0};
-      map[t.id].target++;
-      if(['completed','finalized'].includes(b.status)) map[t.id].completed++;
+      const t=getTeam(b); if(!t) return;
+      const key=String(t.id);
+      if(!map[key]) map[key]={id:t.id,name:t.team_name,members:t.member_ids||[],target:0,completed:0};
+      map[key].target++;
+      if(['completed','finalized'].includes(b.status)) map[key].completed++;
     });
     return Object.values(map);
   },[bookings]);
@@ -784,9 +813,7 @@ function TeamProgressCard({ bookings, profilesMap }: { bookings:any[]; profilesM
 }
 
 /* ═══════════════════════════════════════════════════════════
-   H — INVOICE OVERVIEW  (royal purple + instant invoice)
-   invoices table = monthly company invoices
-   instant_invoices table = POS / walk-in invoices
+   H — INVOICE OVERVIEW
 ═══════════════════════════════════════════════════════════ */
 function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:string; dateTo:string }) {
   const supabase = createClient();
@@ -807,7 +834,8 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
     invoices.forEach(inv=>{
       const v=Number(inv.total_amount)||0; total+=v;
       if(inv.is_paid) paid+=v; else due+=v;
-      cMap[inv.company_name]=(cMap[inv.company_name]||0)+v;
+      const name=(inv.company_name||'Unknown').trim();
+      cMap[name]=(cMap[name]||0)+v;
     });
     const breakdown=Object.entries(cMap).map(([name,value],i)=>({name,value,fill:CHART_COLORS[i%CHART_COLORS.length]})).sort((a,b)=>b.value-a.value);
     return {count:invoices.length,total,paid,due,breakdown};
@@ -824,7 +852,6 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
   },[instantInv]);
 
   const pieColors=['#A78BFA','#818CF8','#6366F1','#4F46E5','#4338CA','#3730A3'];
-  const instColors=['#34D399','#10B981','#059669','#047857'];
 
   return (
     <Card bg="linear-gradient(145deg,#1E1B4B 0%,#312E81 40%,#1E1B4B 100%)" border="rgba(167,139,250,0.3)">
@@ -833,9 +860,7 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
           title={<span className="text-white">Invoice Overview</span>}
           subtitle={<span className="text-violet-300">Monthly + Instant POS invoices</span>}
         />
-        {/* Two sections side by side */}
         <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* Monthly */}
           <div className="rounded-2xl p-3" style={{background:'rgba(167,139,250,0.15)',border:'1px solid rgba(167,139,250,0.25)'}}>
             <div className="flex items-center gap-1.5 mb-2">
               <FileText size={11} style={{color:'#C4B5FD'}}/>
@@ -847,7 +872,6 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
               <div><p className="text-[8px] font-bold text-violet-300 uppercase">Due</p><p className="text-xs font-black text-red-400">AED {monthly.due.toLocaleString()}</p></div>
             </div>
           </div>
-          {/* Instant POS */}
           <div className="rounded-2xl p-3" style={{background:'rgba(52,211,153,0.15)',border:'1px solid rgba(52,211,153,0.25)'}}>
             <div className="flex items-center gap-1.5 mb-2">
               <Zap size={11} style={{color:'#6EE7B7'}}/>
@@ -869,7 +893,6 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
           </div>
         ):(
           <>
-            {/* Monthly breakdown donut */}
             {monthly.breakdown.length>0&&(
               <div className="flex-1 flex flex-col min-h-0">
                 <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{color:'#C4B5FD'}}>Monthly by Company</p>
@@ -887,7 +910,6 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
                     <span className="text-sm font-black text-white">AED {(monthly.total/1000).toFixed(1)}k</span>
                   </div>
                 </div>
-                {/* Legend */}
                 <div className="space-y-1 mt-2 overflow-y-auto" style={{maxHeight:100,scrollbarWidth:'thin'}}>
                   {monthly.breakdown.slice(0,5).map((c,i)=>(
                     <div key={i} className="flex items-center justify-between gap-2">
@@ -902,7 +924,6 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
               </div>
             )}
 
-            {/* Instant POS bar */}
             {instant.count>0&&(
               <div className="flex-1 flex flex-col min-h-0">
                 <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{color:'#6EE7B7'}}>Instant POS Summary</p>
@@ -931,7 +952,8 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
 }
 
 /* ═══════════════════════════════════════════════════════════
-   I — LAUNDRY TRACKING  (orange — only returnable items)
+   I — LAUNDRY TRACKING
+   FIX: separate equipment join (avoid RLS !inner issue)
 ═══════════════════════════════════════════════════════════ */
 function LaundryCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
   const supabase = createClient();
@@ -942,36 +964,45 @@ function LaundryCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
   useEffect(()=>{
     (async()=>{
       setLoading(true);
-      // Only returnable items in laundry records
-      const {data:records} = await supabase
-        .from('laundry_records')
-        .select('sent_qty,received_qty,status,sent_at,equipment:equipment_master!inner(item_name,item_type)')
-        .eq('equipment_master.item_type','returnable')
-        .gte('sent_at',`${dateFrom}T00:00:00`).lte('sent_at',`${dateTo}T23:59:59`);
 
-      // Pending send = returnable items that are qc_bad but not yet have laundry record
-      const {data:pendingLogs} = await supabase
-        .from('booking_inventory_logs')
-        .select('qc_bad_qty,equipment:equipment_master!inner(item_name,item_type),bookings!inner(cleaning_date)')
-        .eq('equipment_master.item_type','returnable')
-        .eq('qc_status','completed')
-        .gte('bookings.cleaning_date',dateFrom)
-        .lte('bookings.cleaning_date',dateTo);
+      // Get returnable equipment
+      const { data: returnableEquip } = await supabase
+        .from('equipment_master')
+        .select('id, item_name')
+        .eq('item_type','returnable');
+      const equipMap: Record<number,string> = {};
+      (returnableEquip||[]).forEach((e:any)=>{ equipMap[e.id]=e.item_name; });
+      const equipIds = Object.keys(equipMap).map(Number);
+
+      if(equipIds.length===0){ setLoading(false); return; }
+
+      const [recordsRes, pendingRes] = await Promise.all([
+        supabase.from('laundry_records')
+          .select('sent_qty,received_qty,status,equipment_id')
+          .in('equipment_id', equipIds)
+          .gte('sent_at',`${dateFrom}T00:00:00`)
+          .lte('sent_at',`${dateTo}T23:59:59`),
+
+        supabase.from('booking_inventory_logs')
+          .select('qc_bad_qty, equipment_id')
+          .in('equipment_id', equipIds)
+          .eq('qc_status','completed'),
+      ]);
 
       const iMap: Record<string,{pendingSend:number;inLaundry:number;received:number}>={};
       let tIn=0,tRec=0,tPend=0;
 
-      if(records){
-        records.forEach((r:any)=>{
-          const n=r.equipment?.item_name||'Other';
+      if(recordsRes.data){
+        recordsRes.data.forEach((r:any)=>{
+          const n=equipMap[r.equipment_id]||'Other';
           if(!iMap[n]) iMap[n]={pendingSend:0,inLaundry:0,received:0};
           if(r.status==='pending_washing'){iMap[n].inLaundry+=r.sent_qty;tIn+=r.sent_qty;}
           else{iMap[n].received+=r.received_qty;tRec+=r.received_qty;}
         });
       }
-      if(pendingLogs){
-        pendingLogs.forEach((l:any)=>{
-          const n=l.equipment?.item_name||'Other'; const q=l.qc_bad_qty||0;
+      if(pendingRes.data){
+        pendingRes.data.forEach((l:any)=>{
+          const n=equipMap[l.equipment_id]||'Other'; const q=l.qc_bad_qty||0;
           if(!iMap[n]) iMap[n]={pendingSend:0,inLaundry:0,received:0};
           iMap[n].pendingSend+=q; tPend+=q;
         });
@@ -1006,7 +1037,7 @@ function LaundryCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
           ))}
         </div>
       </div>
-      <div className="flex-1 px-4 pb-4 min-h-0">
+      <div className="flex-1 px-4 pb-4 min-h-0" style={{minHeight:80}}>
         {loading?(
           <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-white" size={22}/></div>
         ):chartData.length===0?(
@@ -1040,12 +1071,12 @@ function LaundryCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   J — PRICE DISTRIBUTION  (deep rose/magenta — distinct from invoice)
+   J — PRICE DISTRIBUTION
 ═══════════════════════════════════════════════════════════ */
 function PriceDistributionCard({ bookings }: { bookings: any[] }) {
   const scatterData=useMemo(()=>bookings.map((b,i)=>({
     x:i+1, y:Number(b.price)||0,
-    z:(b.booking_extra_inventory?.reduce((a:number,e:any)=>a+Number(e.total_price),0)||0)+10,
+    z:getExtraTotal(b)+10,
     status:b.status,
   })),[bookings]);
 
@@ -1056,10 +1087,9 @@ function PriceDistributionCard({ bookings }: { bookings: any[] }) {
       <div className="p-5 pb-2 flex-shrink-0">
         <CardHead icon={PieIcon} iconBg="rgba(255,255,255,0.2)" iconColor="#fff"
           title={<span className="text-white">Price Distribution</span>}
-          subtitle={<span style={{color:'#A7F3D0'}}>Bubble = extra inventory value</span>}
+          subtitle={<span style={{color:'#A7F3D0'}}>Bubble = extra charges value</span>}
         />
       </div>
-      {/* overflow:hidden prevents scatter bubbles from leaking outside card */}
       <div className="flex-1 flex flex-col px-4 pb-3 min-h-0" style={{overflow:'hidden'}}>
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -1110,34 +1140,52 @@ export default function AdminDashboard() {
         const {data:p} = await supabase.from('profiles').select('*').eq('id',session.user.id).single();
         setAdmin(p);
       }
-      const fs=dateFrom<todayStr?dateFrom:todayStr;
-      const fe=dateTo>todayStr?dateTo:todayStr;
 
-      const [bRes,lRes,iRes] = await Promise.all([
+      // Ensure date range always includes today
+      const fs = dateFrom <= todayStr ? dateFrom : todayStr;
+      const fe = dateTo   >= todayStr ? dateTo   : todayStr;
+
+      const [bRes,iRes] = await Promise.all([
+        // FIX: join booking_extra_added_charges (not booking_extra_inventory)
         supabase.from('bookings').select(`
-          id,cleaning_date,cleaning_time,status,price,assigned_team_id,
-          teams(id,team_name,member_ids),
+          id, cleaning_date, cleaning_time, status, price, assigned_team_id,
+          teams(id, team_name, member_ids),
           units(companies(name)),
-          booking_extra_inventory(total_price)
-        `).gte('cleaning_date',fs).lte('cleaning_date',fe),
+          booking_extra_added_charges(amount, charge_type)
+        `)
+        .gte('cleaning_date', fs)
+        .lte('cleaning_date', fe),
 
-        supabase.from('work_logs').select('id,booking_id,start_time,end_time,status,created_at,agent:profiles!work_logs_submitted_by_fkey(full_name,avatar_url)')
-          .gte('created_at',`${fs}T00:00:00`).lte('created_at',`${fe}T23:59:59`),
-
-        supabase.from('invoices').select('id,company_name,total_amount,created_at,is_paid,start_date,end_date')
-          .lte('start_date',fe).gte('end_date',fs),
+        supabase.from('invoices')
+          .select('id,company_name,total_amount,created_at,is_paid,start_date,end_date')
+          .lte('start_date', fe)
+          .gte('end_date', fs),
       ]);
 
-      const bData=bRes.data||[];
-      const memberIds=new Set<string>();
-      bData.forEach((b:any)=>{ const t=Array.isArray(b.teams)?b.teams[0]:b.teams; t?.member_ids?.forEach((id:string)=>memberIds.add(id)); });
+      const bData = bRes.data || [];
 
-      let pMap:any={};
-      if(memberIds.size>0){
-        const {data:pData} = await supabase.from('profiles').select('id,full_name,avatar_url').in('id',Array.from(memberIds));
-        if(pData) pData.forEach((p:any)=>(pMap[p.id]=p));
+      // Collect member IDs from teams
+      const memberIds = new Set<string>();
+      bData.forEach((b:any)=>{
+        const t = getTeam(b);
+        t?.member_ids?.forEach((id:string) => memberIds.add(id));
+      });
+
+      let pMap: Record<string,any> = {};
+      if(memberIds.size > 0){
+        const {data:pData} = await supabase
+          .from('profiles')
+          .select('id,full_name,avatar_url')
+          .in('id', Array.from(memberIds));
+        if(pData) pData.forEach((p:any)=>{ pMap[p.id]=p; });
       }
-      setData({bookings:bData, workLogs:lRes.data||[], invoices:iRes.data||[], profilesMap:pMap});
+
+      setData({
+        bookings: bData,
+        workLogs: [],          // work_logs fetched inside LiveFeedCard only
+        invoices: iRes.data || [],
+        profilesMap: pMap,
+      });
       setLoading(false);
     })();
   },[dateFrom,dateTo]);
@@ -1155,108 +1203,82 @@ export default function AdminDashboard() {
     );
   }
 
-  const todayBookings = data.bookings.filter(b=>b.cleaning_date===todayStr);
-  const rangeBookings = data.bookings.filter(b=>b.cleaning_date>=dateFrom&&b.cleaning_date<=dateTo);
+  const todayBookings = data.bookings.filter(b => b.cleaning_date === todayStr);
+  const rangeBookings = data.bookings.filter(b => b.cleaning_date >= dateFrom && b.cleaning_date <= dateTo);
 
   return (
     <div className="min-h-screen bg-white pb-24 font-sans">
-      {/* Full-width — fills any monitor size */}
       <div className="w-full px-4 md:px-6 xl:px-8 2xl:px-10 pt-6 space-y-5">
 
-        <WelcomeHeader adminProfile={adminProfile} dateFrom={dateFrom} setDateFrom={setDateFrom} dateTo={dateTo} setDateTo={setDateTo}/>
+        <WelcomeHeader
+          adminProfile={adminProfile}
+          dateFrom={dateFrom} setDateFrom={setDateFrom}
+          dateTo={dateTo}     setDateTo={setDateTo}
+        />
 
-        {/*
-          ┌─────────────────────────────────────────────────────────┐
-          │  ROW 1 (top row)                                        │
-          │  [Today 3col] [Range 3col] [QC 3col] [LiveFeed 3col]   │
-          │                                                         │
-          │  ROW 2 (immediately below)                             │
-          │  [Financial Performance  9col    ] [LiveFeed cont. 3col]│
-          │                                                         │
-          │  Today/Range/QC height = H                             │
-          │  LiveFeed height = 2×H (spans both rows)               │
-          │  Financial height = 2×H - H = fills leftover space     │
-          └─────────────────────────────────────────────────────────┘
-          We achieve this with CSS grid row heights:
-          row1 = ROW_H  |  row2 = FIN_H
-          LiveFeed spans both rows = ROW_H + gap + FIN_H
-        */}
-        <div
-          className="grid gap-5"
-          style={{
-            gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
-            gridTemplateRows: '480px 260px',   /* row1=Today/Range/QC, row2=Financial */
-          }}
-        >
-          {/* Today — row1, col 1-3 */}
-          <div style={{gridColumn:'1/4', gridRow:'1/2'}}>
-            <TodayBookingsCard bookings={todayBookings}/>
+        {/* ── ROW 1+2 (desktop grid) ── */}
+        {/* Mobile: single column stack. Desktop: complex grid with LiveFeed spanning 2 rows */}
+        <div>
+          {/* MOBILE: single-column stacked cards */}
+          <div className="flex flex-col gap-5 lg:hidden">
+            <div style={{height:520}}><TodayBookingsCard bookings={todayBookings}/></div>
+            <div style={{height:460}}><DateRangeCard bookings={rangeBookings}/></div>
+            <div style={{height:460}}><QCAnalyticsCard dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{height:520}}><LiveFeedCard/></div>
+            <div style={{height:300}}><FinancialCard bookings={rangeBookings} dateFrom={dateFrom} dateTo={dateTo}/></div>
           </div>
 
-          {/* Range — row1, col 4-6 */}
-          <div style={{gridColumn:'4/7', gridRow:'1/2'}}>
-            <DateRangeCard bookings={rangeBookings}/>
-          </div>
-
-          {/* QC — row1, col 7-9 */}
-          <div style={{gridColumn:'7/10', gridRow:'1/2'}}>
-            <QCAnalyticsCard dateFrom={dateFrom} dateTo={dateTo}/>
-          </div>
-
-          {/* LiveFeed — col 10-12, spans BOTH rows (row1 + row2) */}
-          <div style={{gridColumn:'10/13', gridRow:'1/3'}}>
-            <LiveFeedCard/>
-          </div>
-
-          {/* Financial — row2, col 1-9 (below the 3 cards, left of live feed) */}
-          <div style={{gridColumn:'1/10', gridRow:'2/3'}}>
-            <FinancialCard bookings={rangeBookings} dateFrom={dateFrom} dateTo={dateTo}/>
+          {/* DESKTOP: complex 12-col grid */}
+          <div
+            className="hidden lg:grid gap-5"
+            style={{
+              gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
+              gridTemplateRows: '480px 260px',
+            }}
+          >
+            <div style={{gridColumn:'1/4',  gridRow:'1/2'}}><TodayBookingsCard bookings={todayBookings}/></div>
+            <div style={{gridColumn:'4/7',  gridRow:'1/2'}}><DateRangeCard bookings={rangeBookings}/></div>
+            <div style={{gridColumn:'7/10', gridRow:'1/2'}}><QCAnalyticsCard dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{gridColumn:'10/13',gridRow:'1/3'}}><LiveFeedCard/></div>
+            <div style={{gridColumn:'1/10', gridRow:'2/3'}}><FinancialCard bookings={rangeBookings} dateFrom={dateFrom} dateTo={dateTo}/></div>
           </div>
         </div>
 
-        {/*
-          ┌──────────────────────────────────────────────────┐
-          │  ROW 3                                           │
-          │  [Audit 4col] [Team Progress 8col]  same height │
-          └──────────────────────────────────────────────────┘
-        */}
-        <div
-          className="grid gap-5"
-          style={{
-            gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
-            gridTemplateRows: '380px',
-          }}
-        >
-          <div style={{gridColumn:'1/5', gridRow:'1/2'}}>
-            <FinancialAuditCard todayBookings={todayBookings} rangeBookings={rangeBookings}/>
+        {/* ── ROW 3: Audit + Team ── */}
+        <div>
+          <div className="flex flex-col gap-5 lg:hidden">
+            <div style={{height:380}}><FinancialAuditCard todayBookings={todayBookings} rangeBookings={rangeBookings}/></div>
+            <div style={{height:380}}><TeamProgressCard bookings={todayBookings} profilesMap={data.profilesMap}/></div>
           </div>
-          <div style={{gridColumn:'5/13', gridRow:'1/2'}}>
-            <TeamProgressCard bookings={todayBookings} profilesMap={data.profilesMap}/>
+          <div
+            className="hidden lg:grid gap-5"
+            style={{
+              gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
+              gridTemplateRows: '380px',
+            }}
+          >
+            <div style={{gridColumn:'1/5', gridRow:'1/2'}}><FinancialAuditCard todayBookings={todayBookings} rangeBookings={rangeBookings}/></div>
+            <div style={{gridColumn:'5/13',gridRow:'1/2'}}><TeamProgressCard bookings={todayBookings} profilesMap={data.profilesMap}/></div>
           </div>
         </div>
 
-        {/*
-          ┌──────────────────────────────────────────────────────┐
-          │  ROW 4 (bottom row)                                  │
-          │  [Invoice 6col] [Laundry 3col] [Scatter 3col]       │
-          │  Invoice width = 2× each of the other two           │
-          └──────────────────────────────────────────────────────┘
-        */}
-        <div
-          className="grid gap-5"
-          style={{
-            gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
-            gridTemplateRows: '420px',
-          }}
-        >
-          <div style={{gridColumn:'1/7', gridRow:'1/2'}}>
-            <InvoiceCard invoices={data.invoices} dateFrom={dateFrom} dateTo={dateTo}/>
+        {/* ── ROW 4: Invoice + Laundry + Scatter ── */}
+        <div>
+          <div className="flex flex-col gap-5 lg:hidden">
+            <div style={{height:420}}><InvoiceCard invoices={data.invoices} dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{height:380}}><LaundryCard dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{height:380}}><PriceDistributionCard bookings={rangeBookings}/></div>
           </div>
-          <div style={{gridColumn:'7/10', gridRow:'1/2'}}>
-            <LaundryCard dateFrom={dateFrom} dateTo={dateTo}/>
-          </div>
-          <div style={{gridColumn:'10/13', gridRow:'1/2'}}>
-            <PriceDistributionCard bookings={rangeBookings}/>
+          <div
+            className="hidden lg:grid gap-5"
+            style={{
+              gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
+              gridTemplateRows: '420px',
+            }}
+          >
+            <div style={{gridColumn:'1/7',  gridRow:'1/2'}}><InvoiceCard invoices={data.invoices} dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{gridColumn:'7/10', gridRow:'1/2'}}><LaundryCard dateFrom={dateFrom} dateTo={dateTo}/></div>
+            <div style={{gridColumn:'10/13',gridRow:'1/2'}}><PriceDistributionCard bookings={rangeBookings}/></div>
           </div>
         </div>
 

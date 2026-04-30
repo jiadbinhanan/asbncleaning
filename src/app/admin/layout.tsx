@@ -5,6 +5,10 @@ import Sidebar from '@/components/admin/dashboard/Sidebar';
 import TopNav from '@/components/admin/TopNav';
 import { createClient } from '@/utils/supabase/client';
 
+// Import the global modals
+import TeamsManagerModal from '@/components/admin/TeamsManagerModal';
+import BookingsManagerModal from '@/components/admin/BookingsManagerModal';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -13,7 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Mobile: Sidebar default CLOSED (false)
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  
+
   // Desktop: Sidebar default OPEN (false means NOT collapsed)
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
 
@@ -24,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) {
           router.push('/admin/login');
           return;
@@ -77,7 +81,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex relative">
-      
+
       {/* Sidebar Component */}
       <Sidebar 
         isMobileOpen={isMobileOpen} 
@@ -91,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out
           ${/* Mobile: Always full width, no margin needed as sidebar is overlay */ ''}
           w-full
-          
+
           ${/* Desktop: Adjust margin based on sidebar state */ ''}
           ${isDesktopCollapsed ? 'md:ml-20' : 'md:ml-72'}
         `}
@@ -102,6 +106,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+
+      {/* Global Modals (Accessible from anywhere via TopNav) */}
+      <TeamsManagerModal />
+      <BookingsManagerModal />
+
     </div>
   );
 }
