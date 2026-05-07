@@ -50,7 +50,7 @@ const S = StyleSheet.create({
     color: C.textMain, 
     backgroundColor: C.white, 
     paddingTop: 25, 
-    paddingBottom: 60, // Changed from 260 to 60 so table flows to the bottom
+    paddingBottom: 60, 
     paddingHorizontal: 0 
   },
 
@@ -152,7 +152,25 @@ const S = StyleSheet.create({
   unitBar: { backgroundColor: C.orange, paddingVertical: 8, paddingHorizontal: 12, marginTop: 10, borderRadius: 4, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   unitBarText: { fontSize: 10, fontWeight: 700, color: C.white, letterSpacing: 0.5, textAlign: 'center' },
 
-  instantBar: { backgroundColor: C.logoBlue, paddingVertical: 8, paddingHorizontal: 12, marginTop: 10, borderRadius: 4 },
+  instantBar: { backgroundColor: C.sky, paddingVertical: 8, paddingHorizontal: 12, marginTop: 10, borderRadius: 4 },
+
+  // New POS Sub Header styles
+  posSubHeaderBox: { 
+    backgroundColor: C.orangeLight, 
+    width: '50%', 
+    paddingVertical: 6, 
+    paddingHorizontal: 12, 
+    marginTop: 8, 
+    borderTopLeftRadius: 4, 
+    borderTopRightRadius: 4, 
+    borderLeft: `3pt solid ${C.orange}` 
+  },
+  posSubHeaderText: { 
+    fontSize: 8.5, 
+    fontWeight: 700, 
+    color: C.navy, 
+    textTransform: 'uppercase' 
+  },
 
   colHdrRow: { flexDirection: 'row', backgroundColor: C.orangeLight, paddingVertical: 8, paddingHorizontal: 12, borderBottom: `1pt solid ${C.orangeSoft}` },
   colHdrCell: { fontSize: 8, fontWeight: 700, color: C.navy, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -175,7 +193,6 @@ const S = StyleSheet.create({
   cRate: { width: '14%', textAlign: 'right' },
   cAmt:  { width: '14%', textAlign: 'right' },
 
-  // Subtotal Styling Updates (Blue Filled Box with Black Text)
   subtotalRow: { 
     flexDirection: 'row', 
     justifyContent: 'flex-end', 
@@ -233,7 +250,7 @@ const S = StyleSheet.create({
 });
 
 export const InvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, companyName, bookings, instantBills, subtotal,
+  const { invoiceNo, date, companyName, bookings, instantBillsByUnit, instantBillsNoUnit, subtotal,
           discountPercent, discountValue, finalTotal, bankDetails, invoiceMode } = data || {};
 
   const issueDate = date ? format(parseISO(date), 'dd-MMM-yyyy') : '';
@@ -258,14 +275,22 @@ export const InvoiceDocument = ({ data }: any) => {
     return acc;
   }, {}) || {};
 
-  const calcUnitSub = (ubs: any[]) => ubs.reduce((sum: number, b: any) => {
-    let t = invoiceMode !== 'inventory_only' ? Number(b.price) : 0;
-    if (invoiceMode !== 'cleaning_only') {
-      t += (b.extras || []).reduce((s: number, e: any) => s + Number(e.total_price), 0);
-      t += (b.extraCharges || []).reduce((s: number, c: any) => s + Number(c.total_price), 0);
-    }
-    return sum + t;
-  }, 0);
+  const calcUnitSub = (ubs: any[], unitId?: number) => {
+    const bookingsTotal = ubs.reduce((sum: number, b: any) => {
+      let t = invoiceMode !== 'inventory_only' ? Number(b.price) : 0;
+      if (invoiceMode !== 'cleaning_only') {
+        t += (b.extras || []).reduce((s: number, e: any) => s + Number(e.total_price), 0);
+        t += (b.extraCharges || []).reduce((s: number, c: any) => s + Number(c.total_price), 0);
+      }
+      return sum + t;
+    }, 0);
+
+    const posTotal = (instantBillsByUnit?.[unitId ?? -1] ?? [])
+      .flatMap((e: any) => e.items)
+      .reduce((s: number, i: any) => s + Number(i.total_price), 0);
+
+    return bookingsTotal + posTotal;
+  };
 
   return (
     <Document>
@@ -329,6 +354,7 @@ export const InvoiceDocument = ({ data }: any) => {
         {/* --- MAIN ITEMS TABLE --- */}
         <View style={S.tableWrap}>
           {Object.entries(grouped).map(([unitName, ubs]: any) => {
+            const unitId = ubs[0]?.unit_id;
             let ri = 0;
             return (
               <React.Fragment key={unitName}>
@@ -378,42 +404,111 @@ export const InvoiceDocument = ({ data }: any) => {
                     </React.Fragment>
                   );
                 })}
-                {/* Updated Subtotal Row with Filled Box */}
+
+                {/* Instant POS Bills for this Unit */}
+                {instantBillsByUnit?.[unitId] && instantBillsByUnit[unitId].length > 0 && (
+                  <React.Fragment>
+                    <View style={S.instantBar} wrap={false}>
+                      <Text style={S.unitBarText}>Additional POS Charges (Walk-in)</Text>
+                    </View>
+
+                    {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => (
+                      <React.Fragment key={`pos-u-${eIdx}`}>
+                        {/* Half Width Left Aligned Orange Box */}
+                        <View style={S.posSubHeaderBox} wrap={false}>
+                          <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
+                        </View>
+
+                        {/* Column Header for POS items */}
+                        <View style={S.colHdrRow} wrap={false}>
+                          <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
+                          <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
+                          <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                          <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                          <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
+                        </View>
+
+                        {/* Items Loop */}
+                        {entry.items?.map((item: any, iIdx: number) => {
+                          const alt = iIdx % 2 !== 0;
+                          return (
+                            <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-item-${iIdx}`} wrap={false}>
+                              <Text style={[S.td, S.cDate]}></Text>
+                              <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
+                              <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
+                              <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                              <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                            </View>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                )}
+
+                {/* Unit Subtotal Row */}
                 <View style={S.subtotalRow} wrap={false}>
                   <View style={S.subtotalBox}>
                     <Text style={S.subtotalLabel}>Unit Sub Total</Text>
-                    <Text style={S.subtotalValue}>{fmt(calcUnitSub(ubs))}</Text>
+                    <Text style={S.subtotalValue}>{fmt(calcUnitSub(ubs, unitId))}</Text>
                   </View>
                 </View>
               </React.Fragment>
             );
           })}
 
-          {instantBills?.length > 0 && (
+          {/* Additional Walk-in POS Charges (No Unit) */}
+          {instantBillsNoUnit?.length > 0 && (
             <React.Fragment>
-              <View style={S.instantBar} wrap={false}><Text style={S.unitBarText}>Outstanding Instant Bills</Text></View>
-              <View style={S.colHdrRow} wrap={false}>
-                <Text style={[S.colHdrCell, { width: '18%' }]}>Date</Text>
-                <Text style={[S.colHdrCell, { width: '54%' }]}>Description</Text>
-                <Text style={[S.colHdrCell, { width: '14%', textAlign: 'center' }]}>Qty</Text>
-                <Text style={[S.colHdrCell, { width: '14%', textAlign: 'right' }]}>Amount</Text>
+              <View style={S.instantBar} wrap={false}>
+                <Text style={S.unitBarText}>Additional POS Charges (Walk-in)</Text>
               </View>
-              {instantBills.map((ib: any, ii: number) => (
-                <View style={[S.dataRow, ii % 2 !== 0 ? S.dataRowAlt : {}]} key={`ib${ii}`} wrap={false}>
-                  <Text style={[S.td, { width: '18%' }]}>{format(parseISO(ib.created_at), 'dd-MMM-yyyy')}</Text>
-                  <Text style={[S.tdProduct, { width: '54%' }]}>Instant POS Bill - {ib.invoice_no}</Text>
-                  <Text style={[S.td, { width: '14%', textAlign: 'center' }]}>1</Text>
-                  <Text style={[S.tdBold, { width: '14%', textAlign: 'right' }]}>{fmt(ib.total_amount)}</Text>
-                </View>
+
+              {instantBillsNoUnit.map((entry: any, eIdx: number) => (
+                <React.Fragment key={`pos-nou-${eIdx}`}>
+                  {/* Half Width Left Aligned Orange Box */}
+                  <View style={S.posSubHeaderBox} wrap={false}>
+                    <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
+                  </View>
+
+                  {/* Column Header for POS items */}
+                  <View style={S.colHdrRow} wrap={false}>
+                    <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
+                    <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
+                    <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                    <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                    <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
+                  </View>
+
+                  {/* Items Loop */}
+                  {entry.items && entry.items.length > 0 ? (
+                    entry.items.map((item: any, iIdx: number) => {
+                      const alt = iIdx % 2 !== 0;
+                      return (
+                        <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-nou-item-${iIdx}`} wrap={false}>
+                          <Text style={[S.td, S.cDate]}></Text>
+                          <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
+                          <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
+                          <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                          <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    // Fallback for bills without details
+                    <View style={S.dataRow} wrap={false}>
+                      <Text style={[S.td, S.cDate]}></Text>
+                      <Text style={[S.tdProduct, S.cDesc]}>POS Bill</Text>
+                      <Text style={[S.td, S.cQty]}>1</Text>
+                      <Text style={[S.td, S.cRate]}></Text>
+                      <Text style={[S.tdBold, S.cAmt]}></Text>
+                    </View>
+                  )}
+                </React.Fragment>
               ))}
-              <View style={S.subtotalRow} wrap={false}>
-                <View style={S.subtotalBox}>
-                  <Text style={S.subtotalLabel}>Bills Sub Total</Text>
-                  <Text style={S.subtotalValue}>{fmt(instantBills.reduce((s: number, b: any) => s + Number(b.total_amount), 0))}</Text>
-                </View>
-              </View>
             </React.Fragment>
           )}
+
         </View>
 
         {/* --- GRAND TOTAL CALCULATION --- */}
@@ -429,7 +524,6 @@ export const InvoiceDocument = ({ data }: any) => {
         </View>
 
         {/* --- SPACER FOR FIXED FOOTER ON LAST PAGE --- */}
-        {/* This ensures the table/grand total doesn't overlap the fixed payment details on the final page */}
         <View style={{ height: 220 }} wrap={false} />
 
         {/* --- FIXED BOTTOM SECTION : STAMP & PAYMENT (Only on last page) --- */}

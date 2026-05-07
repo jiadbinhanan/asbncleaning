@@ -136,6 +136,14 @@ const S = StyleSheet.create({
   // --- TABLE STYLES ---
   tableWrap: { paddingHorizontal: 40, paddingBottom: 5 },
 
+  // --- UNIT GROUPS STYLES ---
+  unitBar: { backgroundColor: C.orange, paddingVertical: 7, paddingHorizontal: 12, marginTop: 8, borderRadius: 4 },
+  unitBarText: { fontSize: 9, fontWeight: 700, color: C.white, textAlign: 'center' },
+  subtotalRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 5, marginBottom: 10 },
+  subtotalBox: { flexDirection: 'row', backgroundColor: C.orangeLight, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, minWidth: 160, justifyContent: 'space-between' },
+  subtotalLabel: { fontSize: 8.5, color: C.navy, fontWeight: 600 },
+  subtotalValue: { fontSize: 9, color: C.navy, fontWeight: 700 },
+
   colHdrRow: { flexDirection: 'row', backgroundColor: C.orangeLight, paddingVertical: 8, paddingHorizontal: 12, borderBottom: `1pt solid ${C.orangeSoft}`, borderRadius: 4, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   colHdrCell: { fontSize: 8, fontWeight: 700, color: C.navy, textTransform: 'uppercase', letterSpacing: 0.5 },
 
@@ -189,7 +197,7 @@ const S = StyleSheet.create({
 });
 
 export const InstantInvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, customerName, items, subtotal, 
+  const { invoiceNo, date, customerName, items, unitGroups, subtotal, 
           discountPercent, discountValue, finalTotal, bankDetails } = data || {};
 
   const issueDate = date ? format(new Date(date), "dd-MMM-yyyy") : "";
@@ -248,24 +256,72 @@ export const InstantInvoiceDocument = ({ data }: any) => {
 
         {/* --- MAIN ITEMS TABLE --- */}
         <View style={S.tableWrap}>
-          <View style={S.colHdrRow} wrap={false}>
-            <Text style={[S.colHdrCell, S.cDesc]}>Item / Service Description</Text>
-            <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
-            <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
-            <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
-          </View>
+          {unitGroups && unitGroups.length > 0 ? (
+            unitGroups.map((group: any, gIdx: number) => {
+              const groupTotal = group.items.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+              return (
+                <React.Fragment key={gIdx}>
+                  {/* Render Unit Header Bar if label exists */}
+                  {group.unitLabel && (
+                    <View style={S.unitBar} wrap={false}>
+                      <Text style={S.unitBarText}>{group.unitLabel}</Text>
+                    </View>
+                  )}
 
-          {items && items.map((item: any, idx: number) => {
-            const alt = idx % 2 !== 0;
-            return (
-              <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={idx} wrap={false}>
-                <Text style={[S.tdProduct, S.cDesc]}>{item.description || "Service Item"}</Text>
-                <Text style={[S.td, S.cQty]}>{item.quantity || 1}</Text>
-                <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
-                <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                  {/* Column Headers */}
+                  <View style={S.colHdrRow} wrap={false}>
+                    <Text style={[S.colHdrCell, S.cDesc]}>Item / Service Description</Text>
+                    <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                    <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                    <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
+                  </View>
+
+                  {/* Items Iteration */}
+                  {group.items && group.items.map((item: any, idx: number) => {
+                    const alt = idx % 2 !== 0;
+                    return (
+                      <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={idx} wrap={false}>
+                        <Text style={[S.tdProduct, S.cDesc]}>{item.description || "Service Item"}</Text>
+                        <Text style={[S.td, S.cQty]}>{item.quantity || 1}</Text>
+                        <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                        <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                      </View>
+                    );
+                  })}
+
+                  {/* Group Subtotal Row */}
+                  <View style={S.subtotalRow} wrap={false}>
+                    <View style={S.subtotalBox}>
+                      <Text style={S.subtotalLabel}>Unit Sub Total</Text>
+                      <Text style={S.subtotalValue}>{fmt(groupTotal)}</Text>
+                    </View>
+                  </View>
+                </React.Fragment>
+              );
+            })
+          ) : (
+            <React.Fragment>
+              {/* Fallback to legacy single items array rendering */}
+              <View style={S.colHdrRow} wrap={false}>
+                <Text style={[S.colHdrCell, S.cDesc]}>Item / Service Description</Text>
+                <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
               </View>
-            );
-          })}
+
+              {items && items.map((item: any, idx: number) => {
+                const alt = idx % 2 !== 0;
+                return (
+                  <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={idx} wrap={false}>
+                    <Text style={[S.tdProduct, S.cDesc]}>{item.description || "Service Item"}</Text>
+                    <Text style={[S.td, S.cQty]}>{item.quantity || 1}</Text>
+                    <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                    <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                  </View>
+                );
+              })}
+            </React.Fragment>
+          )}
         </View>
 
         {/* --- GRAND TOTAL CALCULATION --- */}
