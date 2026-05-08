@@ -125,6 +125,7 @@ export default function InstantPOS({
 
   // ── Items per unit (unitId 0 = walk-in / no-unit mode) ────────────────────
   const [itemsByUnit, setItemsByUnit] = useState<ItemsByUnit>({ 0: [] });
+  const [activeUnitTab, setActiveUnitTab] = useState<number>(0);
 
   // ── Bill Settings ──────────────────────────────────────────────────────────
   const [discount, setDiscount] = useState<number>(0);
@@ -191,11 +192,13 @@ export default function InstantPOS({
           setUnits(data || []);
           setSelectedUnitIds([]);
           setItemsByUnit({ 0: [] });
+          setActiveUnitTab(0);
         });
     } else {
       setUnits([]);
       setSelectedUnitIds([]);
       setItemsByUnit({ 0: [] });
+      setActiveUnitTab(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompanyId, clientType]);
@@ -211,37 +214,42 @@ export default function InstantPOS({
           delete updated[unitId];
           return updated;
         });
+        // Switch active tab to first remaining unit or 0
+        if (activeUnitTab === unitId) setActiveUnitTab(next[0] ?? 0);
         return next;
       } else {
         const next = [...prev, unitId];
         setItemsByUnit((ib) => ({ ...ib, [unitId]: [] }));
+        setActiveUnitTab(unitId);
         return next;
       }
     });
   };
 
-  // ── Item handlers (Updated for Unit-Specific Mapping) ──────────────────────
-  const handleAddItem = (unitId: number, type: "inventory" | "custom") => {
+  // ── Determine which unit id is "active" for item editing ──────────────────
+  // Walk-in uses key 0; registered with units uses selectedUnitIds
+  const activeKey: number = clientType === "registered" && selectedUnitIds.length > 0 ? activeUnitTab : 0;
+  const currentItems: InvoiceItem[] = itemsByUnit[activeKey] ?? [];
+
+  const setCurrentItems = (items: InvoiceItem[] | ((prev: InvoiceItem[]) => InvoiceItem[])) => {
     setItemsByUnit((prev) => ({
       ...prev,
-      [unitId]: [
-        ...(prev[unitId] || []),
-        { id: crypto.randomUUID(), type, description: "", quantity: 1, unit_price: 0, total_price: 0 }
-      ]
+      [activeKey]: typeof items === "function" ? items(prev[activeKey] ?? []) : items,
     }));
   };
 
-  const handleRemoveItem = (unitId: number, id: string) => {
-    setItemsByUnit((prev) => ({
-      ...prev,
-      [unitId]: (prev[unitId] || []).filter((item) => item.id !== id)
-    }));
+  // ── Item handlers ──────────────────────────────────────────────────────────
+  const handleAddItem = (type: "inventory" | "custom") => {
+    setCurrentItems((prev) => [...prev, { id: crypto.randomUUID(), type, description: "", quantity: 1, unit_price: 0, total_price: 0 }]);
   };
 
-  const handleItemChange = (unitId: number, id: string, field: keyof InvoiceItem, value: any) => {
-    setItemsByUnit((prev) => ({
-      ...prev,
-      [unitId]: (prev[unitId] || []).map((item) => {
+  const handleRemoveItem = (id: string) => {
+    setCurrentItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleItemChange = (id: string, field: keyof InvoiceItem, value: any) => {
+    setCurrentItems((prev) =>
+      prev.map((item) => {
         if (item.id !== id) return item;
         const updated = { ...item, [field]: value };
 
@@ -263,11 +271,11 @@ export default function InstantPOS({
         }
         return updated;
       })
-    }));
+    );
   };
 
   // ── Totals ─────────────────────────────────────────────────────────────────
-  // Sum across ALL units for the Right Column summary
+  // Sum across ALL units
   const allItems: InvoiceItem[] = useMemo(
     () => Object.values(itemsByUnit).flat(),
     [itemsByUnit]
@@ -365,7 +373,7 @@ export default function InstantPOS({
                 items: itemsByUnit[uid] || [],
               };
             })
-          : [{ unitLabel: null, items: itemsByUnit[0] || [] }],
+          : [{ unitLabel: null, items: allItems }],
         subtotal,
         discountPercent: discount > 0 && subtotal > 0 ? Number(((discount / subtotal) * 100).toFixed(1)) : 0,
         discountValue: Number(discount) || 0,
@@ -402,6 +410,7 @@ export default function InstantPOS({
       // Reset form
       setItemsByUnit({ 0: [] });
       setSelectedUnitIds([]);
+      setActiveUnitTab(0);
       setDiscount(0);
       setIsPaid(false);
       generateInvoiceNo();
@@ -461,111 +470,12 @@ export default function InstantPOS({
   }, [history, searchQuery]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // UI Helpers
-  // ─────────────────────────────────────────────────────────────────────────
+  // Registered client has units selected?
   const hasUnitMode = clientType === "registered" && selectedUnitIds.length > 0;
-
-  // Render a specific unit's section
-  const renderUnitSection = (unitId: number, title: string) => {
-    const items = itemsByUnit[unitId] || [];
-    const unitTotal = items.reduce((s, i) => s + i.total_price, 0);
-
-    return (
-      <div key={unitId} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col mb-6 last:mb-0">
-        {/* Header Toolbar */}
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/80">
-          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-            <ShoppingCart size={20} className="text-indigo-600" /> {title}
-          </h3>
-          <div className="flex gap-2">
-            <button onClick={() => handleAddItem(unitId, "inventory")} className="px-4 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-sm font-black transition-colors flex items-center gap-2 border border-indigo-200">
-              <Layers size={16} /> Stock Item
-            </button>
-            <button onClick={() => handleAddItem(unitId, "custom")} className="px-4 py-2.5 bg-gray-900 text-white hover:bg-black rounded-xl text-sm font-black transition-colors flex items-center gap-2">
-              <Plus size={16} /> Custom Service
-            </button>
-          </div>
-        </div>
-
-        {/* Items List */}
-        <div className="p-6 space-y-4">
-          {items.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl">
-              <Store size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-sm font-bold text-gray-500">No items yet in this unit. Add a stock item or custom service.</p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {items.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-wrap 2xl:flex-nowrap items-end gap-4 p-5 bg-gray-50 rounded-2xl border border-gray-200 group hover:border-indigo-200 hover:shadow-sm transition-all w-full"
-                >
-                  {/* Description */}
-                  <div className="w-full xl:flex-1">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      {item.type === "inventory" ? <><Layers size={10} /> Inventory Product</> : <><Tag size={10} /> Custom Description</>}
-                    </label>
-                    {item.type === "inventory" ? (
-                      <select value={item.equipment_id || ""} onChange={(e) => handleItemChange(unitId, item.id, "equipment_id", e.target.value)}
-                        className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 cursor-pointer shadow-sm">
-                        <option value="">Select Product...</option>
-                        {inventory.map((inv) => (
-                          <option key={inv.id} value={inv.id} disabled={inv.current_stock <= 0}>
-                            {inv.item_name} ({inv.current_stock > 0 ? `${inv.current_stock} left` : "Out of Stock"})
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input type="text" placeholder="e.g. Sofa Deep Cleaning" value={item.description} onChange={(e) => handleItemChange(unitId, item.id, "description", e.target.value)}
-                        className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 shadow-sm" />
-                    )}
-                  </div>
-                  {/* Qty */}
-                  <div className="w-24 shrink-0 2xl:w-32">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Qty</label>
-                    <input type="number" min="1" value={item.quantity} onChange={(e) => handleItemChange(unitId, item.id, "quantity", e.target.value)}
-                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-center shadow-sm" />
-                  </div>
-                  {/* Rate */}
-                  <div className="w-32 shrink-0 2xl:w-40">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Rate (AED)</label>
-                    <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => handleItemChange(unitId, item.id, "unit_price", e.target.value)}
-                      className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-right shadow-sm" />
-                  </div>
-                  {/* Total */}
-                  <div className="w-28 shrink-0 2xl:w-36 bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-right">
-                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 block">Total</label>
-                    <p className="text-base font-black text-indigo-700">{item.total_price.toFixed(2)}</p>
-                  </div>
-                  {/* Remove */}
-                  <button onClick={() => handleRemoveItem(unitId, item.id)}
-                    className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100 xl:opacity-0 xl:group-hover:opacity-100">
-                    <Trash2 size={18} />
-                  </button>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
-
-        {/* Section Subtotal Footer */}
-        {items.length > 0 && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-5 py-2.5">
-              <span className="text-sm font-black text-indigo-700 uppercase tracking-wider">Unit Subtotal:</span>
-              <span className="text-base font-black text-indigo-900">AED {unitTotal.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Delete Modal */}
       <AnimatePresence>
@@ -581,13 +491,13 @@ export default function InstantPOS({
 
       {/* ── CREATE TAB ── */}
       {activeTab === "create" && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 2xl:grid-cols-12 gap-6 w-full">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-          {/* ── LEFT COLUMN: Bill Builder ── */}
-          <div className="xl:col-span-8 2xl:col-span-9 space-y-6">
+          {/* ── LEFT COLUMN: Bill Builder ── xl:col-span-9 */}
+          <div className="xl:col-span-9 space-y-5">
 
             {/* ── Invoice header card ── */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
               <div className="flex flex-col lg:flex-row gap-6">
 
                 {/* Invoice number */}
@@ -602,26 +512,26 @@ export default function InstantPOS({
                 </div>
 
                 {/* Client type + selection */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Customer</p>
-                  <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200 mb-4 max-w-xs">
+                  <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200 mb-3 max-w-xs">
                     <button type="button" onClick={() => { setClientType("walk_in"); setSelectedCompanyId(""); }} className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${clientType === "walk_in" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Walk-in / Cash</button>
                     <button type="button" onClick={() => setClientType("registered")} className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${clientType === "registered" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>Registered Client</button>
                   </div>
 
                   {clientType === "walk_in" ? (
-                    <div className="relative max-w-md">
-                      <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <div className="relative max-w-sm">
+                      <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                       <input type="text" placeholder="Enter customer name..." value={walkInName} onChange={(e) => setWalkInName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 text-sm font-black text-gray-900 shadow-sm" />
+                        className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 text-sm font-black text-gray-900 shadow-sm" />
                     </div>
                   ) : (
-                    <div className="flex flex-col xl:flex-row gap-5">
+                    <div className="flex flex-col gap-4 w-full">
                       {/* Company selector */}
-                      <div className="relative w-full max-w-md shrink-0">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <div className="relative w-full max-w-sm">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <select value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 text-sm font-black text-gray-900 appearance-none cursor-pointer shadow-sm">
+                          className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-indigo-400 text-sm font-black text-gray-900 appearance-none cursor-pointer shadow-sm">
                           <option value="">Select Company...</option>
                           {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
@@ -629,9 +539,9 @@ export default function InstantPOS({
 
                       {/* Unit chips — shown after company selected */}
                       {selectedCompanyId && units.length > 0 && (
-                        <div className="flex-1">
+                        <div className="w-full">
                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Units</p>
-                          <div className="flex flex-wrap gap-2.5">
+                          <div className="flex flex-wrap gap-2">
                             {units.map((unit) => {
                               const selected = selectedUnitIds.includes(unit.id);
                               return (
@@ -639,12 +549,12 @@ export default function InstantPOS({
                                   key={unit.id}
                                   type="button"
                                   onClick={() => toggleUnit(unit.id)}
-                                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black border transition-all ${selected ? "bg-indigo-600 text-white border-indigo-600 shadow-md" : "bg-gray-50 text-gray-700 border-gray-200 hover:border-indigo-300"}`}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all ${selected ? "bg-indigo-600 text-white border-indigo-600 shadow-md" : "bg-gray-50 text-gray-700 border-gray-200 hover:border-indigo-300"}`}
                                 >
-                                  <Home size={14} />
+                                  <Home size={11} />
                                   Unit {unit.unit_number}
-                                  {unit.building_name && <span className="opacity-70 font-medium">· {unit.building_name}</span>}
-                                  {selected && <X size={14} className="ml-1" />}
+                                  {unit.building_name && <span className="opacity-70">· {unit.building_name}</span>}
+                                  {selected && <X size={11} />}
                                 </button>
                               );
                             })}
@@ -653,7 +563,7 @@ export default function InstantPOS({
                       )}
 
                       {selectedCompanyId && units.length === 0 && (
-                        <p className="text-sm font-bold text-gray-400 self-center">No units found for this company.</p>
+                        <p className="text-xs font-bold text-gray-400 self-center">No units found for this company.</p>
                       )}
                     </div>
                   )}
@@ -661,84 +571,192 @@ export default function InstantPOS({
               </div>
             </div>
 
-            {/* ── Items Sections (List Format) ── */}
-            <div className="w-full">
-              {clientType === "registered" && selectedCompanyId && selectedUnitIds.length === 0 ? (
-                // Disabled state when registered but no unit selected
-                <div className="text-center py-16 px-6 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                  <Home size={48} className="mx-auto text-gray-300 mb-4" />
-                  <p className="text-base font-black text-gray-800">No Unit Selected</p>
-                  <p className="text-sm font-bold text-gray-500 mt-1">Select at least one unit above to start adding items.</p>
-                </div>
-              ) : !hasUnitMode ? (
-                // Walk In Mode
-                renderUnitSection(0, "Items & Services")
-              ) : (
-                // Multi Unit Mode
-                <div className="space-y-6">
+            {/* ── Items section ── */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+              {/* Unit tabs (registered + units selected) */}
+              {hasUnitMode && (
+                <div className="flex gap-1 p-3 bg-gray-50 border-b border-gray-100 overflow-x-auto">
                   {selectedUnitIds.map((uid) => {
-                    const unit = units.find((u) => u.id === uid);
-                    const title = unit ? `Unit ${unit.unit_number}${unit.building_name ? ` – ${unit.building_name}` : ""}` : `Unit ${uid}`;
-                    return renderUnitSection(uid, title);
+                    const unit = units.find((u) => u.id === uid)!;
+                    const unitItemCount = (itemsByUnit[uid] || []).length;
+                    return (
+                      <button
+                        key={uid}
+                        onClick={() => setActiveUnitTab(uid)}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all border ${activeUnitTab === uid ? "bg-indigo-600 text-white border-indigo-600 shadow" : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"}`}
+                      >
+                        <Home size={12} /> Unit {unit.unit_number}
+                        {unitItemCount > 0 && (
+                          <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-black ${activeUnitTab === uid ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-700"}`}>
+                            {unitItemCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Items toolbar */}
+              <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-50/40">
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <ShoppingCart size={18} className="text-indigo-600" />
+                  {hasUnitMode
+                    ? `Items for Unit ${units.find((u) => u.id === activeUnitTab)?.unit_number ?? "—"}`
+                    : "Items & Services"}
+                </h3>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAddItem("inventory")} className="px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-black transition-colors flex items-center gap-1.5 border border-indigo-200">
+                    <Layers size={14} /> Stock Item
+                  </button>
+                  <button onClick={() => handleAddItem("custom")} className="px-3 py-2 bg-gray-900 text-white hover:bg-black rounded-xl text-xs font-black transition-colors flex items-center gap-1.5">
+                    <Plus size={14} /> Custom Service
+                  </button>
+                </div>
+              </div>
+
+              {/* Disabled state when registered but no unit selected */}
+              {clientType === "registered" && selectedCompanyId && selectedUnitIds.length === 0 ? (
+                <div className="text-center py-12 px-6">
+                  <Home size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-sm font-bold text-gray-500">Select at least one unit above to start adding items.</p>
+                </div>
+              ) : (
+                <div className="p-5 space-y-3">
+                  {currentItems.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl">
+                      <Store size={40} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm font-bold text-gray-500">No items yet. Add a stock item or custom service.</p>
+                    </div>
+                  ) : (
+                    <AnimatePresence>
+                      {currentItems.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                          className="flex flex-wrap xl:flex-nowrap items-end gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200 group hover:border-indigo-200 hover:shadow-sm transition-all"
+                        >
+                          {/* Description */}
+                          <div className="w-full xl:flex-1">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                              {item.type === "inventory" ? <><Layers size={9} /> Inventory Product</> : <><Tag size={9} /> Custom Description</>}
+                            </label>
+                            {item.type === "inventory" ? (
+                              <select value={item.equipment_id || ""} onChange={(e) => handleItemChange(item.id, "equipment_id", e.target.value)}
+                                className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 cursor-pointer">
+                                <option value="">Select Product...</option>
+                                {inventory.map((inv) => (
+                                  <option key={inv.id} value={inv.id} disabled={inv.current_stock <= 0}>
+                                    {inv.item_name} ({inv.current_stock > 0 ? `${inv.current_stock} left` : "Out of Stock"})
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input type="text" placeholder="e.g. Sofa Deep Cleaning" value={item.description} onChange={(e) => handleItemChange(item.id, "description", e.target.value)}
+                                className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400" />
+                            )}
+                          </div>
+                          {/* Qty */}
+                          <div className="w-24 shrink-0">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Qty</label>
+                            <input type="number" min="1" value={item.quantity} onChange={(e) => handleItemChange(item.id, "quantity", e.target.value)}
+                              className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-center" />
+                          </div>
+                          {/* Rate */}
+                          <div className="w-32 shrink-0">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Rate (AED)</label>
+                            <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => handleItemChange(item.id, "unit_price", e.target.value)}
+                              className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 text-right" />
+                          </div>
+                          {/* Total */}
+                          <div className="w-28 shrink-0 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5 text-right">
+                            <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-0.5 block">Total</label>
+                            <p className="text-sm font-black text-indigo-700">{item.total_price.toFixed(2)}</p>
+                          </div>
+                          {/* Remove */}
+                          <button onClick={() => handleRemoveItem(item.id)}
+                            className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100 xl:opacity-0 xl:group-hover:opacity-100">
+                            <Trash2 size={16} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  )}
+                </div>
+              )}
+
+              {/* Per-unit subtotals (if multi-unit mode) */}
+              {hasUnitMode && selectedUnitIds.some((uid) => (itemsByUnit[uid] || []).length > 0) && (
+                <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {selectedUnitIds.map((uid) => {
+                    const unit = units.find((u) => u.id === uid)!;
+                    const unitTotal = (itemsByUnit[uid] || []).reduce((s, i) => s + i.total_price, 0);
+                    if (unitTotal === 0) return null;
+                    return (
+                      <div key={uid} className="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs font-black text-indigo-700">Unit {unit.unit_number}</span>
+                        <span className="text-sm font-black text-indigo-900">AED {unitTotal.toFixed(2)}</span>
+                      </div>
+                    );
                   })}
                 </div>
               )}
             </div>
-
           </div>
 
-          {/* ── RIGHT COLUMN: Summary + Bank ── */}
-          <div className="xl:col-span-4 2xl:col-span-3 space-y-6">
+          {/* ── RIGHT COLUMN: Summary + Bank ── xl:col-span-3 */}
+          <div className="xl:col-span-3 space-y-5">
 
             {/* Bill Summary */}
-            <div className="bg-gray-900 rounded-3xl p-7 shadow-xl text-white relative overflow-hidden sticky top-6">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl" />
-              <h3 className="text-xl font-black flex items-center gap-2 mb-6">
-                <Receipt size={22} className="text-indigo-400" /> Bill Summary
+            <div className="bg-gray-900 rounded-2xl p-6 shadow-xl text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-500/20 rounded-full blur-2xl" />
+              <h3 className="text-lg font-black flex items-center gap-2 mb-5">
+                <Receipt size={18} className="text-indigo-400" /> Bill Summary
               </h3>
-              <div className="space-y-4 mb-8 text-sm">
+              <div className="space-y-3 mb-6 text-sm">
                 <div className="flex justify-between text-gray-300">
-                  <span className="font-bold">Subtotal</span>
-                  <span className="font-black text-white">AED {subtotal.toFixed(2)}</span>
+                  <span>Subtotal</span>
+                  <span className="font-bold text-white">AED {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-300">Discount (AED)</span>
+                  <span className="text-gray-300">Discount (AED)</span>
                   <input type="number" min="0" value={discount} onChange={(e) => setDiscount(Number(e.target.value))}
-                    className="w-28 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-right text-white font-black outline-none focus:border-indigo-400 transition-colors" />
+                    className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-right text-white font-black outline-none focus:border-indigo-400" />
                 </div>
-                <div className="h-px bg-white/10 my-4" />
-                <div className="flex justify-between items-end bg-white/5 p-5 rounded-2xl border border-white/10">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-indigo-300">Net Total</span>
-                  <span className="text-3xl font-black text-emerald-400">AED {totalAmount.toFixed(2)}</span>
+                <div className="h-px bg-white/10" />
+                <div className="flex justify-between items-end bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Net Total</span>
+                  <span className="text-2xl font-black text-emerald-400">AED {totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
-              <label className="flex items-center gap-4 p-4 bg-white/10 border border-white/20 rounded-2xl cursor-pointer hover:bg-white/20 transition-colors mb-6 group">
+              <label className="flex items-center gap-3 p-3.5 bg-white/10 border border-white/20 rounded-xl cursor-pointer hover:bg-white/20 transition-colors mb-5">
                 <input type="checkbox" checked={isPaid} onChange={(e) => setIsPaid(e.target.checked)} className="hidden" />
-                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${isPaid ? "bg-emerald-500 border-emerald-500 text-white" : "border-gray-400 group-hover:border-white text-transparent"}`}>
-                  <CheckCircle2 size={16} strokeWidth={3} />
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isPaid ? "bg-emerald-500 border-emerald-500 text-white" : "border-gray-400 text-transparent"}`}>
+                  <CheckCircle2 size={13} strokeWidth={3} />
                 </div>
                 <div className="select-none">
-                  <p className="text-base font-black text-white leading-none mb-1">Payment Received</p>
-                  <p className="text-[11px] font-bold text-gray-400">Mark as paid instantly</p>
+                  <p className="text-sm font-black text-white leading-none">Payment Received</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Mark as paid instantly</p>
                 </div>
               </label>
 
               <button onClick={handleGenerateInvoice} disabled={saving}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95 text-base">
+                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95 text-sm">
                 {saving
-                  ? <><Loader2 size={18} className="animate-spin" /><span>{saveProgress}</span></>
-                  : <><ArrowRight size={18} /> Generate Bill & PDF</>
+                  ? <><Loader2 size={16} className="animate-spin" /><span>{saveProgress}</span></>
+                  : <><ArrowRight size={16} /> Generate Bill & PDF</>
                 }
               </button>
             </div>
 
             {/* Bank Details */}
-            <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-xs font-black text-gray-800 flex items-center gap-2 mb-5 uppercase tracking-widest">
-                <Banknote size={16} className="text-indigo-600" /> Bank Details
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+              <h3 className="text-xs font-black text-gray-800 flex items-center gap-2 mb-4 uppercase tracking-widest">
+                <Banknote size={14} className="text-indigo-600" /> Bank Details
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {[
                   { label: "Bank Name", key: "bankName" },
                   { label: "Account Name", key: "accountName" },
@@ -748,9 +766,9 @@ export default function InstantPOS({
                   { label: "Routing No", key: "routingNo" },
                 ].map(({ label, key }) => (
                   <div key={key}>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">{label}</label>
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{label}</label>
                     <input type="text" value={(bankDetails as any)[key]} onChange={(e) => setBankDetails({ ...bankDetails, [key]: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-black text-gray-900 outline-none focus:border-indigo-400 transition-colors" />
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400" />
                   </div>
                 ))}
               </div>
@@ -761,7 +779,7 @@ export default function InstantPOS({
 
       {/* ── HISTORY TAB ── */}
       {activeTab === "history" && (
-        <div className="w-full">
+        <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-2xl font-black text-gray-900">Instant POS History</h2>
@@ -787,7 +805,8 @@ export default function InstantPOS({
               <p className="text-sm text-gray-500 mt-1">Generate a quick bill to see it here.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-5">
+            /* Wide monitor: 2 cols lg, 3 cols xl, 4 cols 2xl */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               {filteredHistory.map((inv: any) => (
                 <motion.div
                   key={inv.id}
@@ -820,6 +839,7 @@ export default function InstantPOS({
                           <CheckCircle2 size={17} />
                         </button>
                       )}
+                      {/* Delete — unpaid only */}
                       {!inv.is_paid && (
                         <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete">
                           <Trash2 size={17} />

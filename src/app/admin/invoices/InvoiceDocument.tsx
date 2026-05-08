@@ -50,7 +50,7 @@ const S = StyleSheet.create({
     color: C.textMain, 
     backgroundColor: C.white, 
     paddingTop: 25, 
-    paddingBottom: 60, 
+    paddingBottom: 60, // Changed from 260 to 60 so table flows to the bottom
     paddingHorizontal: 0 
   },
 
@@ -250,7 +250,7 @@ const S = StyleSheet.create({
 });
 
 export const InvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, companyName, bookings, instantBillsByUnit, instantBillsNoUnit, subtotal,
+  const { invoiceNo, date, companyName, bookings, instantBills, instantBillsByUnit, instantBillsNoUnit, subtotal,
           discountPercent, discountValue, finalTotal, bankDetails, invoiceMode } = data || {};
 
   const issueDate = date ? format(parseISO(date), 'dd-MMM-yyyy') : '';
@@ -412,37 +412,41 @@ export const InvoiceDocument = ({ data }: any) => {
                       <Text style={S.unitBarText}>Additional POS Charges (Walk-in)</Text>
                     </View>
 
-                    {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => (
-                      <React.Fragment key={`pos-u-${eIdx}`}>
-                        {/* Half Width Left Aligned Orange Box */}
-                        <View style={S.posSubHeaderBox} wrap={false}>
-                          <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
-                        </View>
+                    {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => {
+                      const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
+                      const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                      return (
+                        <React.Fragment key={`pos-u-${eIdx}`}>
+                          {/* Half Width Left Aligned Orange Box */}
+                          <View style={S.posSubHeaderBox} wrap={false}>
+                            <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
+                          </View>
 
-                        {/* Column Header for POS items */}
-                        <View style={S.colHdrRow} wrap={false}>
-                          <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
-                          <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
-                          <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
-                          <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
-                          <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
-                        </View>
+                          {/* Column Header for POS items */}
+                          <View style={S.colHdrRow} wrap={false}>
+                            <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
+                            <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
+                            <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                            <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                            <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
+                          </View>
 
-                        {/* Items Loop */}
-                        {entry.items?.map((item: any, iIdx: number) => {
-                          const alt = iIdx % 2 !== 0;
-                          return (
-                            <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-item-${iIdx}`} wrap={false}>
-                              <Text style={[S.td, S.cDate]}></Text>
-                              <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
-                              <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
-                              <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
-                              <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
-                            </View>
-                          );
-                        })}
-                      </React.Fragment>
-                    ))}
+                          {/* Items Loop */}
+                          {entry.items?.map((item: any, iIdx: number) => {
+                            const alt = iIdx % 2 !== 0;
+                            return (
+                              <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-item-${iIdx}`} wrap={false}>
+                                <Text style={[S.td, S.cDate]}>{billDateStr}</Text>
+                                <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
+                                <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
+                                <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                                <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                              </View>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
                   </React.Fragment>
                 )}
 
@@ -464,48 +468,52 @@ export const InvoiceDocument = ({ data }: any) => {
                 <Text style={S.unitBarText}>Additional POS Charges (Walk-in)</Text>
               </View>
 
-              {instantBillsNoUnit.map((entry: any, eIdx: number) => (
-                <React.Fragment key={`pos-nou-${eIdx}`}>
-                  {/* Half Width Left Aligned Orange Box */}
-                  <View style={S.posSubHeaderBox} wrap={false}>
-                    <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
-                  </View>
-
-                  {/* Column Header for POS items */}
-                  <View style={S.colHdrRow} wrap={false}>
-                    <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
-                    <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
-                    <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
-                    <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
-                    <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
-                  </View>
-
-                  {/* Items Loop */}
-                  {entry.items && entry.items.length > 0 ? (
-                    entry.items.map((item: any, iIdx: number) => {
-                      const alt = iIdx % 2 !== 0;
-                      return (
-                        <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-nou-item-${iIdx}`} wrap={false}>
-                          <Text style={[S.td, S.cDate]}></Text>
-                          <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
-                          <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
-                          <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
-                          <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
-                        </View>
-                      );
-                    })
-                  ) : (
-                    // Fallback for bills without details
-                    <View style={S.dataRow} wrap={false}>
-                      <Text style={[S.td, S.cDate]}></Text>
-                      <Text style={[S.tdProduct, S.cDesc]}>POS Bill</Text>
-                      <Text style={[S.td, S.cQty]}>1</Text>
-                      <Text style={[S.td, S.cRate]}></Text>
-                      <Text style={[S.tdBold, S.cAmt]}></Text>
+              {instantBillsNoUnit.map((entry: any, eIdx: number) => {
+                const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
+                const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                return (
+                  <React.Fragment key={`pos-nou-${eIdx}`}>
+                    {/* Half Width Left Aligned Orange Box */}
+                    <View style={S.posSubHeaderBox} wrap={false}>
+                      <Text style={S.posSubHeaderText}>Instant POS: {entry.billNo}</Text>
                     </View>
-                  )}
-                </React.Fragment>
-              ))}
+
+                    {/* Column Header for POS items */}
+                    <View style={S.colHdrRow} wrap={false}>
+                      <Text style={[S.colHdrCell, S.cDate]}>Date</Text>
+                      <Text style={[S.colHdrCell, S.cDesc]}>Description</Text>
+                      <Text style={[S.colHdrCell, S.cQty]}>Qty</Text>
+                      <Text style={[S.colHdrCell, S.cRate]}>Rate</Text>
+                      <Text style={[S.colHdrCell, S.cAmt]}>Amount</Text>
+                    </View>
+
+                    {/* Items Loop */}
+                    {entry.items && entry.items.length > 0 ? (
+                      entry.items.map((item: any, iIdx: number) => {
+                        const alt = iIdx % 2 !== 0;
+                        return (
+                          <View style={[S.dataRow, alt ? S.dataRowAlt : {}]} key={`pos-nou-item-${iIdx}`} wrap={false}>
+                            <Text style={[S.td, S.cDate]}>{billDateStr}</Text>
+                            <Text style={[S.tdProduct, S.cDesc]}>{item.description}</Text>
+                            <Text style={[S.td, S.cQty]}>{item.quantity}</Text>
+                            <Text style={[S.td, S.cRate]}>{fmt(item.unit_price)}</Text>
+                            <Text style={[S.tdBold, S.cAmt]}>{fmt(item.total_price)}</Text>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      // Fallback for bills without details
+                      <View style={S.dataRow} wrap={false}>
+                        <Text style={[S.td, S.cDate]}>{billDateStr}</Text>
+                        <Text style={[S.tdProduct, S.cDesc]}>POS Bill</Text>
+                        <Text style={[S.td, S.cQty]}>1</Text>
+                        <Text style={[S.td, S.cRate]}></Text>
+                        <Text style={[S.tdBold, S.cAmt]}></Text>
+                      </View>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </React.Fragment>
           )}
 
