@@ -446,17 +446,6 @@ export default function InstantPOS({
     finally { setDeleting(false); }
   };
 
-  // ── Download ───────────────────────────────────────────────────────────────
-  const handleDownload = async (url: string, filename: string) => {
-    try {
-      const blob = await (await fetch(url)).blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch { window.open(url, "_blank"); }
-  };
 
   // ── Filtered History ───────────────────────────────────────────────────────
   const filteredHistory = useMemo(() => {
@@ -847,13 +836,12 @@ export default function InstantPOS({
                       )}
                       {inv.pdf_url ? (
                         <>
-                          <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="p-2.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl transition-colors" title="View PDF">
+                          <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl transition-colors" title="View PDF">
                             <Eye size={17} />
                           </a>
-                          <button onClick={() => handleDownload(inv.pdf_url, `${inv.invoice_no.replace(/\//g, "-")}.pdf`)}
-                            className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-sm" title="Download PDF">
+                          <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-sm" title="Download PDF">
                             <Download size={17} />
-                          </button>
+                          </a>
                         </>
                       ) : (
                         <button onClick={() => toast("PDF not available for old drafts.", { icon: "📄" })}

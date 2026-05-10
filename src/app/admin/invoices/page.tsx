@@ -96,17 +96,6 @@ function InvoicedPopover({
     };
   }, [onClose]);
 
-  const handleDownload = async (url: string, filename: string) => {
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch { window.open(url, '_blank'); }
-  };
 
   const leftPos = Math.min(data.x, typeof window !== 'undefined' ? window.innerWidth - 380 : data.x);
   const topPos = typeof window !== 'undefined' && data.y > window.innerHeight - 300 ? data.y - 280 : data.y + 12;
@@ -170,12 +159,12 @@ function InvoicedPopover({
             )}
             {inv.pdf_url && (
               <>
-                <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="flex-1 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors text-xs font-black text-center flex items-center justify-center gap-1.5">
+                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="flex-1 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors text-xs font-black text-center flex items-center justify-center gap-1.5">
                   <Eye size={14} /> View
                 </a>
-                <button onClick={() => handleDownload(inv.pdf_url, `${inv.invoice_no.replace(/\//g, '-')}.pdf`)} className="flex-1 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors text-xs font-black flex items-center justify-center gap-1.5">
+                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="flex-1 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors text-xs font-black flex items-center justify-center gap-1.5">
                   <Download size={14} /> Download
-                </button>
+                </a>
               </>
             )}
           </div>
@@ -482,10 +471,6 @@ export default function InvoiceManagement() {
     return { groups, sortedDates: Object.keys(groups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) };
   }, [filteredHistory]);
 
-  const handleDownload = async (url: string, filename: string) => {
-    try { const blob = await (await fetch(url)).blob(); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
-    catch { window.open(url, '_blank'); }
-  };
 
   if (loadingInitial) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12" /></div>;
 
@@ -812,8 +797,8 @@ export default function InvoiceManagement() {
                               {!inv.is_paid && (
                                 <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete"><Trash2 size={17} /></button>
                               )}
-                              <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="p-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors" title="View"><Eye size={17} /></a>
-                              <button onClick={() => handleDownload(inv.pdf_url, `${inv.invoice_no.replace(/\//g, '-')}.pdf`)} className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors" title="Download"><Download size={17} /></button>
+                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors" title="View"><Eye size={17} /></a>
+                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors" title="Download"><Download size={17} /></a>
                             </div>
                           </div>
                         ))}
