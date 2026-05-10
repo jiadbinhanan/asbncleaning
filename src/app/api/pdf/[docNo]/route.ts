@@ -9,12 +9,14 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { docNo: string } }
+  { params }: { params: Promise<{ docNo: string }> }
 ) {
-  const docNo = decodeURIComponent(params.docNo);
+  // Next.js 15: params is a Promise — must be awaited
+  const { docNo: rawDocNo } = await params;
+  const docNo = decodeURIComponent(rawDocNo);
   const download = request.nextUrl.searchParams.get("dl") === "1";
 
-  // ── Step 1: Find pdf_url by looking up docNo across all three tables ──────
+  // ── Step 1: Find pdf_url across all three tables ──────────────────────────
   let pdfUrl: string | null = null;
 
   // 1a. Monthly invoices
@@ -24,9 +26,7 @@ export async function GET(
     .eq("invoice_no", docNo)
     .maybeSingle();
 
-  if (monthly?.pdf_url) {
-    pdfUrl = monthly.pdf_url;
-  }
+  if (monthly?.pdf_url) pdfUrl = monthly.pdf_url;
 
   // 1b. Instant invoices
   if (!pdfUrl) {
@@ -36,9 +36,7 @@ export async function GET(
       .eq("invoice_no", docNo)
       .maybeSingle();
 
-    if (instant?.pdf_url) {
-      pdfUrl = instant.pdf_url;
-    }
+    if (instant?.pdf_url) pdfUrl = instant.pdf_url;
   }
 
   // 1c. Quotations
@@ -49,17 +47,12 @@ export async function GET(
       .eq("quote_no", docNo)
       .maybeSingle();
 
-    if (quotation?.pdf_url) {
-      pdfUrl = quotation.pdf_url;
-    }
+    if (quotation?.pdf_url) pdfUrl = quotation.pdf_url;
   }
 
   // ── Step 2: Not found ─────────────────────────────────────────────────────
   if (!pdfUrl) {
-    return new NextResponse(
-      JSON.stringify({ error: "PDF not found for: " + docNo }),
-      { status: 404, headers: { "Content-Type": "application/json" } }
-    );
+    return new NextResponse("PDF not found.", { status: 404 });
   }
 
   // ── Step 3: Fetch PDF from Cloudinary (server-side only) ──────────────────
@@ -67,21 +60,14 @@ export async function GET(
   try {
     cloudRes = await fetch(pdfUrl, { cache: "no-store" });
   } catch {
-    return new NextResponse(
-      JSON.stringify({ error: "Failed to reach storage." }),
-      { status: 502, headers: { "Content-Type": "application/json" } }
-    );
+    return new NextResponse("Failed to reach storage.", { status: 502 });
   }
 
   if (!cloudRes.ok) {
-    return new NextResponse(
-      JSON.stringify({ error: "PDF unavailable." }),
-      { status: 502, headers: { "Content-Type": "application/json" } }
-    );
+    return new NextResponse("PDF unavailable.", { status: 502 });
   }
 
-  // ── Step 4: Stream PDF to browser with clean headers ─────────────────────
-  // Cloudinary URL never appears in the browser — only /api/pdf/[docNo] is visible
+  // ── Step 4: Stream to browser — Cloudinary URL never reaches the client ───
   const safeFilename = `${docNo.replace(/\//g, "-")}.pdf`;
 
   return new NextResponse(cloudRes.body, {
@@ -91,9 +77,7 @@ export async function GET(
       "Content-Disposition": download
         ? `attachment; filename="${safeFilename}"`
         : `inline; filename="${safeFilename}"`,
-      // Cache for 1 hour on the browser, but do not store on shared/CDN caches
       "Cache-Control": "private, max-age=3600",
-      // Prevent search engines from indexing the PDF URL
       "X-Robots-Tag": "noindex, nofollow",
     },
   });

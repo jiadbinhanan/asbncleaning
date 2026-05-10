@@ -170,7 +170,7 @@ export default function QuotationManager() {
   const rightCategories = splitIndex > -1 ? pricingData.slice(splitIndex) : [];
 
   return (
-    <div className="min-h-screen pb-20 p-2 md:p-6 max-w-7xl mx-auto overflow-hidden">
+    <div className="min-h-screen pb-20 p-2 md:p-6 overflow-hidden">
       <AnimatePresence mode="wait">
         
         {/* ======================= GENERATOR VIEW ======================= */}
@@ -434,7 +434,7 @@ export default function QuotationManager() {
                             <td className="p-5 text-right">
                               <div className="flex justify-end gap-2">
                                 <a 
-                                  href={quote.pdf_url} 
+                                  href={`/api/pdf/${encodeURIComponent(quote.quote_no)}`}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="p-2.5 bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2"
@@ -444,8 +444,8 @@ export default function QuotationManager() {
                                 </a>
                                 
                                 <a 
-                                  href={quote.pdf_url} 
-                                  download={`${quote.quote_no}.pdf`}
+                                  href={`/api/pdf/${encodeURIComponent(quote.quote_no)}?dl=1`}
+                                  download
                                   className="p-2.5 bg-gray-900 text-white hover:bg-black rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
                                   title="Download PDF"
                                 >
