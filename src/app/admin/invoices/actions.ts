@@ -10,36 +10,104 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// --- Supabase Admin Client (service role for secure server-side operations) ---
+// --- Supabase Admin Client ---
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-/**
- * Helper: Extracts Cloudinary public_id from a secure PDF URL.
- * e.g. "https://res.cloudinary.com/demo/raw/upload/v123/invoices/COMP/BTM-2604.pdf"
- *   =>  "invoices/COMP/BTM-2604"
- */
-function extractPublicId(pdfUrl: string): string | null {
+// ─────────────────────────────────────────────────────────────────────────────
+// Cloudinary URL Parser
+//
+// Live URL examples from this project:
+//   invoices:        .../depm89vip/image/upload/v17.../invoices/COMP/BTM-xxx.pdf
+//   instant_invoices:.../depm89vip/image/upload/v17.../instant_invoices/NAME/BTM-xxx.pdf
+//
+// IMPORTANT: Even though these are PDFs, Cloudinary stores them as resource_type
+// "image" because they were uploaded via /auto/upload. The resource_type is
+// embedded in the URL path at position [2] (after cloud_name).
+//
+// Returns: { publicId, resourceType } parsed directly from the URL.
+// ─────────────────────────────────────────────────────────────────────────────
+function parseCloudinaryUrl(pdfUrl: string): {
+  publicId: string;
+  resourceType: "image" | "raw" | "video";
+} | null {
   try {
-    const url = new URL(pdfUrl);
-    const parts = url.pathname.split("/upload/");
-    if (parts.length < 2) return null;
-    const afterUpload = parts[1].replace(/^v\d+\//, "");
-    return afterUpload.replace(/\.[^/.]+$/, "");
+    const parsed = new URL(pdfUrl);
+    // pathname: /<cloud_name>/<resource_type>/upload/v<ver>/<folder>/<file>.pdf
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    // segments: [cloud_name, resource_type, "upload", "vNNN", ...path_parts]
+    const uploadIdx = segments.indexOf("upload");
+    if (uploadIdx < 2) return null;
+
+    const resourceType = segments[uploadIdx - 1] as "image" | "raw" | "video";
+
+    // Everything after "upload/" — drop leading version segment vNNNNNN
+    const afterUpload = segments
+      .slice(uploadIdx + 1)
+      .join("/")
+      .replace(/^v\d+\//, "");
+
+    // Strip file extension to get clean public_id
+    const publicId = afterUpload.replace(/\.[^/.]+$/, "");
+
+    if (!publicId) return null;
+    return { publicId, resourceType };
   } catch {
     return null;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Robust Cloudinary Delete
+//
+// Strategy:
+//   1. Parse resource_type from the URL (most reliable — it's in the URL itself)
+//   2. Try destroy with that resource_type first
+//   3. If result is not "ok", fall back to the other two types
+//      (handles edge cases: legacy uploads, Cloudinary reclassification)
+//
+// "not found" is treated as success — file is already gone.
+// ─────────────────────────────────────────────────────────────────────────────
+async function deleteFromCloudinary(pdfUrl: string): Promise<void> {
+  const parsed = parseCloudinaryUrl(pdfUrl);
+  if (!parsed) return; // Unrecognised URL — skip silently
+
+  const { publicId, resourceType } = parsed;
+  const allTypes: Array<"image" | "raw" | "video"> = ["image", "raw", "video"];
+
+  // Try the URL-indicated type first, then the others as fallback
+  const orderedTypes = [
+    resourceType,
+    ...allTypes.filter((t) => t !== resourceType),
+  ];
+
+  for (const type of orderedTypes) {
+    try {
+      const res = await cloudinary.uploader.destroy(publicId, {
+        resource_type: type,
+      });
+      // "ok" = deleted, "not found" = already gone — both are success states
+      if (res.result === "ok" || res.result === "not found") return;
+    } catch {
+      // Network / auth error on this type — try next
+    }
+  }
+  // All types tried — file may be gone already or URL was invalid. Continue.
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Upload Signature — Monthly Invoices
 // ─────────────────────────────────────────────────────────────────────────────
-export async function getInvoiceUploadSignature(companyName: string, invoiceNo: string) {
+export async function getInvoiceUploadSignature(
+  companyName: string,
+  invoiceNo: string
+) {
   const timestamp = Math.round(new Date().getTime() / 1000);
-
-  const safeCompanyName = companyName.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+  const safeCompanyName = companyName
+    .replace(/[^a-zA-Z0-9]/g, "_")
+    .replace(/_+/g, "_");
   const folderPath = `invoices/${safeCompanyName}`;
   const safeInvoiceNo = invoiceNo.replace(/\//g, "-");
 
@@ -61,10 +129,14 @@ export async function getInvoiceUploadSignature(companyName: string, invoiceNo: 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Upload Signature — Instant Invoices
 // ─────────────────────────────────────────────────────────────────────────────
-export async function getInstantInvoiceUploadSignature(customerName: string, invoiceNo: string) {
+export async function getInstantInvoiceUploadSignature(
+  customerName: string,
+  invoiceNo: string
+) {
   const timestamp = Math.round(new Date().getTime() / 1000);
-
-  const safeName = (customerName || "Walk_In").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+  const safeName = (customerName || "Walk_In")
+    .replace(/[^a-zA-Z0-9]/g, "_")
+    .replace(/_+/g, "_");
   const folderPath = `instant_invoices/${safeName}`;
   const safeInvoiceNo = invoiceNo.replace(/\//g, "-");
 
@@ -86,11 +158,10 @@ export async function getInstantInvoiceUploadSignature(customerName: string, inv
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. DELETE — Monthly Invoice
 //
-//  a) Safety check — paid invoices cannot be deleted
-//  b) Delete PDF from Cloudinary (resource_type: "raw")
-//  c) Reset bookings.invoice_no => NULL
-//  d) Reset instant_invoices.merged_into_monthly => false
-//     using instant_invoice_ids[] stored on the invoice row
+//  a) Safety: paid invoices cannot be deleted
+//  b) Delete PDF from Cloudinary (resource_type read from URL → "image")
+//  c) Reset bookings.invoice_no → NULL
+//  d) Reset instant_invoices.merged_into_monthly → false
 //  e) Delete the invoice row
 // ─────────────────────────────────────────────────────────────────────────────
 export async function deleteMonthlyInvoice(invoiceId: string) {
@@ -101,21 +172,15 @@ export async function deleteMonthlyInvoice(invoiceId: string) {
     .single();
 
   if (fetchErr || !inv) return { success: false, error: "Invoice not found." };
-  if (inv.is_paid) return { success: false, error: "Paid invoices cannot be deleted." };
+  if (inv.is_paid)
+    return { success: false, error: "Paid invoices cannot be deleted." };
 
-  // Delete PDF from Cloudinary
+  // Delete PDF — resource_type "image" (confirmed from live Cloudinary URLs)
   if (inv.pdf_url) {
-    const publicId = extractPublicId(inv.pdf_url);
-    if (publicId) {
-      try {
-        await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
-      } catch {
-        // Continue even if Cloudinary delete fails
-      }
-    }
+    await deleteFromCloudinary(inv.pdf_url);
   }
 
-  // Reset bookings — clear invoice_no so they become re-invoiceable
+  // Reset bookings
   const bookingIds: number[] = inv.booking_ids || [];
   if (bookingIds.length > 0) {
     await supabaseAdmin
@@ -124,7 +189,7 @@ export async function deleteMonthlyInvoice(invoiceId: string) {
       .in("id", bookingIds);
   }
 
-  // Unmerge instant invoices using the tracked IDs
+  // Unmerge instant invoices
   const instantInvoiceIds: string[] = inv.instant_invoice_ids || [];
   if (instantInvoiceIds.length > 0) {
     await supabaseAdmin
@@ -139,7 +204,8 @@ export async function deleteMonthlyInvoice(invoiceId: string) {
     .delete()
     .eq("id", invoiceId);
 
-  if (delErr) return { success: false, error: "Failed to delete record: " + delErr.message };
+  if (delErr)
+    return { success: false, error: "Failed to delete record: " + delErr.message };
 
   return { success: true };
 }
@@ -147,7 +213,7 @@ export async function deleteMonthlyInvoice(invoiceId: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. DELETE — Instant Invoice
 //
-//  a) Safety check — paid invoices cannot be deleted
+//  a) Safety: paid invoices cannot be deleted
 //  b) Delete PDF from Cloudinary
 //  c) Delete the instant_invoices row
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,17 +225,12 @@ export async function deleteInstantInvoice(invoiceId: string) {
     .single();
 
   if (fetchErr || !inv) return { success: false, error: "Invoice not found." };
-  if (inv.is_paid) return { success: false, error: "Paid invoices cannot be deleted." };
+  if (inv.is_paid)
+    return { success: false, error: "Paid invoices cannot be deleted." };
 
+  // Delete PDF — resource_type "image" (confirmed from live Cloudinary URLs)
   if (inv.pdf_url) {
-    const publicId = extractPublicId(inv.pdf_url);
-    if (publicId) {
-      try {
-        await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
-      } catch {
-        // Continue regardless
-      }
-    }
+    await deleteFromCloudinary(inv.pdf_url);
   }
 
   const { error: delErr } = await supabaseAdmin
@@ -177,7 +238,8 @@ export async function deleteInstantInvoice(invoiceId: string) {
     .delete()
     .eq("id", invoiceId);
 
-  if (delErr) return { success: false, error: "Failed to delete: " + delErr.message };
+  if (delErr)
+    return { success: false, error: "Failed to delete: " + delErr.message };
 
   return { success: true };
 }
