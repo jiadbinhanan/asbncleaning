@@ -596,7 +596,7 @@ export default function BookingManagement() {
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
       {/* Header with Gradient & Stats */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-4 pb-4 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden'>
+      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden'>
         <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
         <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none'></div>
 
@@ -606,8 +606,8 @@ export default function BookingManagement() {
               <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
                 <LayoutDashboard size={12}/> Operations Control
               </p>
-              <h1 className='text-lg md:text-xl font-black tracking-tight flex items-center gap-2'>
-                <ClipboardList className='text-blue-500' size={22}/> Booking Management
+              <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
+                <ClipboardList className='text-blue-500' size={28}/> Booking Management
               </h1>
             </div>
 
