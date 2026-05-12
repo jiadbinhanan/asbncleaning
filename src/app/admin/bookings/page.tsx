@@ -596,54 +596,62 @@ export default function BookingManagement() {
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
       {/* Header with Gradient & Stats */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-8 pb-12 md:pb-16 px-4 md:px-8 shadow-2xl relative z-10 mb-6 rounded-3xl overflow-hidden'>
+      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-4 pb-4 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden'>
         <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
         <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none'></div>
 
         <div className='relative z-20'>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
             <div>
-              <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2'>
-                <LayoutDashboard size={14}/> Operations Control
+              <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
+                <LayoutDashboard size={12}/> Operations Control
               </p>
-              <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
-                <ClipboardList className='text-blue-500' size={28}/> Booking Management
+              <h1 className='text-lg md:text-xl font-black tracking-tight flex items-center gap-2'>
+                <ClipboardList className='text-blue-500' size={22}/> Booking Management
               </h1>
             </div>
 
-            <div className="flex gap-3 w-full md:w-auto flex-wrap">
-              <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2">
-                <FileSpreadsheet size={16}/> Export Excel
+            <div className="flex gap-2 w-full md:w-auto flex-wrap">
+              <button onClick={handleExportExcel} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+                <FileSpreadsheet size={14}/> Export Excel
               </button>
-              <button onClick={handleExportPDF} className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2">
-                <Download size={16}/> Export PDF
+              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+                <Download size={14}/> Export PDF
               </button>
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-5 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-2 border text-xs w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
-                <Filter size={18}/> Filters {showFilters && <X size={14}/>}
+              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
+                <Filter size={15}/> Filters {showFilters && <X size={13}/>}
               </button>
-              <button onClick={() => setIsAddOpen(true)} className="px-6 py-2 bg-blue-600 hover:bg-blue-50 text-white rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 border border-blue-500/50 backdrop-blur-md w-full md:w-auto text-xs">
-                <Plus size={18} strokeWidth={3}/> New Booking
+              <button onClick={() => setIsAddOpen(true)} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30 border border-blue-500/50 w-full md:w-auto text-xs">
+                <Plus size={15} strokeWidth={3}/> New Booking
               </button>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Records</p>
-              <p className="text-xl font-black text-white">{stats.total}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+              <div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Records</p>
+                <p className="text-base font-black text-white leading-tight">{stats.total}</p>
+              </div>
             </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 backdrop-blur-sm">
-              <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Pending Assignment</p>
-              <p className="text-xl font-black text-amber-50">{stats.pending}</p>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+              <div>
+                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pending</p>
+                <p className="text-base font-black text-amber-50 leading-tight">{stats.pending}</p>
+              </div>
             </div>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Active (Live)</p>
-              <p className="text-xl font-black text-blue-50">{stats.active}</p>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+              <div>
+                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Active (Live)</p>
+                <p className="text-base font-black text-blue-50 leading-tight">{stats.active}</p>
+              </div>
             </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 backdrop-blur-sm">
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Completed Jobs</p>
-              <p className="text-xl font-black text-emerald-50">{stats.completed}</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+              <div>
+                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Completed</p>
+                <p className="text-base font-black text-emerald-50 leading-tight">{stats.completed}</p>
+              </div>
             </div>
           </div>
         </div>
