@@ -125,7 +125,7 @@ export default function InventoryManagement() {
       {/* 🚨 FIXED: Responsive Premium Header (overflow-hidden & flex-wrap added) */}
       <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-12 pb-24 px-4 md:px-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 w-full">
+        <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 w-full">
         
            <div className="w-full xl:w-auto">
               <p className="text-blue-300 font-bold uppercase tracking-widest text-xs mb-1">Master Inventory & Ledger</p>
@@ -152,7 +152,7 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-12 relative z-20">
+      <div className="px-4 md:px-8 -mt-12 relative z-20">
         
         {/* ======================= STOCK VIEW ======================= */}
         {activeTab === 'stock' && (

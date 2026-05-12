@@ -274,7 +274,7 @@ export default function EquipmentSetup() {
       
       {/* 1. PREMIUM HEADER */}
       <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative">
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
            <div>
               <p className="text-blue-300 font-bold uppercase tracking-widest text-xs mb-1">Inventory Management</p>
               <h1 className="text-3xl font-black tracking-tight flex items-center gap-3"><Package className="text-blue-500" size={32}/> Equipment Setup</h1>
@@ -295,7 +295,7 @@ export default function EquipmentSetup() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
+      <div className="px-4 md:px-8 -mt-10 relative z-20">
         {loading ? (
           <div className="bg-white p-20 rounded-[3rem] shadow-xl flex justify-center items-center gap-4"><Loader2 className="animate-spin text-blue-600" size={32}/><span className="font-bold text-gray-400">Loading data...</span></div>
         ) : (

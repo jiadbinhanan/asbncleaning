@@ -316,7 +316,7 @@ export default function AdminTeamManagement() {
       {/* HEADER */}
       <div className="bg-gradient-to-br from-[#0A192F] via-[#112240] to-black text-white pt-10 pb-20 px-6 md:px-12 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
               <Briefcase className="text-blue-500" size={36} /> Team Directory
@@ -333,7 +333,7 @@ export default function AdminTeamManagement() {
       </div>
 
       {/* MAIN */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-20">
+      <div className="px-4 md:px-8 -mt-10 relative z-20">
 
         {/* Tabs & Top Filters */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">

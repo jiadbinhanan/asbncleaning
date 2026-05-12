@@ -600,7 +600,7 @@ export default function BookingManagement() {
         <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
         <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none'></div>
 
-        <div className='max-w-7xl mx-auto relative z-20'>
+        <div className='relative z-20'>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
             <div>
               <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2'>
