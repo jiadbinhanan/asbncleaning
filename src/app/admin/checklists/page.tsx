@@ -142,18 +142,26 @@ export default function ChecklistManagement() {
   };
 
   return (
-    <div className="min-h-screen pb-10">
-      
+    <div className="min-h-screen bg-[#F4F7FA] pb-10 font-sans">
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><ClipboardList className="text-blue-600" /> Checklist Templates</h1>
-          <p className="text-gray-500 text-sm">Create standard checklists (e.g. 1BR, Villa Deep Clean)</p>
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+              <ClipboardList className="text-blue-500" size={30} /> Checklist Templates
+            </h1>
+            <p className="text-blue-300 font-bold mt-1 text-sm">Create standard checklists (e.g. 1BR, Villa Deep Clean)</p>
+          </div>
+          <button onClick={() => handleOpenEditor()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap">
+            <Plus size={20} /> New Template
+          </button>
         </div>
-        <button onClick={() => handleOpenEditor()} className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-lg">
-          <Plus size={20} /> New Template
-        </button>
       </div>
+
+      {/* Content */}
+      <div className="px-6 md:px-10 pt-8">
 
       {/* Templates List */}
       {loading ? (
@@ -199,6 +207,8 @@ export default function ChecklistManagement() {
           ))}
         </div>
       )}
+
+      </div>{/* end content */}
 
       {/* --- TEMPLATE EDITOR MODAL (Full Screen) --- */}
       <AnimatePresence>

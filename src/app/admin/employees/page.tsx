@@ -112,31 +112,40 @@ export default function EmployeeManagement() {
   );
 
   return (
-    <div className="min-h-screen pb-10">
+    <div className="min-h-screen bg-[#F4F7FA] pb-10 font-sans">
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Employee Directory</h1>
-          <p className="text-gray-500 text-sm">Manage Supervisors & Cleaning Agents</p>
-        </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search staff..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+              <User className="text-blue-500" size={30} /> Employee Directory
+            </h1>
+            <p className="text-blue-300 font-bold mt-1 text-sm">Manage Supervisors & Cleaning Agents</p>
           </div>
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-medium hover:bg-black transition-all flex items-center gap-2"
-          >
-            <Plus size={18} /> Add Staff
-          </button>
+          <div className="flex gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search staff..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-gray-400 font-medium"
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap"
+            >
+              <Plus size={18} /> Add Staff
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="px-6 md:px-10 pt-8">
 
       {/* Employee Grid */}
       {loading ? (
@@ -186,6 +195,8 @@ export default function EmployeeManagement() {
           ))}
         </div>
       )}
+
+      </div>{/* end content */}
 
       {/* Profile SlideOver Component */}
       <AnimatePresence>

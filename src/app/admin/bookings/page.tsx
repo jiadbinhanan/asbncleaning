@@ -592,7 +592,7 @@ export default function BookingManagement() {
   };
 
   return (
-    <div className="min-h-screen pb-10">
+    <div className="min-h-screen pb-10 p-2 md:p-4">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
       {/* Header with Gradient & Stats */}
