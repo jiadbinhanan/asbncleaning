@@ -220,7 +220,7 @@ export const InstantInvoiceDocument = ({ data }: any) => {
                 <View style={S.companyInfo}>
                   <Text style={S.companyName}>B T M Cleaning Service</Text>
                   <Text style={S.companyMeta}><Text style={S.metaGold}>Phone:</Text> +971-544-374231</Text>
-                  <Text style={S.companyMeta}><Text style={S.metaGold}>Email:</Text> sales@btmcleaning.com</Text>
+                  <Text style={S.companyMeta}><Text style={S.metaGold}>Email:</Text> btm.cleanings@gmail.com</Text>
                   <Text style={S.companyMeta}><Text style={S.metaGold}>Web:</Text> btm-cleaning.com</Text>
                 </View>
               </View>

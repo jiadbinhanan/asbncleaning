@@ -326,7 +326,7 @@ export const QuotationDocument = ({ quoteNo, date, customerName, pricingData }: 
               <Text>Quote No: <Text style={styles.goldText}>{quoteNo}</Text></Text>
               <Text>Date: <Text style={styles.goldText}>{date}</Text></Text>
               <Text>Phone: +971-544-374231</Text>
-              <Text>Email: sales@btmcleaning.com</Text>
+              <Text>Email: btm.cleanings@gmail.com</Text>
               <Text>Web: www.btmcleaning.com</Text>
             </View>
           </View>

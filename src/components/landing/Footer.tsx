@@ -29,7 +29,7 @@ export default function Footer() {
         <div>
           <h3 className="font-bold text-white text-lg mb-3">Contact Info</h3>
           <ul className="space-y-2 text-sm font-medium">
-            <li>Email: contact@btmcleaning.com</li>
+            <li>Email: btm.cleanings@gmail.com</li>
             <li>Phone: +971 00 000 0000</li>
             <li className="flex items-center gap-2 mt-4 text-blue-400 bg-blue-500/10 w-fit px-3 py-1.5 rounded-lg border border-blue-500/20">
               <Sparkles size={16} />
