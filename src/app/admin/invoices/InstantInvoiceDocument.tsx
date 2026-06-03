@@ -198,7 +198,7 @@ const S = StyleSheet.create({
 
 export const InstantInvoiceDocument = ({ data }: any) => {
   const { invoiceNo, date, customerName, items, unitGroups, subtotal, 
-          discountPercent, discountValue, finalTotal, bankDetails } = data || {};
+          discountPercent, discountValue, discountRemarks, finalTotal, bankDetails } = data || {};
 
   const issueDate = date ? format(new Date(date), "dd-MMM-yyyy") : "";
   const issueTime = date ? format(new Date(date), "hh:mm a") : "";
@@ -328,9 +328,12 @@ export const InstantInvoiceDocument = ({ data }: any) => {
         <View style={S.grandAreaWrap} wrap={false}>
           <View style={S.grandBox}>
             <View style={S.grandLine}><Text style={S.gtLabel}>Total Amount</Text><Text style={S.gtValue}>{fmt(subtotal)}</Text></View>
-            {Number(discountPercent) > 0 && (
+            <View style={S.grandLine}><Text style={S.gtLabel}>Total Amount</Text><Text style={S.gtValue}>{fmt(subtotal)}</Text></View>
+            {Number(discountValue) > 0 && (
               <View style={S.grandLine}>
-                <Text style={S.gtLabel}>Discount ({discountPercent}%)</Text>
+                <Text style={S.gtLabel}>
+                  {`Discount${Number(discountPercent) > 0 ? ` (${discountPercent}%)` : ''}${discountRemarks ? ` — ${discountRemarks}` : ''}`}
+                </Text>
                 <Text style={[S.gtValue, { color: C.danger }]}>- {fmt(discountValue)}</Text>
               </View>
             )}

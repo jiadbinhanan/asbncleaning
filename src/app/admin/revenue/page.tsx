@@ -35,7 +35,7 @@ export default function RevenueDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [unitConfigs, setUnitConfigs] = useState<any[]>([]);
 
-  // Accordion State
+  const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
 
   // ─── Initial Fetch (Companies) ───
@@ -77,8 +77,8 @@ export default function RevenueDashboard() {
     }
 
     const [invRes, instRes, bookRes, configRes] = await Promise.all([
-      supabase.from('invoices').select('id, invoice_no, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
-      supabase.from('instant_invoices').select('id, invoice_no, total_amount, is_paid, created_at, payment_date, client_type, customer_name, merged_into_monthly, pdf_url, company_id, companies(name)').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
+      supabase.from('invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id, instant_invoice_ids').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
+      supabase.from('instant_invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, client_type, customer_name, merged_into_monthly, pdf_url, company_id, companies(name)').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
       supabase.from('bookings').select(`
         id, cleaning_date, status, price, invoice_no, unit_id, booking_ref, service_type,
         units ( unit_number, building_name, company_id, companies (name) ),
@@ -136,12 +136,16 @@ export default function RevenueDashboard() {
     const totalInstantSales = filteredInstant.reduce((sum, i) => sum + Number(i.total_amount), 0);
     const totalBusiness = totalBookingsValue + totalInstantSales;
 
-    // 2. Total Work Billed (Invoices Generated)
+    // 2. Total Work Billed — monthly invoice already includes merged instant amounts,
+    //    so only add unmerged instant bills to avoid double counting.
     const monthlyBilled = filteredInvoices.reduce((sum, i) => sum + Number(i.total_amount), 0);
-    const instantBilled = filteredInstant.reduce((sum, i) => sum + Number(i.total_amount), 0);
+    const instantBilled = filteredInstant.filter(i => !i.merged_into_monthly).reduce((sum, i) => sum + Number(i.total_amount), 0);
+    const mergedInstantBilled = filteredInstant.filter(i => i.merged_into_monthly).reduce((sum, i) => sum + Number(i.total_amount), 0);
+    const totalInstantAll = filteredInstant.reduce((sum, i) => sum + Number(i.total_amount), 0); // all instant (merged+unmerged)
     const totalBilled = monthlyBilled + instantBilled;
 
-    // 3. Total Collected Revenue
+    // 3. Total Collected Revenue — merged instant paid status is reflected via monthly invoice,
+    //    so only count unmerged instant invoices separately.
     const monthlyCollected = filteredInvoices.filter(i => i.is_paid).reduce((sum, i) => sum + Number(i.total_amount), 0);
     const instantCollected = filteredInstant.filter(i => i.is_paid && !i.merged_into_monthly).reduce((sum, i) => sum + Number(i.total_amount), 0);
     const totalCollected = monthlyCollected + instantCollected;
@@ -151,12 +155,19 @@ export default function RevenueDashboard() {
     const instantDue = filteredInstant.filter(i => !i.is_paid && !i.merged_into_monthly).reduce((sum, i) => sum + Number(i.total_amount), 0);
     const totalDue = monthlyDue + instantDue;
 
-    // 5. Work Not Invoiced
+    // 5. Work Not Invoiced (finalized bookings with no invoice_no)
     const notInvoicedAmount = filteredBookings.filter(b => !b.invoice_no).reduce((sum, b) => sum + b.grandTotal, 0);
+
+    // 6. Total Discounts Given (both monthly invoices and instant invoices)
+    const monthlyDiscount = filteredInvoices.reduce((sum, i) => sum + Number(i.discount || 0), 0);
+    const instantDiscount = filteredInstant.reduce((sum, i) => sum + Number(i.discount || 0), 0);
+    const totalDiscount = monthlyDiscount + instantDiscount;
 
     return { 
       totalBusiness, totalBilled, totalCollected, totalDue, notInvoicedAmount, 
-      monthlyBilled, instantBilled, monthlyCollected, instantCollected 
+      monthlyBilled, instantBilled, monthlyCollected, instantCollected,
+      mergedInstantBilled, totalInstantAll,
+      totalDiscount, monthlyDiscount, instantDiscount
     };
   }, [filteredInvoices, filteredInstant, filteredBookings]);
 
@@ -187,33 +198,67 @@ export default function RevenueDashboard() {
     });
   }, [filteredBookings, filteredInvoices, filteredInstant, dateFilter, customStart, customEnd]);
 
-  // ─── Bar Chart Data (Source Breakdown) ───
+  // ─── Bar Chart Data (Source Breakdown) — Merged POS stacked on Monthly ───
   const sourceBarData = [
-    { name: 'Monthly Invoices', Billed: stats.monthlyBilled, Collected: stats.monthlyCollected },
-    { name: 'Instant POS', Billed: stats.instantBilled, Collected: stats.instantCollected },
+    { 
+      name: 'Monthly', 
+      Billed: stats.monthlyBilled, 
+      Collected: stats.monthlyCollected,
+      MergedPOS: stats.mergedInstantBilled  // stacked on top of monthly bar
+    },
+    { 
+      name: 'Instant POS', 
+      Billed: stats.totalInstantAll,   // all instant (merged + unmerged) combined
+      Collected: stats.instantCollected,
+      MergedPOS: 0
+    },
   ];
 
   // ─── Company Revenue Analytics Data (Pie) ───
   const companyAnalytics = useMemo(() => {
-    const map: Record<string, { id: string, name: string, billed: number, collected: number }> = {};
+    const map: Record<string, { 
+      id: string, name: string, billed: number, collected: number,
+      monthlyBilled: number, monthlyCollected: number,
+      monthlyDiscount: number,
+      instantBilled: number, instantCollected: number,
+      instantDiscount: number,
+      mergedInstantIds: string[],
+      mergedInstantBilled: number,
+      individualInstantBilled: number,
+    }> = {};
 
-    filteredBookings.forEach(b => {
-      const compId = b.units?.company_id?.toString() || 'walk_in';
-      const compName = b.units?.companies?.name || 'Walk-in / Cash';
-      if(!map[compId]) map[compId] = { id: compId, name: compName, billed: 0, collected: 0 };
-      map[compId].billed += b.grandTotal;
+    const empty = () => ({ billed: 0, collected: 0, monthlyBilled: 0, monthlyCollected: 0, monthlyDiscount: 0, instantBilled: 0, instantCollected: 0, instantDiscount: 0, mergedInstantIds: [] as string[], mergedInstantBilled: 0, individualInstantBilled: 0 });
+
+    // Add monthly invoices
+    filteredInvoices.forEach(inv => {
+      const compId = inv.company_id?.toString() || 'unknown';
+      const compName = inv.company_name || 'Unknown';
+      if (!map[compId]) map[compId] = { id: compId, name: compName, ...empty() };
+      map[compId].monthlyBilled += Number(inv.total_amount);
+      map[compId].monthlyDiscount += Number(inv.discount || 0);
+      map[compId].billed += Number(inv.total_amount);
+      if (inv.is_paid) { map[compId].monthlyCollected += Number(inv.total_amount); map[compId].collected += Number(inv.total_amount); }
+      if (inv.instant_invoice_ids?.length) map[compId].mergedInstantIds.push(...inv.instant_invoice_ids);
     });
 
+    // All instant invoices — track merged vs individual separately
     filteredInstant.forEach(i => {
       const compId = i.company_id?.toString() || 'walk_in';
       const compName = i.client_type === 'registered' ? i.companies?.name : (i.customer_name || 'Walk-in / Cash');
-      if(!map[compId]) map[compId] = { id: compId, name: compName, billed: 0, collected: 0 };
-      map[compId].billed += Number(i.total_amount);
-      if(i.is_paid) map[compId].collected += Number(i.total_amount);
+      if (!map[compId]) map[compId] = { id: compId, name: compName, ...empty() };
+      map[compId].instantBilled += Number(i.total_amount);
+      map[compId].instantDiscount += Number(i.discount || 0);
+      if (i.merged_into_monthly) {
+        map[compId].mergedInstantBilled += Number(i.total_amount);
+      } else {
+        map[compId].individualInstantBilled += Number(i.total_amount);
+        map[compId].billed += Number(i.total_amount);
+        if (i.is_paid) { map[compId].instantCollected += Number(i.total_amount); map[compId].collected += Number(i.total_amount); }
+      }
     });
 
     return Object.values(map).sort((a, b) => b.billed - a.billed);
-  }, [filteredBookings, filteredInstant]);
+  }, [filteredInvoices, filteredInstant]);
 
   const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#6366f1'];
 
@@ -221,11 +266,13 @@ export default function RevenueDashboard() {
   const combinedLedger = useMemo(() => {
     const list: any[] = [];
 
-    filteredInvoices.forEach(i => {
-      const mergedAmount = instantInvoices
-        .filter(inst => inst.merged_into_monthly && inst.company_id === i.company_id && new Date(inst.created_at) >= new Date(i.start_date) && new Date(inst.created_at) <= new Date(i.end_date))
-        .reduce((sum, inst) => sum + Number(inst.total_amount), 0);
-      list.push({ ...i, origin: 'Monthly Contract', date: i.created_at, name: i.company_name, mergedAmount });
+    filteredInvoices.forEach(inv => {
+      // Use instant_invoice_ids array for accurate merged lookup
+      const mergedInstants = (inv.instant_invoice_ids || [])
+        .map((iid: string) => instantInvoices.find((ii: any) => ii.id === iid))
+        .filter(Boolean);
+      const mergedAmount = mergedInstants.reduce((sum: number, inst: any) => sum + Number(inst.total_amount), 0);
+      list.push({ ...inv, origin: 'Monthly Contract', date: inv.created_at, name: inv.company_name, mergedAmount, mergedInstants });
     });
 
     filteredInstant.filter(i => !i.merged_into_monthly).forEach(i => {
@@ -263,7 +310,7 @@ export default function RevenueDashboard() {
       return (
         <div className="bg-white p-4 rounded-2xl shadow-2xl border border-gray-200">
           <p className="text-sm font-black text-gray-900 mb-3 border-b border-gray-100 pb-2 flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }}></div>
+            <span className="w-3 h-3 rounded-full inline-block shrink-0" style={{ backgroundColor: payload[0].color }}></span>
             {data.name}
           </p>
           <div className="space-y-1.5">
@@ -335,7 +382,7 @@ export default function RevenueDashboard() {
       </div>
 
       {/* ── MAIN CONTENT (Overlap Header) ── */}
-      <div className={`w-full mx-auto px-4 md:px-8 -mt-20 relative z-30 space-y-8 transition-opacity duration-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`w-full mx-auto px-4 md:px-8 xl:px-12 2xl:px-16 -mt-20 relative z-30 space-y-8 transition-opacity duration-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
 
         {isRefreshing && (
           <div className="absolute inset-0 z-50 flex items-start justify-center pt-20 pointer-events-none">
@@ -346,44 +393,59 @@ export default function RevenueDashboard() {
           </div>
         )}
 
-        {/* ── 5 KPI CARDS (GRID COLS 5) ── */}
+        {/* ── 5 KPI CARDS ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
 
-          {/* Card 5: New Total Business Card */}
-          <div className="bg-gradient-to-br from-indigo-800 to-indigo-950 text-white p-5 rounded-[2rem] shadow-xl shadow-indigo-900/20 border border-indigo-700 flex flex-col justify-center relative overflow-hidden group">
-            <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform"><LineChart size={80}/></div>
+          {/* Card 1: Total Sales / Business */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0 }}
+            className="bg-gradient-to-br from-indigo-800 to-indigo-950 text-white p-5 rounded-[2rem] shadow-xl shadow-indigo-900/20 border border-indigo-700 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-indigo-900/30 hover:-translate-y-1 transition-all duration-200">
+            <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-125 group-hover:opacity-20 transition-all duration-300"><LineChart size={80}/></div>
             <p className="text-[9px] font-black text-indigo-300 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Store size={12}/> Total Sales / Business</p>
             <h2 className="text-2xl font-black text-white">AED {stats.totalBusiness.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             <p className="text-[10px] font-bold text-indigo-200 mt-2">All work done in period</p>
-          </div>
+          </motion.div>
 
-          {/* Original 4 Cards */}
-          <div className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group">
-            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform"><Briefcase size={80}/></div>
+          {/* Card 2: Total Work Billed */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-blue-100/60 hover:-translate-y-1 hover:border-blue-200 transition-all duration-200">
+            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Briefcase size={80}/></div>
             <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Total Work Billed</p>
             <h2 className="text-2xl font-black text-gray-900">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <p className="text-[10px] font-bold text-gray-500 mt-2">Generated Invoices & POS</p>
-          </div>
+            {stats.totalDiscount > 0 && (
+              <p className="text-[10px] font-bold text-rose-500 mt-1 flex items-center gap-1">
+                <span className="text-[9px] bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md font-black">Discount Given</span>
+                AED {stats.totalDiscount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            )}
+            <p className="text-[10px] font-bold text-gray-500 mt-1.5">Generated Invoices &amp; POS</p>
+          </motion.div>
 
-          <div className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition-transform"><Wallet size={80}/></div>
+          {/* Card 3: Collected Revenue */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-emerald-100/60 hover:-translate-y-1 hover:border-emerald-300 transition-all duration-200">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Wallet size={80}/></div>
             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Revenue</p>
             <h2 className="text-2xl font-black text-emerald-600">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             <p className="text-[10px] font-bold text-gray-500 mt-2">Successfully received</p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-amber-200 flex flex-col justify-center relative overflow-hidden group">
-             <div className="absolute -right-4 -bottom-4 opacity-5 text-amber-500 group-hover:scale-110 transition-transform"><AlertCircle size={80}/></div>
-             <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowUpRight size={12}/> Outstanding Dues</p>
-             <h2 className="text-2xl font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-             <p className="text-[10px] font-bold text-gray-500 mt-2">Pending to collect</p>
-          </div>
+          {/* Card 4: Outstanding Dues */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-amber-200 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-amber-100/60 hover:-translate-y-1 hover:border-amber-300 transition-all duration-200">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-amber-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><AlertCircle size={80}/></div>
+            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowUpRight size={12}/> Outstanding Dues</p>
+            <h2 className="text-2xl font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <p className="text-[10px] font-bold text-gray-500 mt-2">Pending to collect</p>
+          </motion.div>
 
-          <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-200 flex flex-col justify-center border-dashed">
-             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
-             <h2 className="text-2xl font-black text-slate-700">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-             <p className="text-[10px] font-bold text-slate-400 mt-2">Finalized, bill pending</p>
-          </div>
+          {/* Card 5: Work Not Invoiced */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.24 }}
+            className="bg-slate-50 p-5 rounded-[2rem] border border-dashed border-slate-300 flex flex-col justify-center relative overflow-hidden group cursor-default hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-400 transition-all duration-200">
+            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Receipt size={80}/></div>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
+            <h2 className="text-2xl font-black text-slate-700">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <p className="text-[10px] font-bold text-slate-400 mt-2">Finalized, bill pending</p>
+          </motion.div>
         </div>
 
         {/* ── CHARTS SECTION (Area + Bar) ── */}
@@ -419,19 +481,69 @@ export default function RevenueDashboard() {
 
           {/* Bar Chart: Source Comparison */}
           <div className="lg:col-span-1 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 h-[400px] flex flex-col">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500"/> Source Performance</h3>
-            <div className="flex-1 w-full min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sourceBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
-                  <RechartsTooltip content={<CustomAreaTooltip />} cursor={{fill: 'transparent'}} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '10px' }} />
-                  <Bar dataKey="Billed" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="Collected" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500"/> Source Performance</h3>
+            <div className="flex flex-1 min-h-0 gap-3">
+              {/* Stacked Bar Chart */}
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sourceBarData} margin={{ top: 10, right: 0, left: -28, bottom: 0 }} barCategoryGap="30%" barGap={3}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} dy={8} interval={0} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                    <RechartsTooltip content={<CustomAreaTooltip />} cursor={{fill: 'transparent'}} />
+                    <Bar dataKey="Billed" stackId="a" fill="#94a3b8" radius={[0, 0, 4, 4]} maxBarSize={32} />
+                    <Bar dataKey="MergedPOS" stackId="a" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Bar dataKey="Collected" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Text amounts — right side */}
+              <div className="w-[100px] shrink-0 flex flex-col justify-center gap-4 py-2">
+                <div className="space-y-2">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Monthly</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
+                    <div>
+                      <p className="text-[8px] font-bold text-gray-400">Billed</p>
+                      <p className="text-[10px] font-black text-gray-800">AED {stats.monthlyBilled.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  {stats.mergedInstantBilled > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"/>
+                      <div>
+                        <p className="text-[8px] font-bold text-indigo-400">+ Merged POS</p>
+                        <p className="text-[10px] font-black text-indigo-700">AED {stats.mergedInstantBilled.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
+                    <div>
+                      <p className="text-[8px] font-bold text-gray-400">Collected</p>
+                      <p className="text-[10px] font-black text-emerald-600">AED {stats.monthlyCollected.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full h-px bg-gray-100"/>
+                <div className="space-y-2">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Instant POS</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
+                    <div>
+                      <p className="text-[8px] font-bold text-gray-400">Total Billed</p>
+                      <p className="text-[10px] font-black text-gray-800">AED {stats.totalInstantAll.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
+                    <div>
+                      <p className="text-[8px] font-bold text-gray-400">Collected</p>
+                      <p className="text-[10px] font-black text-emerald-600">AED {stats.instantCollected.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -440,7 +552,7 @@ export default function RevenueDashboard() {
         {/* ── COMPANY REVENUE ANALYTICS ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Donut Chart */}
+          {/* Filled Pie Chart */}
           <div className="lg:col-span-1 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col h-[450px]">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-2 flex items-center gap-2"><PieChartIcon size={16} className="text-indigo-600"/> Sales by Company</h3>
             <p className="text-xs font-bold text-gray-500 mb-4">Top contributors to total sales</p>
@@ -450,10 +562,32 @@ export default function RevenueDashboard() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={companyAnalytics} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={4} dataKey="billed" stroke="none">
-                      {companyAnalytics.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
+                    <Pie
+                      data={companyAnalytics}
+                      cx="50%" cy="50%"
+                      innerRadius={0}
+                      outerRadius={activePieIndex !== null ? 88 : 90}
+                      paddingAngle={1}
+                      dataKey="billed"
+                      stroke="none"
+                      onMouseEnter={(_, index) => setActivePieIndex(index)}
+                      onMouseLeave={() => setActivePieIndex(null)}
+                    >
+                      {companyAnalytics.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={PIE_COLORS[index % PIE_COLORS.length]}
+                          opacity={activePieIndex === null || activePieIndex === index ? 1 : 0.65}
+                          style={{
+                            transform: activePieIndex === index ? 'scale(1.06)' : 'scale(1)',
+                            transformOrigin: '50% 50%',
+                            transition: 'transform 0.18s ease, opacity 0.15s ease',
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
                     </Pie>
-                    <RechartsTooltip content={<CustomPieTooltip />} />
+                    <RechartsTooltip content={<CustomPieTooltip />} position={{ x: 0, y: 0 }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -471,28 +605,63 @@ export default function RevenueDashboard() {
                  <div className="text-center py-20 text-gray-400 font-bold">No sales records found.</div>
               ) : (
                 companyAnalytics.map((comp, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors group">
-                    <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}>
-                         {i + 1}
-                       </div>
-                       <h4 className="font-black text-gray-900 text-base leading-tight flex items-center flex-wrap gap-2">
-                         {comp.name}
-                         {comp.id === 'walk_in' && (
-                           <span className="text-[9px] bg-orange-100 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-md uppercase font-black tracking-widest">Walk-in</span>
-                         )}
-                       </h4>
+                  <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-white hover:shadow-md transition-all duration-150 group">
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}>{i + 1}</div>
+                        <h4 className="font-black text-gray-900 text-sm leading-tight flex items-center flex-wrap gap-2">
+                          {comp.name}
+                          {comp.id === 'walk_in' && <span className="text-[9px] bg-orange-100 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-md uppercase font-black tracking-widest">Walk-in</span>}
+                        </h4>
+                      </div>
+                      {/* Final Sales + discount summary */}
+                      <div className="text-right">
+                        <p className="text-base font-black text-blue-700">AED {comp.billed.toLocaleString()}</p>
+                        {(comp.monthlyDiscount + comp.instantDiscount) > 0 && (
+                          <p className="text-[9px] font-black text-rose-500 flex items-center justify-end gap-0.5 mt-0.5">
+                            Discount: AED {(comp.monthlyDiscount + comp.instantDiscount).toLocaleString()}
+                          </p>
+                        )}
+                        <p className="text-[9px] font-bold text-emerald-600 mt-0.5">Collected: AED {comp.collected.toLocaleString()}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-6 mt-3 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
-                       <div className="text-right">
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Sales</p>
-                         <p className="text-sm font-black text-blue-600">AED {comp.billed.toLocaleString()}</p>
-                       </div>
-                       <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
-                       <div className="text-right">
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Collected</p>
-                         <p className="text-sm font-black text-emerald-600">AED {comp.collected.toLocaleString()}</p>
-                       </div>
+
+                    {/* Breakdown grid */}
+                    <div className="grid grid-cols-2 gap-2 mt-2 border-t border-gray-100 pt-3">
+                      {/* Monthly column */}
+                      {comp.monthlyBilled > 0 && (
+                        <div className="bg-white rounded-xl border border-blue-100 p-2.5">
+                          <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Building2 size={9}/> Monthly Invoice</p>
+                          <p className="text-[11px] font-black text-gray-900">AED {comp.monthlyBilled.toLocaleString()}</p>
+                          {comp.monthlyDiscount > 0 && <p className="text-[9px] font-bold text-rose-400 mt-0.5">Discount: AED {comp.monthlyDiscount.toLocaleString()}</p>}
+                          <p className="text-[9px] font-bold text-emerald-500 mt-0.5">Collected: AED {comp.monthlyCollected.toLocaleString()}</p>
+                        </div>
+                      )}
+
+                      {/* POS column */}
+                      {comp.instantBilled > 0 && (
+                        <div className="bg-white rounded-xl border border-indigo-100 p-2.5">
+                          <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Store size={9}/> Instant POS</p>
+                          <p className="text-[11px] font-black text-gray-900">AED {comp.instantBilled.toLocaleString()}</p>
+                          {comp.instantDiscount > 0 && <p className="text-[9px] font-bold text-rose-400 mt-0.5">Discount: AED {comp.instantDiscount.toLocaleString()}</p>}
+                          {/* Merged vs Individual breakdown */}
+                          <div className="mt-1.5 space-y-0.5">
+                            {comp.mergedInstantBilled > 0 && (
+                              <p className="text-[8px] font-bold text-teal-500 flex items-center gap-1">
+                                <PackagePlus size={8}/> Merged w/ monthly: AED {comp.mergedInstantBilled.toLocaleString()}
+                                {comp.mergedInstantIds.length > 0 && <span className="bg-teal-100 text-teal-700 px-1 rounded font-black">{comp.mergedInstantIds.length}</span>}
+                              </p>
+                            )}
+                            {comp.individualInstantBilled > 0 && (
+                              <p className="text-[8px] font-bold text-indigo-400 flex items-center gap-1">
+                                <Store size={8}/> Individual: AED {comp.individualInstantBilled.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          <p className="text-[9px] font-bold text-emerald-500 mt-0.5">Collected: AED {comp.instantCollected.toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -653,17 +822,31 @@ export default function RevenueDashboard() {
                            )}
                         </div>
 
-                        {/* 🚨 Faint Included Instant Bills Notice */}
-                        {l.mergedAmount > 0 && (
-                           <p className="text-[9px] font-black text-indigo-400/80 mt-2 flex items-center gap-1">
-                             <PackagePlus size={10}/> Includes Instant Bills: AED {l.mergedAmount.toFixed(2)}
-                           </p>
+                        {/* Highlighted merged instant bills with invoice_no */}
+                        {l.mergedInstants?.length > 0 && (
+                          <div className="mt-2.5 space-y-1">
+                            <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1 mb-1">
+                              <PackagePlus size={9}/> Merged Instant POS Bills
+                            </p>
+                            {l.mergedInstants.map((inst: any) => (
+                              <div key={inst.id} className="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1">
+                                <span className="text-[9px] font-black text-indigo-700 tracking-wide">{inst.invoice_no}</span>
+                                <span className="text-[9px] font-black text-indigo-900 shrink-0">AED {Number(inst.total_amount).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end justify-between h-full gap-3">
                       <div className="text-right">
+                        {Number(l.discount || 0) > 0 && (
+                          <p className="text-[9px] font-bold text-rose-400 flex items-center justify-end gap-1 mb-0.5">
+                            <span className="line-through text-gray-400">AED {Number(l.subtotal || l.total_amount).toFixed(2)}</span>
+                            <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black">-{Number(l.discount).toFixed(2)}</span>
+                          </p>
+                        )}
                         <p className="text-base font-black text-gray-900">AED {Number(l.total_amount).toFixed(2)}</p>
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded mt-1 inline-block border shadow-sm ${l.is_paid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
                           {l.is_paid ? 'Paid' : 'Due'}

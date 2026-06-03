@@ -113,6 +113,7 @@ export default function InstantPOS({
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [monthlyInvoices, setMonthlyInvoices] = useState<any[]>([]);
 
   // ── Invoice Header ─────────────────────────────────────────────────────────
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -129,6 +130,9 @@ export default function InstantPOS({
 
   // ── Bill Settings ──────────────────────────────────────────────────────────
   const [discount, setDiscount] = useState<number>(0);
+  const [discountMode, setDiscountMode] = useState<'percent' | 'manual'>('manual');
+  const [discountPercent, setDiscountPercent] = useState<string>("");
+  const [discountRemarks, setDiscountRemarks] = useState<string>("");
   const [isPaid, setIsPaid] = useState<boolean>(false);
 
   // ── Save Progress ──────────────────────────────────────────────────────────
@@ -170,8 +174,12 @@ export default function InstantPOS({
 
   const fetchHistory = async () => {
     setLoading(true);
-    const { data } = await supabase.from("instant_invoices").select("*, companies(name)").order("created_at", { ascending: false });
-    if (data) setHistory(data);
+    const [instRes, monthlyRes] = await Promise.all([
+      supabase.from("instant_invoices").select("*, subtotal, discount, discount_remarks, companies(name)").order("created_at", { ascending: false }),
+      supabase.from("invoices").select("id, invoice_no, is_paid, instant_invoice_ids").order("created_at", { ascending: false }),
+    ]);
+    if (instRes.data) setHistory(instRes.data);
+    if (monthlyRes.data) setMonthlyInvoices(monthlyRes.data);
     setLoading(false);
   };
 
@@ -281,7 +289,14 @@ export default function InstantPOS({
     [itemsByUnit]
   );
   const subtotal = useMemo(() => allItems.reduce((s, i) => s + i.total_price, 0), [allItems]);
-  const totalAmount = subtotal - (Number(discount) || 0);
+  const discountValue = useMemo(() => {
+    if (discountMode === 'percent') {
+      const p = parseFloat(discountPercent || "0");
+      return (!p || p <= 0 || p > 100) ? 0 : (subtotal * p) / 100;
+    }
+    return (!discount || discount < 0 || discount > subtotal) ? 0 : discount;
+  }, [subtotal, discount, discountPercent, discountMode]);
+  const totalAmount = subtotal - discountValue;
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const validate = (): boolean => {
@@ -327,7 +342,8 @@ export default function InstantPOS({
         customer_name: clientType === "walk_in" ? walkInName : null,
         items: itemsPayload,
         subtotal,
-        discount: Number(discount) || 0,
+        discount: discountValue,
+        discount_remarks: discountRemarks,
         total_amount: totalAmount,
         is_paid: isPaid,
         merged_into_monthly: false,
@@ -375,8 +391,9 @@ export default function InstantPOS({
             })
           : [{ unitLabel: null, items: allItems }],
         subtotal,
-        discountPercent: discount > 0 && subtotal > 0 ? Number(((discount / subtotal) * 100).toFixed(1)) : 0,
-        discountValue: Number(discount) || 0,
+        discountPercent: discountValue > 0 && subtotal > 0 ? Number(((discountValue / subtotal) * 100).toFixed(1)) : 0,
+        discountValue,
+        discountRemarks,
         finalTotal: totalAmount,
         bankDetails,
       };
@@ -411,7 +428,7 @@ export default function InstantPOS({
       setItemsByUnit({ 0: [] });
       setSelectedUnitIds([]);
       setActiveUnitTab(0);
-      setDiscount(0);
+      setDiscount(0); setDiscountMode('manual'); setDiscountPercent(""); setDiscountRemarks("");
       setIsPaid(false);
       generateInvoiceNo();
       if (clientType === "walk_in") setWalkInName("");
@@ -427,8 +444,15 @@ export default function InstantPOS({
 
   // ── Mark as Paid ───────────────────────────────────────────────────────────
   const handleMarkAsPaid = async (id: string) => {
-    const { error } = await supabase.from("instant_invoices").update({ is_paid: true }).eq("id", id);
+    const { error } = await supabase.from("instant_invoices").update({ is_paid: true, payment_date: new Date().toISOString() }).eq("id", id);
     if (!error) { toast.success("Invoice marked as Paid!"); setHistory((prev) => prev.map((inv) => inv.id === id ? { ...inv, is_paid: true } : inv)); }
+    else toast.error("Failed to update status.");
+  };
+
+  // ── Mark as Unpaid ─────────────────────────────────────────────────────────
+  const handleMarkAsUnpaid = async (id: string) => {
+    const { error } = await supabase.from("instant_invoices").update({ is_paid: false, payment_date: null }).eq("id", id);
+    if (!error) { toast.success("Invoice marked as Unpaid."); setHistory((prev) => prev.map((inv) => inv.id === id ? { ...inv, is_paid: false } : inv)); }
     else toast.error("Failed to update status.");
   };
 
@@ -479,7 +503,9 @@ export default function InstantPOS({
       </AnimatePresence>
 
       {/* ── CREATE TAB ── */}
+      <AnimatePresence mode="wait">
       {activeTab === "create" && (
+        <motion.div key="inst-create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
           {/* ── LEFT COLUMN: Bill Builder ── xl:col-span-9 */}
@@ -703,22 +729,47 @@ export default function InstantPOS({
               <h3 className="text-lg font-black flex items-center gap-2 mb-5">
                 <Receipt size={18} className="text-indigo-400" /> Bill Summary
               </h3>
-              <div className="space-y-3 mb-6 text-sm">
-                <div className="flex justify-between text-gray-300">
-                  <span>Subtotal</span>
-                  <span className="font-bold text-white">AED {subtotal.toFixed(2)}</span>
+                <div className="space-y-3 mb-6 text-sm">
+                  <div className="flex justify-between text-gray-300">
+                    <span>Subtotal</span>
+                    <span className="font-bold text-white">AED {subtotal.toFixed(2)}</span>
+                  </div>
+                  {/* Discount section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300 text-xs font-bold">Discount</span>
+                      {/* Mode toggle */}
+                      <div className="flex gap-1 bg-white/10 p-0.5 rounded-lg">
+                        <button type="button" onClick={() => { setDiscountMode('manual'); setDiscountPercent(""); }} className={`px-2 py-1 text-[9px] font-black rounded-md transition-all ${discountMode === 'manual' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>AED</button>
+                        <button type="button" onClick={() => { setDiscountMode('percent'); setDiscount(0); }} className={`px-2 py-1 text-[9px] font-black rounded-md transition-all ${discountMode === 'percent' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>%</button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {discountMode === 'manual' ? (
+                        <input type="number" min="0" value={discount} onChange={(e) => setDiscount(Number(e.target.value))}
+                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-right text-white font-black outline-none focus:border-indigo-400" placeholder="0.00" />
+                      ) : (
+                        <div className="flex-1 flex items-center bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 focus-within:border-indigo-400">
+                          <input type="number" min="0" max="100" step="0.5" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)}
+                            className="flex-1 bg-transparent text-right text-white font-black outline-none" placeholder="0" />
+                          <span className="text-gray-400 font-black ml-1">%</span>
+                        </div>
+                      )}
+                      {discountValue > 0 && (
+                        <span className="text-amber-400 font-black text-xs shrink-0">- AED {discountValue.toFixed(2)}</span>
+                      )}
+                    </div>
+                    {/* Remarks */}
+                    <input type="text" value={discountRemarks} onChange={e => setDiscountRemarks(e.target.value)}
+                      placeholder="Discount reason (optional)"
+                      className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-300 outline-none focus:border-indigo-400 placeholder:text-gray-500 transition-colors" />
+                  </div>
+                  <div className="h-px bg-white/10" />
+                  <div className="flex justify-between items-end bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Net Total</span>
+                    <span className="text-2xl font-black text-emerald-400">AED {totalAmount.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Discount (AED)</span>
-                  <input type="number" min="0" value={discount} onChange={(e) => setDiscount(Number(e.target.value))}
-                    className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-right text-white font-black outline-none focus:border-indigo-400" />
-                </div>
-                <div className="h-px bg-white/10" />
-                <div className="flex justify-between items-end bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Net Total</span>
-                  <span className="text-2xl font-black text-emerald-400">AED {totalAmount.toFixed(2)}</span>
-                </div>
-              </div>
 
               <label className="flex items-center gap-3 p-3.5 bg-white/10 border border-white/20 rounded-xl cursor-pointer hover:bg-white/20 transition-colors mb-5">
                 <input type="checkbox" checked={isPaid} onChange={(e) => setIsPaid(e.target.checked)} className="hidden" />
@@ -764,10 +815,12 @@ export default function InstantPOS({
             </div>
           </div>
         </div>
+        </motion.div>
       )}
 
       {/* ── HISTORY TAB ── */}
       {activeTab === "history" && (
+        <motion.div key="inst-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
@@ -796,40 +849,86 @@ export default function InstantPOS({
           ) : (
             /* Wide monitor: 2 cols lg, 3 cols xl, 4 cols 2xl */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {filteredHistory.map((inv: any) => (
+              {filteredHistory.map((inv: any, idx: number) => {
+                // Find the monthly invoice this instant invoice is merged into (if any)
+                const mergedIntoMonthly = inv.merged_into_monthly
+                  ? monthlyInvoices.find((mi: any) => mi.instant_invoice_ids?.includes(inv.id))
+                  : null;
+                // If merged, paid status is driven by the monthly invoice's paid status
+                const effectivePaid = mergedIntoMonthly ? mergedIntoMonthly.is_paid : inv.is_paid;
+
+                return (
                 <motion.div
                   key={inv.id}
-                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className={`rounded-2xl border p-5 flex flex-col transition-all hover:shadow-lg ${inv.is_paid ? "border-gray-200 bg-white" : "border-amber-200 bg-amber-50/40"}`}
+                  initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.2, delay: idx * 0.035 }}
+                  className={`rounded-2xl border p-5 flex flex-col shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${
+                    mergedIntoMonthly
+                      ? effectivePaid ? "border-gray-200 bg-white" : "border-emerald-200 bg-emerald-50/30"
+                      : effectivePaid ? "border-gray-200 bg-white" : "border-amber-200 bg-amber-50/40"
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
                       {format(new Date(inv.created_at), "dd MMM yyyy")}
                     </span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${inv.is_paid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
-                      {inv.is_paid ? <><CheckCircle2 size={12} /> Paid</> : <><AlertCircle size={12} /> Unpaid</>}
-                    </span>
+                    {mergedIntoMonthly ? (
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-teal-100 text-teal-700 border-teal-300"}`}>
+                        {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><Layers size={12} /> Merged</>}
+                      </span>
+                    ) : (
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
+                        {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><AlertCircle size={12} /> Unpaid</>}
+                      </span>
+                    )}
                   </div>
 
                   <h4 className="text-base font-black text-gray-900 mb-0.5">{inv.invoice_no}</h4>
-                  <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-4">
+                  <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-2">
                     {inv.client_type === "registered" ? <Building2 size={13} className="text-blue-500" /> : <UserCircle size={13} className="text-orange-500" />}
                     {inv.client_type === "registered" ? inv.companies?.name : inv.customer_name}
                   </p>
 
+                  {/* Merged into monthly invoice info */}
+                  {mergedIntoMonthly && (
+                    <div className="mb-3 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+                      <p className="text-[9px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Merged with Monthly</p>
+                      <p className="text-[11px] font-black text-teal-700">{mergedIntoMonthly.invoice_no}</p>
+                      {!effectivePaid && (
+                        <p className="text-[9px] font-bold text-teal-400 mt-0.5">Paid when monthly invoice is paid</p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="mt-auto pt-4 border-t border-gray-100 flex items-end justify-between">
                     <div>
                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Net Total</p>
+                      {Number(inv.discount || 0) > 0 && (
+                        <p className="text-[9px] font-bold text-rose-400 flex items-center gap-1 mb-0.5">
+                          <span className="line-through text-gray-400">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
+                          <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
+                        </p>
+                      )}
                       <p className="text-xl font-black text-indigo-700">AED {Number(inv.total_amount).toFixed(2)}</p>
+                      {inv.discount_remarks && (
+                        <p className="text-[8px] font-bold text-gray-400 mt-0.5 max-w-[120px] leading-tight">{inv.discount_remarks}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {!inv.is_paid && (
+                      {/* Mark paid — only for non-merged, unpaid invoices */}
+                      {!mergedIntoMonthly && !effectivePaid && (
                         <button onClick={() => handleMarkAsPaid(inv.id)} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-sm active:scale-95" title="Mark as Paid">
                           <CheckCircle2 size={17} />
                         </button>
                       )}
-                      {/* Delete — unpaid only */}
-                      {!inv.is_paid && (
+                      {/* Mark unpaid — only for non-merged, paid invoices */}
+                      {!mergedIntoMonthly && effectivePaid && (
+                        <button onClick={() => handleMarkAsUnpaid(inv.id)} className="p-2.5 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-colors border border-amber-200" title="Mark as Unpaid">
+                          <AlertCircle size={17} />
+                        </button>
+                      )}
+                      {/* Delete — only non-merged, unpaid */}
+                      {!mergedIntoMonthly && !effectivePaid && (
                         <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete">
                           <Trash2 size={17} />
                         </button>
@@ -852,11 +951,14 @@ export default function InstantPOS({
                     </div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -196,6 +196,7 @@ export default function InvoiceManagement() {
   const [activeTab, setActiveTab] = useState<'generate' | 'history'>('generate');
   const [companies, setCompanies] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [allInstantInvoices, setAllInstantInvoices] = useState<any[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
   // ── Generate Tab States ────────────────────────────────────────────────────
@@ -214,7 +215,10 @@ export default function InvoiceManagement() {
   const [selectedInstantBillIds, setSelectedInstantBillIds] = useState<string[]>([]);
 
   // ── Discount ───────────────────────────────────────────────────────────────
+  const [discountMode, setDiscountMode] = useState<'percent' | 'manual'>('percent');
   const [discountPercent, setDiscountPercent] = useState<string>("");
+  const [discountManual, setDiscountManual] = useState<string>("");
+  const [discountRemarks, setDiscountRemarks] = useState<string>("");
 
   // ── Bank Details ───────────────────────────────────────────────────────────
   const [bankDetails, setBankDetails] = useState({
@@ -241,14 +245,16 @@ export default function InvoiceManagement() {
   useEffect(() => {
     const initData = async () => {
       setLoadingInitial(true);
-      const [compRes, invRes, ucRes] = await Promise.all([
+      const [compRes, invRes, ucRes, instRes] = await Promise.all([
         supabase.from('companies').select('id, name').order('name'),
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
+        supabase.from('instant_invoices').select('id, invoice_no, is_paid, merged_into_monthly, total_amount').order('created_at', { ascending: false }),
       ]);
       if (compRes.data) setCompanies(compRes.data);
       if (invRes.data) setInvoices(invRes.data);
       if (ucRes.data) setUnitConfigs(ucRes.data);
+      if (instRes.data) setAllInstantInvoices(instRes.data);
       setLoadingInitial(false);
     };
     initData();
@@ -271,7 +277,7 @@ export default function InvoiceManagement() {
   const fetchBookingsForInvoice = async () => {
     if (!selectedCompany || !startDate || !endDate) return toast.error("Please fill all fields.");
     setLoadingFetch(true);
-    setBookings([]); setUnpaidInstantBills([]); setSelectedInstantBillIds([]); setDiscountPercent("");
+    setBookings([]); setUnpaidInstantBills([]); setSelectedInstantBillIds([]); setDiscountPercent(""); setDiscountManual(""); setDiscountRemarks("");
 
     const companyId = parseInt(selectedCompany);
 
@@ -340,7 +346,15 @@ export default function InvoiceManagement() {
     return bt + it;
   }, [bookings, invoiceMode, selectedInstantBillIds, unpaidInstantBills]);
 
-  const discountValue = useMemo(() => { const p = parseFloat(discountPercent || "0"); return (!p || p <= 0 || p > 100) ? 0 : (subtotal * p) / 100; }, [subtotal, discountPercent]);
+  const discountValue = useMemo(() => {
+    if (discountMode === 'percent') {
+      const p = parseFloat(discountPercent || "0");
+      return (!p || p <= 0 || p > 100) ? 0 : (subtotal * p) / 100;
+    } else {
+      const m = parseFloat(discountManual || "0");
+      return (!m || m < 0 || m > subtotal) ? 0 : m;
+    }
+  }, [subtotal, discountPercent, discountManual, discountMode]);
   const finalTotal = useMemo(() => subtotal - discountValue, [subtotal, discountValue]);
   const visibleItemsCount = useMemo(() => {
     return bookings.filter(b => { if (b.isAlreadyInvoiced) return false; if (invoiceMode === 'cleaning_only') return Number(b.price) > 0; if (invoiceMode === 'inventory_only') return b.extras?.length > 0; return true; }).length + selectedInstantBillIds.length;
@@ -396,8 +410,9 @@ export default function InvoiceManagement() {
         instantBillsByUnit,
         instantBillsNoUnit,
         subtotal,
-        discountPercent: parseFloat(discountPercent || "0"),
+        discountPercent: discountValue > 0 && subtotal > 0 ? Number(((discountValue / subtotal) * 100).toFixed(1)) : 0,
         discountValue,
+        discountRemarks,
         finalTotal,
         bankDetails,
         invoiceMode,
@@ -410,13 +425,15 @@ export default function InvoiceManagement() {
       formData.append("signature", signature); formData.append("folder", folderPath); formData.append("public_id", publicId);
       const uploadData = await (await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData })).json();
       if (!uploadData.secure_url) throw new Error("Cloudinary upload failed");
-      const { error: invError } = await supabase.from('invoices').insert([{ company_id: parseInt(selectedCompany), company_name: compName, invoice_no: invoiceNo, start_date: startDate, end_date: endDate, total_amount: finalTotal, pdf_url: uploadData.secure_url, booking_ids: validBookings.map(b => b.id), instant_invoice_ids: selectedInstantBillIds }]);
+      const { error: invError } = await supabase.from('invoices').insert([{ company_id: parseInt(selectedCompany), company_name: compName, invoice_no: invoiceNo, start_date: startDate, end_date: endDate, subtotal, discount: discountValue, discount_remarks: discountRemarks, total_amount: finalTotal, pdf_url: uploadData.secure_url, booking_ids: validBookings.map(b => b.id), instant_invoice_ids: selectedInstantBillIds }]);
       if (invError) throw invError;
       if (validBookings.length > 0) await supabase.from('bookings').update({ invoice_no: invoiceNo }).in('id', validBookings.map(b => b.id));
       if (selectedInstantBillIds.length > 0) await supabase.from('instant_invoices').update({ merged_into_monthly: true }).in('id', selectedInstantBillIds);
       toast.success("Invoice Generated & Saved!");
       const { data: newHistory } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
       if (newHistory) setInvoices(newHistory);
+      const { data: newInstant } = await supabase.from('instant_invoices').select('id, invoice_no, is_paid, merged_into_monthly, total_amount').order('created_at', { ascending: false });
+      if (newInstant) setAllInstantInvoices(newInstant);
       setActiveTab('history');
     } catch (err: any) { toast.error("Error: " + err.message); } finally { setGenerating(false); }
   };
@@ -424,7 +441,30 @@ export default function InvoiceManagement() {
   // ── 5. Mark Paid ──────────────────────────────────────────────────────────
   const handleMarkMonthlyPaid = async (id: string) => {
     const { error } = await supabase.from('invoices').update({ is_paid: true, payment_date: new Date().toISOString() }).eq('id', id);
-    if (!error) { toast.success("Invoice marked as Paid!"); setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, is_paid: true } : inv)); }
+    if (!error) {
+      toast.success("Invoice marked as Paid!");
+      setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, is_paid: true } : inv));
+      // Also mark merged instant invoices as paid
+      const inv = invoices.find(i => i.id === id);
+      if (inv?.instant_invoice_ids?.length > 0) {
+        await supabase.from('instant_invoices').update({ is_paid: true, payment_date: new Date().toISOString() }).in('id', inv.instant_invoice_ids);
+      }
+    }
+    else toast.error("Failed to update payment status.");
+  };
+
+  // ── 5b. Mark Unpaid ───────────────────────────────────────────────────────
+  const handleMarkMonthlyUnpaid = async (id: string) => {
+    const { error } = await supabase.from('invoices').update({ is_paid: false, payment_date: null }).eq('id', id);
+    if (!error) {
+      toast.success("Invoice marked as Unpaid.");
+      setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, is_paid: false, payment_date: null } : inv));
+      // Also unmark merged instant invoices
+      const inv = invoices.find(i => i.id === id);
+      if (inv?.instant_invoice_ids?.length > 0) {
+        await supabase.from('instant_invoices').update({ is_paid: false, payment_date: null }).in('id', inv.instant_invoice_ids);
+      }
+    }
     else toast.error("Failed to update payment status.");
   };
 
@@ -552,8 +592,9 @@ export default function InvoiceManagement() {
         {activeMainTab === 'monthly' ? (
           <>
             {/* ── GENERATE TAB ── */}
+            <AnimatePresence mode="wait">
             {activeTab === 'generate' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div key="monthly-generate" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
                 className="grid grid-cols-1 xl:grid-cols-12 gap-6"
               >
                 {/* Left: Settings */}
@@ -719,15 +760,31 @@ export default function InvoiceManagement() {
                             <p className="text-gray-500 font-bold">Subtotal</p>
                             <p className="text-xl font-black text-gray-700">AED {subtotal.toFixed(2)}</p>
                           </div>
-                          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-                            <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-1 mb-2"><Tag size={11} /> Discount (Optional)</label>
+                          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3">
+                            <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-1"><Tag size={11} /> Discount (Optional)</label>
+                            {/* Mode toggle */}
+                            <div className="flex gap-1 bg-amber-100/60 p-1 rounded-xl">
+                              <button type="button" onClick={() => { setDiscountMode('percent'); setDiscountManual(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'percent' ? 'bg-white text-amber-700 shadow-sm' : 'text-amber-600 hover:text-amber-800'}`}>% Percent</button>
+                              <button type="button" onClick={() => { setDiscountMode('manual'); setDiscountPercent(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'manual' ? 'bg-white text-amber-700 shadow-sm' : 'text-amber-600 hover:text-amber-800'}`}>AED Manual</button>
+                            </div>
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2.5 flex-1 focus-within:border-amber-400 transition-colors">
-                                <input type="number" min="0" max="100" step="0.5" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="0" className="flex-1 outline-none text-lg font-black text-gray-900 bg-transparent w-full" />
-                                <span className="text-gray-400 font-black text-lg">%</span>
+                                {discountMode === 'percent' ? (
+                                  <>
+                                    <input type="number" min="0" max="100" step="0.5" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="0" className="flex-1 outline-none text-lg font-black text-gray-900 bg-transparent w-full" />
+                                    <span className="text-gray-400 font-black text-lg">%</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-gray-400 font-black text-sm">AED</span>
+                                    <input type="number" min="0" step="0.01" value={discountManual} onChange={e => setDiscountManual(e.target.value)} placeholder="0.00" className="flex-1 outline-none text-lg font-black text-gray-900 bg-transparent w-full" />
+                                  </>
+                                )}
                               </div>
                               {discountValue > 0 && <div className="text-right shrink-0"><p className="text-[10px] font-black text-amber-600 uppercase">Saving</p><p className="text-base font-black text-amber-700">- AED {discountValue.toFixed(2)}</p></div>}
                             </div>
+                            {/* Remarks */}
+                            <input type="text" value={discountRemarks} onChange={e => setDiscountRemarks(e.target.value)} placeholder="Discount reason / remarks (optional)" className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:border-amber-400 placeholder:text-gray-300 transition-colors" />
                           </div>
                           <div className="flex justify-between items-center bg-gray-50 rounded-2xl px-5 py-4 border border-gray-100">
                             <p className="text-gray-600 font-black">Final Invoice Total</p>
@@ -752,7 +809,7 @@ export default function InvoiceManagement() {
 
             {/* ── HISTORY TAB ── */}
             {activeTab === 'history' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div key="monthly-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
                 <div className="mb-6 relative max-w-xl">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input type="text" placeholder="Search by Company or Invoice ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-blue-500 font-bold text-gray-900 shadow-sm text-sm" />
@@ -767,8 +824,14 @@ export default function InvoiceManagement() {
                       </h3>
                       {/* History cards */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {groupedHistory.groups[dateStr].map((inv: any) => (
-                          <div key={inv.id} className={`p-5 rounded-2xl border shadow-sm transition-all ${inv.is_paid ? 'bg-white border-gray-100' : 'bg-amber-50/30 border-amber-200'}`}>
+                        {groupedHistory.groups[dateStr].map((inv: any, idx: number) => (
+                          <motion.div
+                            key={inv.id}
+                            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.22, delay: idx * 0.04 }}
+                            className={`p-5 rounded-2xl border shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${inv.is_paid ? 'bg-white border-gray-100' : 'bg-amber-50/30 border-amber-200'}`}
+                          >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -787,12 +850,47 @@ export default function InvoiceManagement() {
                               </div>
                               <div className="text-right shrink-0 ml-3">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total</p>
+                                {Number(inv.discount || 0) > 0 && (
+                                  <p className="text-[9px] font-bold text-rose-400 flex items-center justify-end gap-1 mb-0.5">
+                                    <span className="line-through text-gray-400">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
+                                    <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
+                                  </p>
+                                )}
                                 <p className="text-lg font-black text-green-600">AED {Number(inv.total_amount).toFixed(2)}</p>
+                                {inv.discount_remarks && (
+                                  <p className="text-[8px] font-bold text-gray-400 mt-0.5 max-w-[120px] text-right leading-tight">{inv.discount_remarks}</p>
+                                )}
                               </div>
                             </div>
+                            {/* Merged instant invoices list */}
+                            {inv.instant_invoice_ids?.length > 0 && (
+                              <div className="mb-3 bg-indigo-50/60 border border-indigo-100 rounded-xl p-3">
+                                <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-1"><PackagePlus size={10} /> Instant POS Included</p>
+                                <div className="space-y-1">
+                                  {inv.instant_invoice_ids.map((iid: string) => {
+                                    const instInv = allInstantInvoices.find((ii: any) => ii.id === iid);
+                                    return (
+                                      <div key={iid} className="flex items-center justify-between bg-white border border-indigo-100 rounded-lg px-2 py-1">
+                                        <p className="text-[10px] font-bold text-indigo-700 truncate">{instInv?.invoice_no || iid.slice(0, 13) + '…'}</p>
+                                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                          {instInv?.total_amount != null && (
+                                            <span className="text-[10px] font-black text-indigo-900">AED {Number(instInv.total_amount).toFixed(2)}</span>
+                                          )}
+                                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${inv.is_paid ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                            {inv.is_paid ? 'Paid' : 'Merged'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                              {!inv.is_paid && (
+                              {!inv.is_paid ? (
                                 <button onClick={() => handleMarkMonthlyPaid(inv.id)} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-sm active:scale-95" title="Mark as Paid"><CheckCircle2 size={17} /></button>
+                              ) : (
+                                <button onClick={() => handleMarkMonthlyUnpaid(inv.id)} className="p-2.5 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-colors border border-amber-200" title="Mark as Unpaid"><AlertCircle size={17} /></button>
                               )}
                               {!inv.is_paid && (
                                 <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete"><Trash2 size={17} /></button>
@@ -800,7 +898,7 @@ export default function InvoiceManagement() {
                               <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors" title="View"><Eye size={17} /></a>
                               <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors" title="Download"><Download size={17} /></a>
                             </div>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -808,6 +906,7 @@ export default function InvoiceManagement() {
                 </div>
               </motion.div>
             )}
+            </AnimatePresence>
           </>
         ) : (
           <InstantPOS 

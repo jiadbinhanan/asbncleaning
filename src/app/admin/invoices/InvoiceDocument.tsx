@@ -251,7 +251,7 @@ const S = StyleSheet.create({
 
 export const InvoiceDocument = ({ data }: any) => {
   const { invoiceNo, date, companyName, bookings, instantBills, instantBillsByUnit, instantBillsNoUnit, subtotal,
-          discountPercent, discountValue, finalTotal, bankDetails, invoiceMode } = data || {};
+          discountPercent, discountValue, discountRemarks, finalTotal, bankDetails, invoiceMode } = data || {};
 
   const issueDate = date ? format(parseISO(date), 'dd-MMM-yyyy') : '';
 
@@ -523,8 +523,13 @@ export const InvoiceDocument = ({ data }: any) => {
         <View style={S.grandAreaWrap} wrap={false}>
           <View style={S.grandBox}>
             <View style={S.grandLine}><Text style={S.gtLabel}>Total Amount</Text><Text style={S.gtValue}>{fmt(subtotal)}</Text></View>
-            {Number(discountPercent) > 0 && (
-              <View style={S.grandLine}><Text style={S.gtLabel}>Discount ({discountPercent}%)</Text><Text style={[S.gtValue, { color: C.danger }]}>- {fmt(discountValue)}</Text></View>
+            {Number(discountValue) > 0 && (
+              <View style={S.grandLine}>
+                <Text style={S.gtLabel}>
+                  {`Discount${Number(discountPercent) > 0 ? ` (${discountPercent}%)` : ''}${discountRemarks ? ` — ${discountRemarks}` : ''}`}
+                </Text>
+                <Text style={[S.gtValue, { color: C.danger }]}>- {fmt(discountValue)}</Text>
+              </View>
             )}
             <View style={S.grandLine}><Text style={S.gtLabel}>Tax</Text><Text style={S.gtValue}>0.00</Text></View>
             <View style={S.grandFinal}><Text style={S.gtFinalLabel}>Grand Total</Text><Text style={S.gtFinalValue}>AED {fmt(finalTotal ?? subtotal)}</Text></View>

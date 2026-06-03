@@ -1,81 +1,83 @@
-'use client';
+"use client";
 import { motion } from 'framer-motion';
-import { CheckCircle2, PlayCircle, ClipboardCheck } from 'lucide-react';
+import { CheckCircle2, PlayCircle, ClipboardCheck, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TeamLogin() {
   return (
     <section
-      id="teamlogin"
-      className="py-20 bg-[#0A192F] text-white relative overflow-hidden"
+      id="team-login"
+      className="py-24 bg-slate-900 text-white relative overflow-hidden"
     >
-      {/* Abstract Shapes */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-30"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-500 rounded-full blur-[100px] opacity-20"></div>
+      {/* লাক্সারি অ্যাবস্ট্রাক্ট শেইপস (Luxury Abstract Shapes) */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600 rounded-full blur-[150px] opacity-20 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600 rounded-full blur-[150px] opacity-20 pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-10">
-        <div className="md:w-1/2 space-y-6 relative z-10">
-          <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-lg text-xs font-black uppercase tracking-widest border border-blue-500/30">
-            Internal Operations
-          </span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-            Ready to start your shift?
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-16 relative z-10">
+
+        {/* টেক্সট অংশ (Text Content) */}
+        <div className="md:w-1/2 space-y-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md text-cyan-300 rounded-full text-xs font-bold uppercase tracking-widest border border-white/20">
+            <ShieldAlert size={16} /> Restricted Area (Staff Only)
+          </div>
+          <h2 className="text-4xl md:text-5xl font-serif font-bold tracking-tight leading-tight">
+            Ready to start your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-300">Daily Shift?</span>
           </h2>
-          <p className="text-blue-100/70 text-lg font-medium leading-relaxed">
-            Welcome to the B T M Cleaning Team Portal. Check your assigned
-            schedule, verify unit access codes, complete checklists, and start
-            your shift securely.
+          <p className="text-slate-300 text-lg font-medium leading-relaxed max-w-lg">
+            Welcome to the BTM Internal Operations Portal. Access your schedule, verify units, and maintain our premium standards.
           </p>
-          <div className="space-y-3 pt-2">
-            <p className="flex items-center gap-2 font-bold text-sm">
-              <CheckCircle2 className="text-teal-400" size={18} /> View daily
-              assigned units
+          <div className="space-y-4 pt-4">
+            <p className="flex items-center gap-3 font-bold text-slate-200">
+              <CheckCircle2 className="text-cyan-400 flex-shrink-0" size={22} /> View your daily assigned luxury units
             </p>
-            <p className="flex items-center gap-2 font-bold text-sm">
-              <CheckCircle2 className="text-teal-400" size={18} /> Access
-              digital checklists
+            <p className="flex items-center gap-3 font-bold text-slate-200">
+              <CheckCircle2 className="text-cyan-400 flex-shrink-0" size={22} /> Access digital checklists & routines
             </p>
-            <p className="flex items-center gap-2 font-bold text-sm">
-              <CheckCircle2 className="text-teal-400" size={18} /> Upload
-              photo evidence directly
+            <p className="flex items-center gap-3 font-bold text-slate-200">
+              <CheckCircle2 className="text-cyan-400 flex-shrink-0" size={22} /> Upload 'Before-After' photo evidence
             </p>
           </div>
         </div>
 
+        {/* লগইন কার্ড (Login Card) */}
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="md:w-1/3 w-full bg-white/10 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative z-10"
+          whileHover={{ y: -5 }}
+          className="md:w-[400px] w-full bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[2.5rem] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)] relative z-10"
         >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 border border-blue-500/30">
+          <div className="flex items-center gap-5 mb-10">
+            <div className="p-4 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-lg">
               <PlayCircle size={32} />
             </div>
             <div>
-              <h3 className="text-xl font-black tracking-wide">Agent Portal</h3>
-              <p className="text-blue-200/60 text-sm font-bold uppercase tracking-widest mt-0.5">
+              <h3 className="text-2xl font-bold tracking-tight text-white">Agent Portal</h3>
+              <p className="text-cyan-300 text-xs font-bold uppercase tracking-widest mt-1">
                 Secure Access
               </p>
             </div>
           </div>
 
           <Link href="/team/login">
-            <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-900/50">
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-4 bg-white hover:bg-cyan-50 text-slate-900 rounded-2xl font-extrabold text-lg flex items-center justify-center gap-2 transition-colors shadow-xl"
+            >
               Login to Dashboard
-            </button>
+            </motion.button>
           </Link>
 
-          {/* 🚨 UPDATED: Global QC Portal Login Link */}
-          <div className="mt-6 pt-6 border-t border-white/10 text-center">
-            <p className="text-sm font-medium text-blue-200/60 mb-3">
-              Only doing Quality Control?
+          <div className="mt-8 pt-8 border-t border-white/10 text-center">
+            <p className="text-sm font-medium text-slate-400 mb-4">
+              Authorized Quality Control?
             </p>
             <Link href="/team/qc-login">
-              <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2">
-                <ClipboardCheck size={18} /> QC Portal Login
+              <button className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-bold transition-all text-sm flex items-center justify-center gap-2">
+                <ClipboardCheck size={20} /> Access QC Portal
               </button>
             </Link>
           </div>
         </motion.div>
+
       </div>
     </section>
   );

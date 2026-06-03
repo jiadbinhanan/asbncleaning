@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Building2 } from "lucide-react";
+import { Send, Droplets, Calendar, Clock, MapPin, Building2, User } from "lucide-react";
 
 export default function BookingForm() {
   const [formData, setFormData] = useState({
     companyName: "",
-    service: "Checkout Cleaning", // 🚨 2. Default set to Checkout Cleaning
+    service: "Checkout Cleaning",
     type: "Apartment",
     layout: "",
     building: "",
@@ -15,11 +15,10 @@ export default function BookingForm() {
     doorCode: "",
     date: "",
     time: "10:00",
-    hasCheckIn: false, // 🚨 1. Check-in state
+    hasCheckIn: false,
     checkInTime: "",
   });
 
-  // Custom Dropdown States
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showLayoutDropdown, setShowLayoutDropdown] = useState(false);
 
@@ -29,69 +28,111 @@ export default function BookingForm() {
 
   const handleBooking = () => {
     const { companyName, service, type, layout, building, floor, unit, doorCode, date, time, hasCheckIn, checkInTime } = formData;
-    
-    let message = `*New Booking Request* 🧹%0A%0A*Company / Client:* ${companyName}%0A*Service:* ${service}%0A*Type:* ${type}%0A*Layout:* ${layout}%0A*Building:* ${building}%0A*Floor:* ${floor}%0A*Unit:* ${unit}%0A*Door Code:* ${doorCode}%0A*Date:* ${date}%0A*Time:* ${time}`;
-    
-    // 🚨 1. Add check-in info to WhatsApp message if applicable
+
+    let message = `*New Premium Booking Request* 🧹%0A%0A*Client / Company:* ${companyName}%0A*Service:* ${service}%0A*Property Type:* ${type}%0A*Layout:* ${layout}%0A*Building:* ${building}%0A*Floor:* ${floor}%0A*Unit:* ${unit}%0A*Door Code:* ${doorCode}%0A*Date:* ${date}%0A*Time:* ${time}`;
+
     if (hasCheckIn) {
-      message += `%0A*Check-in:* Yes%0A*Check-in Time:* ${checkInTime || "Not specified"}`;
+      message += `%0A%0A*Guest Check-in:* Yes%0A*Check-in Time:* ${checkInTime || "Not specified"}`;
     }
 
-    const adminPhone = "+971544374231"; // Change to your actual WhatsApp Number
+    const adminPhone = "+971544374231";
     window.open(`https://wa.me/${adminPhone}?text=${message}`, "_blank");
   };
 
-  const inputStyles = "w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-700 transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/20";
+  // লাক্সারি ইনপুট স্টাইল (Luxury Input Styles)
+  const inputStyles = "w-full p-4 bg-[#FDFBF7] border-2 border-slate-100 rounded-2xl outline-none text-sm font-bold text-slate-800 transition-all focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_20px_rgba(34,211,238,0.15)] placeholder:text-slate-400";
+  const labelStyles = "flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2";
 
   return (
-    <div id="booking" className="w-full max-w-2xl mx-auto">
+    // বেইজ ব্যাকগ্রাউন্ড এবং ডেকোরেশন (Beige Background and Decoration)
+    <section id="booking" className="relative py-24 bg-[#FDFBF7] overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-100/50 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-100/50 rounded-full blur-[120px] pointer-events-none"></div>
+
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative z-10 flex flex-col lg:flex-row gap-16 items-center">
+
+        {/* ফর্মের বাম দিকের টেক্সট (Left Side Text of Form) */}
+        <div className="lg:w-5/12 space-y-8 text-center lg:text-left">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 text-orange-600 text-sm font-bold tracking-widest uppercase"
+          >
+            <Droplets size={16} /> Instant Booking
+          </motion.div>
+          <h2 className="font-serif text-5xl md:text-6xl font-bold text-slate-900 leading-[1.1]">
+            Schedule Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Premium Cleaning</span>
+          </h2>
+          <p className="font-sans text-lg text-slate-600 leading-relaxed">
+            Fill out the details below to request a service. Our team will instantly receive your request and confirm your booking via WhatsApp.
+          </p>
+          <div className="hidden lg:flex flex-col gap-4 mt-8">
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-slate-100">
+              <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl"><Clock size={24} /></div>
+              <div>
+                <h4 className="font-bold text-slate-800">Fast Response</h4>
+                <p className="text-sm text-slate-500">Get confirmation within minutes.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-slate-100">
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl"><User size={24} /></div>
+              <div>
+                <h4 className="font-bold text-slate-800">Verified Agents</h4>
+                <p className="text-sm text-slate-500">Only top-rated staff will be assigned.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ফর্ম কন্টেইনার (Form Container) */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="lg:w-7/12 w-full bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] border border-slate-100 overflow-visible relative"
         >
-          {/* 🚨 ORIGINAL HEADER (No changes made here) */}
-          <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-8 text-white text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-            <h2 className="text-3xl font-black mb-2">Book a Service Instantly</h2>
-            <p className="text-blue-100 font-medium">B T M Cleaning And Technical Services CO.</p>
+          {/* লাক্সারি হেডার (Luxury Header) */}
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-t-[2.5rem] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+            <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+              Service Details
+            </h3>
+            <p className="text-slate-400 font-medium text-sm">Secure your spot with BTM Technical Services</p>
           </div>
 
-          <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            
-            <div className="space-y-2 sm:col-span-2">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Company / Client Name</label>
-               <input name="companyName" placeholder="Enter Company Name" onChange={handleChange} className={inputStyles} />
+          <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+
+            {/* Client Name */}
+            <div className="sm:col-span-2">
+               <label className={labelStyles}><User size={14} /> Company / Client Name</label>
+               <input name="companyName" placeholder="E.g., John Doe or BTM Homes" onChange={handleChange} className={inputStyles} />
             </div>
 
-            {/* 🚨 4. Property Type (Custom Input + Dropdown) */}
-            <div className="space-y-2 relative">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Property Type</label>
+            {/* Property Type Dropdown */}
+            <div className="relative">
+               <label className={labelStyles}><Building2 size={14} /> Property Type</label>
                <div className="relative">
                  <input 
                    name="type" 
                    value={formData.type}
                    onChange={handleChange}
                    onFocus={() => setShowTypeDropdown(true)}
-                   onBlur={() => setShowTypeDropdown(false)}
+                   onBlur={() => setTimeout(() => setShowTypeDropdown(false), 200)}
                    placeholder="Type or select..." 
                    className={inputStyles} 
                    autoComplete="off"
                  />
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
                </div>
-               
                {showTypeDropdown && (
-                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                 <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl max-h-48 overflow-y-auto">
                    {["Apartment", "Villa", "Townhouse", "Penthouse", "Office", "Commercial Space"].map(opt => (
                      <div 
                        key={opt} 
-                       className="p-3 text-sm font-bold text-gray-700 hover:bg-green-50 cursor-pointer border-b border-gray-50 last:border-0"
-                       onMouseDown={(e) => { 
-                         e.preventDefault(); 
-                         handleChange({ target: { name: 'type', value: opt } } as any); 
-                         setShowTypeDropdown(false); 
-                       }}
+                       className="p-3 text-sm font-bold text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 cursor-pointer transition-colors"
+                       onClick={() => { handleChange({ target: { name: 'type', value: opt } } as any); setShowTypeDropdown(false); }}
                      >
                        {opt}
                      </div>
@@ -100,34 +141,29 @@ export default function BookingForm() {
                )}
             </div>
 
-            {/* 🚨 3. Layout (Custom Input + Dropdown) */}
-            <div className="space-y-2 relative">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Layout</label>
+            {/* Layout Dropdown */}
+            <div className="relative">
+               <label className={labelStyles}><MapPin size={14} /> Layout</label>
                <div className="relative">
                  <input 
                    name="layout" 
                    value={formData.layout}
                    onChange={handleChange}
                    onFocus={() => setShowLayoutDropdown(true)}
-                   onBlur={() => setShowLayoutDropdown(false)}
+                   onBlur={() => setTimeout(() => setShowLayoutDropdown(false), 200)}
                    placeholder="Type or select..." 
                    className={inputStyles} 
                    autoComplete="off"
                  />
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
                </div>
-               
                {showLayoutDropdown && (
-                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
-                   {["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom", "4 Bedroom", "5 Bedroom", "Duplex", "Penthouse"].map(opt => (
+                 <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl max-h-48 overflow-y-auto">
+                   {["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom", "4 Bedroom", "Duplex", "Penthouse"].map(opt => (
                      <div 
                        key={opt} 
-                       className="p-3 text-sm font-bold text-gray-700 hover:bg-green-50 cursor-pointer border-b border-gray-50 last:border-0"
-                       onMouseDown={(e) => { 
-                         e.preventDefault(); 
-                         handleChange({ target: { name: 'layout', value: opt } } as any); 
-                         setShowLayoutDropdown(false); 
-                       }}
+                       className="p-3 text-sm font-bold text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 cursor-pointer transition-colors"
+                       onClick={() => { handleChange({ target: { name: 'layout', value: opt } } as any); setShowLayoutDropdown(false); }}
                      >
                        {opt}
                      </div>
@@ -136,70 +172,79 @@ export default function BookingForm() {
                )}
             </div>
 
-            <div className="space-y-2">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Building Name</label>
-               <input name="building" placeholder="Building Name" onChange={handleChange} className={inputStyles} />
+            {/* Building */}
+            <div className="sm:col-span-2">
+               <label className={labelStyles}>Building Name / Address</label>
+               <input name="building" placeholder="E.g., Burj Khalifa, Downtown" onChange={handleChange} className={inputStyles} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
-                 <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Floor</label>
-                 <input name="floor" placeholder="Floor" onChange={handleChange} className={inputStyles} />
-               </div>
-               <div className="space-y-2">
-                 <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Unit</label>
-                 <input name="unit" placeholder="Unit No" onChange={handleChange} className={inputStyles} />
-               </div>
+            {/* Floor & Unit */}
+            <div>
+              <label className={labelStyles}>Floor</label>
+              <input name="floor" placeholder="E.g., 45" onChange={handleChange} className={inputStyles} />
+            </div>
+            <div>
+              <label className={labelStyles}>Unit No.</label>
+              <input name="unit" placeholder="E.g., 4502" onChange={handleChange} className={inputStyles} />
             </div>
 
-            <div className="space-y-2">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Door Code</label>
-               <input name="doorCode" placeholder="****" onChange={handleChange} className={inputStyles} />
+            {/* Door Code */}
+            <div className="sm:col-span-2">
+               <label className={labelStyles}>Door Access Code</label>
+               <input name="doorCode" placeholder="**** (If applicable)" onChange={handleChange} className={inputStyles} />
             </div>
 
-            <div className="space-y-2">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Preferred Date</label>
+            {/* Date & Time */}
+            <div>
+               <label className={labelStyles}><Calendar size={14} /> Preferred Date</label>
                <input type="date" name="date" onChange={handleChange} className={inputStyles} />
             </div>
-
-             <div className="space-y-2">
-               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Time</label>
+            <div>
+               <label className={labelStyles}><Clock size={14} /> Time</label>
                <input type="time" name="time" defaultValue="10:00" onChange={handleChange} className={inputStyles} />
             </div>
 
-            {/* 🚨 1. Check-in Checkbox Section */}
-            <div className="space-y-3 sm:col-span-2 bg-gray-50/50 p-4 rounded-xl border border-gray-200">
-               <label className="flex items-center gap-3 text-sm font-bold text-gray-800 cursor-pointer">
+            {/* Check-in Toggle */}
+            <div className="sm:col-span-2 bg-orange-50/50 p-5 rounded-2xl border border-orange-100 mt-2">
+               <label className="flex items-center gap-3 text-sm font-bold text-slate-800 cursor-pointer">
                   <input
                      type="checkbox"
                      checked={formData.hasCheckIn}
                      onChange={(e) => setFormData({ ...formData, hasCheckIn: e.target.checked })}
-                     className="w-5 h-5 text-green-600 rounded-md border-gray-300 focus:ring-green-500 transition-all cursor-pointer"
+                     className="w-5 h-5 accent-orange-500 rounded-md cursor-pointer"
                   />
                   Is there a Guest Check-in today?
                </label>
-               
-               {formData.hasCheckIn && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-2">
-                     <label className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 block">Check-in Time</label>
-                     <input type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} className={inputStyles} />
-                  </motion.div>
-               )}
+
+               <motion.div 
+                 initial={false} 
+                 animate={{ height: formData.hasCheckIn ? 'auto' : 0, opacity: formData.hasCheckIn ? 1 : 0 }} 
+                 className="overflow-hidden"
+               >
+                 <div className="pt-4">
+                   <label className={labelStyles}>Check-in Time</label>
+                   <input type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} className={inputStyles} />
+                 </div>
+               </motion.div>
             </div>
 
           </div>
 
-          {/* 🚨 ORIGINAL SUBMIT BUTTON (No changes made here) */}
-          <div className="p-8 pt-0 mt-4">
-            <button
+          {/* Submit Button */}
+          <div className="p-8 pt-0">
+            <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleBooking}
-                className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl font-black text-lg shadow-xl shadow-green-500/30 transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full py-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-extrabold text-lg uppercase tracking-widest shadow-[0_15px_30px_-10px_rgba(249,115,22,0.5)] transition-all flex items-center justify-center gap-3"
             >
-                <Send size={20} />
-                Book via WhatsApp
-            </button>
+                <Send size={22} />
+                Send Request via WhatsApp
+            </motion.button>
           </div>
         </motion.div>
-    </div>
+
+      </div>
+    </section>
   );
 }
