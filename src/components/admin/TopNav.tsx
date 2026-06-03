@@ -35,7 +35,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
     : 'AD';
 
   return (
-    <header className="h-16 md:h-[68px] bg-white border-b border-gray-100 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
+    <header className="h-16 md:h-[68px] bg-white border-b border-gray-100 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
 
       {/* ── LEFT: Hamburger + Modal buttons ───────────────────────── */}
       <div className="flex items-center gap-2 md:gap-3">

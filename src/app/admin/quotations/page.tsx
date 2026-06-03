@@ -173,43 +173,69 @@ export default function QuotationManager() {
   const rightCategories = splitIndex > -1 ? pricingData.slice(splitIndex) : [];
 
   return (
-    <div className="min-h-screen pb-20 p-2 md:p-6 overflow-hidden">
-      <AnimatePresence mode="wait">
-        
-        {/* ======================= GENERATOR VIEW ======================= */}
-        {activeView === 'generator' && (
-          <motion.div 
-            key="generator"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <div>
-                <h1 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
-                  <FileText className="text-blue-600 shrink-0" /> Generate Quotation
+    <div className="min-h-screen pb-20">
+
+      {/* ── DARK GRADIENT HEADER ── */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"/>
+        <div className="w-full relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <AnimatePresence mode="wait">
+            {activeView === 'generator' ? (
+              <motion.div key="gen-title" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }}>
+                <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                  <FileText className="text-blue-400" size={36}/> Generate Quotation
                 </h1>
-              </div>
-              
-              <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                <button 
-                  onClick={() => setActiveView('history')}
-                  className="flex-1 md:flex-none px-4 py-3 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap"
-                >
-                  <History size={18} className="shrink-0" /> View History
+                <p className="text-blue-200 font-medium mt-2">Create and download professional quotations for clients.</p>
+              </motion.div>
+            ) : (
+              <motion.div key="hist-title" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="flex items-center gap-4">
+                <button onClick={() => setActiveView('generator')} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all" title="Back to Generator">
+                  <ArrowLeft size={22}/>
                 </button>
-                <button 
-                  onClick={handleSaveAndDownload} disabled={isGenerating}
-                  className="flex-1 md:flex-none px-5 py-3 bg-blue-700 text-white rounded-xl font-black shadow-xl shadow-blue-200 hover:bg-blue-800 transition-all flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
-                >
-                  {isGenerating ? <Loader2 className="animate-spin shrink-0" size={20}/> : <Download size={20} className="shrink-0" />} 
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                    <History className="text-blue-400" size={36}/> Quotation History
+                  </h1>
+                  <p className="text-blue-200 font-medium mt-2">Browse and download previously generated quotations.</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            {activeView === 'generator' ? (
+              <motion.div key="gen-btns" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }} className="flex flex-wrap gap-3 w-full md:w-auto">
+                <button onClick={() => setActiveView('history')} className="flex-1 md:flex-none px-4 py-3 bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 rounded-xl font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                  <History size={18} className="shrink-0"/> View History
+                </button>
+                <button onClick={handleSaveAndDownload} disabled={isGenerating} className="flex-1 md:flex-none px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap">
+                  {isGenerating ? <Loader2 className="animate-spin shrink-0" size={20}/> : <Download size={20} className="shrink-0"/>}
                   {isGenerating ? "Processing..." : "Save & Download"}
                 </button>
-              </div>
-            </div>
+              </motion.div>
+            ) : (
+              <motion.div key="hist-badge" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
+                <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/10 text-blue-100 font-bold rounded-xl text-sm">
+                  Total Records: {quotations.length}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
 
+      {/* ── MAIN CONTENT (Overlap Header) ── */}
+      <div className="w-full mx-auto px-2 md:px-6 -mt-20 relative z-20 pb-4">
+        <AnimatePresence mode="wait">
+          
+          {/* ======================= GENERATOR VIEW ======================= */}
+          {activeView === 'generator' && (
+            <motion.div 
+              key="generator"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+            >
             {/* SPLIT LAYOUT */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
@@ -330,36 +356,14 @@ export default function QuotationManager() {
 
 
         {/* ======================= HISTORY VIEW ======================= */}
-        {activeView === 'history' && (
-          <motion.div 
-            key="history"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setActiveView('generator')}
-                  className="p-3 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-all"
-                  title="Back to Generator"
-                >
-                  <ArrowLeft size={24} />
-                </button>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
-                    Quotation History
-                  </h1>
-                </div>
-              </div>
-              
-              <div className="px-4 py-2 bg-blue-50 text-blue-700 font-bold rounded-lg text-sm border border-blue-100">
-                Total Records: {quotations.length}
-              </div>
-            </div>
-
+          {activeView === 'history' && (
+            <motion.div 
+              key="history"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
             {/* FILTERS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="md:col-span-2 relative group">
@@ -477,7 +481,8 @@ export default function QuotationManager() {
           </motion.div>
         )}
 
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
