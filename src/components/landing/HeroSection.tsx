@@ -68,7 +68,7 @@ export default function HeroSection() {
       y: 0, 
       filter: "blur(0px)", 
       scale: 1, 
-      transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] } 
+      transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } 
     }
   };
 
@@ -81,11 +81,6 @@ export default function HeroSection() {
       opacity: 1,
       transition: { staggerChildren: 0.15, delayChildren: 0.2 },
     },
-  };
-
-  const fadeUpVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 1, ease: "easeOut" } },
   };
 
   return (
