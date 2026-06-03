@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FileText, Download, History, Loader2, User, DollarSign,
-  ArrowLeft, Search, Calendar, ExternalLink, Building2
+  ArrowLeft, Search, Calendar, ExternalLink, Building2, RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
 import { QuotationDocument, defaultPricingCategories } from "@/components/admin/quotations/QuotationDocument";
@@ -40,15 +40,18 @@ export default function QuotationManager() {
   const [dateFilter, setDateFilter] = useState("");
 
   // Auto Generate Quote ID
-  useEffect(() => {
-    setIsMounted(true);
+  const generateQuoteNo = () => {
     const today = new Date();
     const yy = today.getFullYear().toString().slice(-2);
     const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000); 
-    
+    const random = Math.floor(1000 + Math.random() * 9000);
     setQuoteNo(`BTM/QUOT-Q${yy}${mm}-${random}`);
-    setDate(today.toISOString().split('T')[0]);
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+    generateQuoteNo();
+    setDate(new Date().toISOString().split('T')[0]);
   }, []);
 
   // Fetch History Function
@@ -230,7 +233,17 @@ export default function QuotationManager() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Quote No (Auto)</label>
-                        <input disabled value={quoteNo} className="w-full p-4 bg-gray-100 border border-gray-200 rounded-xl text-gray-600 font-bold cursor-not-allowed" />
+                        <div className="flex gap-2">
+                          <input disabled value={quoteNo} className="flex-1 p-4 bg-gray-100 border border-gray-200 rounded-xl text-gray-600 font-bold cursor-not-allowed min-w-0" />
+                          <button
+                            type="button"
+                            onClick={generateQuoteNo}
+                            title="Regenerate Quote No"
+                            className="p-4 bg-gray-100 border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 text-gray-500 rounded-xl transition-all shrink-0"
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Date</label>

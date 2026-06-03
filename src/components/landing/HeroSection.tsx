@@ -1,49 +1,65 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, ChevronRight, Medal, Star } from "lucide-react";
+
+// Static bubble data — pre-generated to avoid SSR/client hydration mismatch
+const BUBBLES = [
+  { size: 72, left: 8,  duration: 14, delay: 0   },
+  { size: 45, left: 18, duration: 17, delay: 2   },
+  { size: 88, left: 30, duration: 12, delay: 5   },
+  { size: 35, left: 42, duration: 16, delay: 1   },
+  { size: 60, left: 55, duration: 13, delay: 7   },
+  { size: 50, left: 65, duration: 18, delay: 3   },
+  { size: 78, left: 75, duration: 11, delay: 9   },
+  { size: 40, left: 82, duration: 15, delay: 4   },
+  { size: 65, left: 90, duration: 14, delay: 6   },
+  { size: 55, left: 12, duration: 16, delay: 8   },
+  { size: 42, left: 48, duration: 12, delay: 0.5 },
+  { size: 70, left: 60, duration: 17, delay: 3.5 },
+];
 
 // রিয়ালিস্টিক বুদবুদ অ্যানিমেশন (Realistic Soap Bubbles)
 const RealisticBubbles = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-      {[...Array(12)].map((_, i) => {
-        const size = Math.random() * 60 + 30; // 30px to 90px
-        return (
-          <motion.div
-            key={i}
-            initial={{ y: "110vh", opacity: 0, scale: 0.5 }}
-            animate={{
-              y: "-20vh",
-              opacity: [0, 1, 1, 0],
-              scale: [0.8, 1, 1.2, 0.9],
-              x: Math.sin(i * 45) * 150,
-            }}
-            transition={{
-              duration: Math.random() * 8 + 10, // Very slow and floating
-              repeat: Infinity,
-              delay: Math.random() * 10,
-              ease: "linear",
-            }}
-            className="absolute rounded-full"
-            style={{
-              width: `${size}px`,
-              height: `${size}px`,
-              left: `${Math.random() * 100}%`,
-              // 3D Soap Bubble CSS Effect
-              background: "radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.1) 80%, rgba(255, 255, 255, 0.4) 100%)",
-              boxShadow: "inset 0 0 15px rgba(255, 255, 255, 0.4), 0 0 10px rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              backdropFilter: "blur(1.5px)",
-            }}
-          />
-        );
-      })}
+      {BUBBLES.map((b, i) => (
+        <motion.div
+          key={i}
+          initial={{ y: "110vh", opacity: 0, scale: 0.5 }}
+          animate={{
+            y: "-20vh",
+            opacity: [0, 1, 1, 0],
+            scale: [0.8, 1, 1.2, 0.9],
+            x: Math.sin(i * 45) * 150,
+          }}
+          transition={{
+            duration: b.duration,
+            repeat: Infinity,
+            delay: b.delay,
+            ease: "linear",
+          }}
+          className="absolute rounded-full"
+          style={{
+            width: `${b.size}px`,
+            height: `${b.size}px`,
+            left: `${b.left}%`,
+            background: "radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.1) 80%, rgba(255, 255, 255, 0.4) 100%)",
+            boxShadow: "inset 0 0 15px rgba(255, 255, 255, 0.4), 0 0 10px rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.25)",
+            backdropFilter: "blur(1.5px)",
+          }}
+        />
+      ))}
     </div>
   );
 };
 
 export default function HeroSection() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   // Smoke Reveal Animation Variants
   const smokeVariants = {
     hidden: { opacity: 0, y: 30, filter: "blur(12px)", scale: 0.95 },
@@ -82,7 +98,7 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-cyan-950/70" />
       </div>
 
-      <RealisticBubbles />
+      {isMounted && <RealisticBubbles />}
 
       {/* আল্ট্রা-ওয়াইড সাপোর্ট (w-full max-w-[2560px]) */}
       <div className="w-full max-w-[2560px] mx-auto px-6 md:px-12 2xl:px-24 relative z-20 flex flex-col items-center text-center lg:items-start lg:text-left pt-10">
