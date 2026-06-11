@@ -44,7 +44,11 @@ export async function getQuotationUploadSignature() {
 /**
  * 2. Delete Quotation — Cloudinary থেকে PDF মুছবে, তারপর Supabase থেকে record মুছবে।
  * pdf_url থেকে public_id extract করা হয়।
- * Cloudinary-তে PDF গুলো resource_type "raw" হিসেবে upload হয়েছে।
+ *
+ * BUG FIX: cloudinary.uploader.destroy কখনো throw করে না।
+ * সফল হলে { result: 'ok' } এবং না পেলে { result: 'not found' } return করে।
+ * তাই try/catch দিয়ে fallback কাজ করে না — result check করতে হয়।
+ * Cloudinary-তে সব PDF আসলে resource_type: "image" হিসেবে আছে।
  */
 export async function deleteQuotationRecord(data: {
   id: string;
@@ -52,19 +56,22 @@ export async function deleteQuotationRecord(data: {
 }) {
   try {
     // pdf_url থেকে public_id বের করা
-    // e.g. https://res.cloudinary.com/xxx/image/upload/v123/quotations/abcdef.pdf
+    // e.g. https://res.cloudinary.com/xxx/image/upload/v1234/quotations/abcdef.pdf
     // → public_id = "quotations/abcdef"
     const urlParts = data.pdf_url.split("/upload/");
     if (urlParts.length === 2) {
-      const afterUpload = urlParts[1]; // "v123/quotations/abcdef.pdf"
+      const afterUpload = urlParts[1];                            // "v1234/quotations/abcdef.pdf"
       const withoutVersion = afterUpload.replace(/^v\d+\//, ""); // "quotations/abcdef.pdf"
-      const publicId = withoutVersion.replace(/\.[^/.]+$/, ""); // "quotations/abcdef"
+      const publicId = withoutVersion.replace(/\.[^/.]+$/, "");  // "quotations/abcdef"
 
-      // Cloudinary থেকে delete — resource_type "raw" try করি আগে, না হলে "image"
-      try {
+      // destroy() never throws — it returns { result: 'ok' } or { result: 'not found' }
+      // All PDFs uploaded via auto/upload land as resource_type "image" in Cloudinary.
+      // We try "image" first (correct type), then "raw" as fallback just in case.
+      const result = await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+
+      if (result?.result !== "ok") {
+        // Fallback: try raw (for any older uploads that may differ)
         await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
-      } catch {
-        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
       }
     }
 
