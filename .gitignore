@@ -82,3 +82,16 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 .firebase/
+
+# Local Workspace and Configuration
+.local/
+.config/
+.agents/
+.replit
+.idx/
+.vscode/
+
+# Logs and Generated Files
+DEVELOPER_GUIDE.md
+commit_history.txt
+prisma/schema.sql

@@ -50,6 +50,17 @@ export async function GET(
     if (quotation?.pdf_url) pdfUrl = quotation.pdf_url;
   }
 
+  // 1d. Expenses (Receipts) - ID is used instead of docNo
+  if (!pdfUrl) {
+    const { data: expense } = await supabase
+      .from("expenses")
+      .select("receipt_url")
+      .eq("id", docNo)
+      .maybeSingle();
+
+    if (expense?.receipt_url) pdfUrl = expense.receipt_url;
+  }
+
   // ── Step 2: Not found ─────────────────────────────────────────────────────
   if (!pdfUrl) {
     return new NextResponse("PDF not found.", { status: 404 });
@@ -68,12 +79,14 @@ export async function GET(
   }
 
   // ── Step 4: Stream to browser — Cloudinary URL never reaches the client ───
-  const safeFilename = `${docNo.replace(/\//g, "-")}.pdf`;
+  const contentType = cloudRes.headers.get("content-type") || "application/pdf";
+  const extension = contentType.includes("image/png") ? "png" : contentType.includes("image/jpeg") ? "jpg" : "pdf";
+  const safeFilename = `${docNo.replace(/\//g, "-")}.${extension}`;
 
   return new NextResponse(cloudRes.body, {
     status: 200,
     headers: {
-      "Content-Type": "application/pdf",
+      "Content-Type": contentType,
       "Content-Disposition": download
         ? `attachment; filename="${safeFilename}"`
         : `inline; filename="${safeFilename}"`,

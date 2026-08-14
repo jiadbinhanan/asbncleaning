@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  TrendingUp, Wallet, Receipt, AlertCircle, 
+  TrendingUp, TrendingDown, Wallet, Receipt, AlertCircle, 
   Calendar, CheckCircle2, ChevronDown, ChevronUp, 
   PackagePlus, Loader2, Building2, 
   Briefcase, FileDigit, Store, ArrowDownToLine, ArrowUpRight, Eye,
@@ -34,6 +34,7 @@ export default function RevenueDashboard() {
   const [instantInvoices, setInstantInvoices] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [unitConfigs, setUnitConfigs] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
 
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
@@ -76,8 +77,8 @@ export default function RevenueDashboard() {
       endDateStr = customEnd;
     }
 
-    const [invRes, instRes, bookRes, configRes] = await Promise.all([
-      supabase.from('invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id, instant_invoice_ids').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
+    const [invRes, instRes, bookRes, configRes, expRes] = await Promise.all([
+      supabase.from('invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id, instant_invoice_ids').gte('end_date', `${startDateStr}T00:00:00.000Z`).lte('end_date', `${endDateStr}T23:59:59.999Z`),
       supabase.from('instant_invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, client_type, customer_name, merged_into_monthly, pdf_url, company_id, companies(name)').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
       supabase.from('bookings').select(`
         id, cleaning_date, status, price, invoice_no, unit_id, booking_ref, service_type,
@@ -85,12 +86,14 @@ export default function RevenueDashboard() {
         booking_inventory_logs ( equipment_id, extra_provided_qty, supervisor_price, equipment_master(item_name) ),
         booking_extra_added_charges ( amount, item_description, charge_type )
       `).eq('status', 'finalized').gte('cleaning_date', startDateStr).lte('cleaning_date', endDateStr).order('cleaning_date', { ascending: false }),
-      supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price')
+      supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
+      supabase.from('expenses').select('*').gte('expense_date', startDateStr).lte('expense_date', endDateStr)
     ]);
 
     if (invRes.data) setInvoices(invRes.data);
     if (instRes.data) setInstantInvoices(instRes.data);
     if (configRes.data) setUnitConfigs(configRes.data);
+    if (expRes.data) setExpenses(expRes.data);
 
     if (bookRes.data && configRes.data) {
       const processedBookings = bookRes.data.map((b: any) => {
@@ -163,13 +166,17 @@ export default function RevenueDashboard() {
     const instantDiscount = filteredInstant.reduce((sum, i) => sum + Number(i.discount || 0), 0);
     const totalDiscount = monthlyDiscount + instantDiscount;
 
+    // 7. Total Expenses
+    const totalExpense = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
     return { 
       totalBusiness, totalBilled, totalCollected, totalDue, notInvoicedAmount, 
       monthlyBilled, instantBilled, monthlyCollected, instantCollected,
       mergedInstantBilled, totalInstantAll,
-      totalDiscount, monthlyDiscount, instantDiscount
+      totalDiscount, monthlyDiscount, instantDiscount,
+      totalExpense
     };
-  }, [filteredInvoices, filteredInstant, filteredBookings]);
+  }, [filteredInvoices, filteredInstant, filteredBookings, expenses]);
 
   // ─── Trend Chart Data (Area) ───
   const trendData = useMemo(() => {
@@ -398,16 +405,23 @@ export default function RevenueDashboard() {
 
           {/* Card 1: Total Sales / Business */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0 }}
-            className="bg-gradient-to-br from-indigo-800 to-indigo-950 text-white p-5 rounded-[2rem] shadow-xl shadow-indigo-900/20 border border-indigo-700 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-indigo-900/30 hover:-translate-y-1 transition-all duration-200">
+            className="bg-gradient-to-br from-indigo-800 to-indigo-950 text-white p-5 rounded-[2rem] shadow-xl shadow-indigo-900/20 border border-indigo-700 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-900/30 hover:-translate-y-1 transition-all duration-200"
+            onClick={() => document.getElementById('charts-section')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-125 group-hover:opacity-20 transition-all duration-300"><LineChart size={80}/></div>
             <p className="text-[9px] font-black text-indigo-300 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Store size={12}/> Total Sales / Business</p>
             <h2 className="text-2xl font-black text-white">AED {stats.totalBusiness.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <p className="text-[10px] font-bold text-indigo-200 mt-2">All work done in period</p>
+            <div className="mt-auto pt-2 flex justify-between items-end">
+              <p className="text-[10px] font-bold text-indigo-200">All work done in period</p>
+              <span className="text-[8px] font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">View Charts</span>
+            </div>
           </motion.div>
 
           {/* Card 2: Total Work Billed */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-blue-100/60 hover:-translate-y-1 hover:border-blue-200 transition-all duration-200">
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-blue-100/60 hover:-translate-y-1 hover:border-blue-200 transition-all duration-200"
+            onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Briefcase size={80}/></div>
             <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Total Work Billed</p>
             <h2 className="text-2xl font-black text-gray-900">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
@@ -417,39 +431,62 @@ export default function RevenueDashboard() {
                 AED {stats.totalDiscount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
             )}
-            <p className="text-[10px] font-bold text-gray-500 mt-1.5">Generated Invoices &amp; POS</p>
+            <div className="mt-auto pt-2 flex justify-between items-end">
+              <p className="text-[10px] font-bold text-gray-500">Generated Invoices & POS</p>
+              <span className="text-[8px] font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">View Work History</span>
+            </div>
           </motion.div>
 
-          {/* Card 3: Collected Revenue */}
+          {/* Card 3: Finance Overview (Collected & Due) */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-emerald-100/60 hover:-translate-y-1 hover:border-emerald-300 transition-all duration-200">
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-emerald-100/60 hover:-translate-y-1 hover:border-emerald-300 transition-all duration-200"
+            onClick={() => document.getElementById('invoice-history')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Wallet size={80}/></div>
             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Revenue</p>
             <h2 className="text-2xl font-black text-emerald-600">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <p className="text-[10px] font-bold text-gray-500 mt-2">Successfully received</p>
+            <div className="mt-3 pt-3 border-t border-emerald-50 flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><ArrowUpRight size={10} className="text-amber-500"/> Outstanding Dues</span>
+                <span className="text-xs font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-end mt-1">
+                <span className="text-[8px] font-bold text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">View Invoice Ledger</span>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Card 4: Outstanding Dues */}
+          {/* Card 4: Total Expenses */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-amber-200 flex flex-col justify-center relative overflow-hidden group cursor-default hover:shadow-2xl hover:shadow-amber-100/60 hover:-translate-y-1 hover:border-amber-300 transition-all duration-200">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-amber-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><AlertCircle size={80}/></div>
-            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowUpRight size={12}/> Outstanding Dues</p>
-            <h2 className="text-2xl font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <p className="text-[10px] font-bold text-gray-500 mt-2">Pending to collect</p>
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-red-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-red-100/60 hover:-translate-y-1 hover:border-red-300 transition-all duration-200"
+            onClick={() => document.getElementById('expense-summary')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-red-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><TrendingDown size={80}/></div>
+            <p className="text-[9px] font-black text-red-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><TrendingDown size={12}/> Total Expenses</p>
+            <h2 className="text-2xl font-black text-red-600">AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mt-auto pt-2 flex justify-between items-end">
+              <p className="text-[10px] font-bold text-gray-500">Money spent in period</p>
+              <span className="text-[8px] font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">View Expenses</span>
+            </div>
           </motion.div>
 
           {/* Card 5: Work Not Invoiced */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.24 }}
-            className="bg-slate-50 p-5 rounded-[2rem] border border-dashed border-slate-300 flex flex-col justify-center relative overflow-hidden group cursor-default hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-400 transition-all duration-200">
+            className="bg-slate-50 p-5 rounded-[2rem] border border-dashed border-slate-300 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-400 transition-all duration-200"
+            onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Receipt size={80}/></div>
             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
             <h2 className="text-2xl font-black text-slate-700">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <p className="text-[10px] font-bold text-slate-400 mt-2">Finalized, bill pending</p>
+            <div className="mt-auto pt-2 flex justify-between items-end">
+              <p className="text-[10px] font-bold text-slate-400">Finalized, bill pending</p>
+              <span className="text-[8px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">View Work</span>
+            </div>
           </motion.div>
         </div>
 
         {/* ── CHARTS SECTION (Area + Bar) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div id="charts-section" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Area Chart: Daily Trend */}
           <div className="lg:col-span-2 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 h-[400px] flex flex-col">
@@ -674,7 +711,7 @@ export default function RevenueDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           {/* ── WORK HISTORY (ACCORDION) ── */}
-          <div className="lg:col-span-7 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col h-[600px]">
+          <div id="detailed-work-history" className="lg:col-span-7 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col h-[600px]">
             <div className="p-6 md:p-8 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><Briefcase size={20} className="text-indigo-600"/> Detailed Work History</h3>
@@ -787,7 +824,7 @@ export default function RevenueDashboard() {
           </div>
 
           {/* ── INVOICE HISTORY (LEDGER) ── */}
-          <div className="lg:col-span-5 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden h-[600px]">
+          <div id="invoice-history" className="lg:col-span-5 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden h-[600px]">
             <div className="p-6 md:p-8 border-b border-slate-100 shrink-0">
               <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><Calendar size={20} className="text-blue-600"/> Invoice History</h3>
               <p className="text-xs font-bold text-gray-500 mt-1">Combined Monthly & POS History</p>
@@ -866,6 +903,42 @@ export default function RevenueDashboard() {
             </div>
           </div>
 
+        </div>
+
+        {/* ── EXPENSES SUMMARY ── */}
+        <div id="expense-summary" className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden mt-8 mb-8">
+          <div className="p-6 md:p-8 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center shrink-0">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><TrendingDown size={20} className="text-red-600"/> Expense Summary</h3>
+              <p className="text-xs font-bold text-gray-500 mt-1">Expenses recorded in this period</p>
+            </div>
+            <span className="bg-white border border-gray-200 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600">Total: AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          </div>
+          
+          <div className="p-4 md:p-6 overflow-x-auto bg-slate-50/30">
+            {expenses.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 font-bold">No expenses recorded for this period.</div>
+            ) : (
+              <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="bg-white border-b border-gray-200">
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest">Date</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest">Description</th>
+                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest text-right">Amount (AED)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {expenses.map((expense) => (
+                    <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-6 font-bold text-gray-700">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</td>
+                      <td className="py-3 px-6 font-medium text-gray-600 truncate max-w-[300px]">{expense.description}</td>
+                      <td className="py-3 px-6 font-black text-red-600 text-right">{Number(expense.amount).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
       </div>

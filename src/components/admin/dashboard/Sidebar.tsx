@@ -2,7 +2,8 @@
 import {
   LayoutDashboard, Users, Building2, CalendarCheck,
   FileText, User, LogOut, X, ChevronRight, Contact, DollarSign,
-  ClipboardList, FileDigit, FileCheck, Package, ClipboardCheck, WashingMachine
+  ClipboardList, FileDigit, FileCheck, Package, ClipboardCheck, WashingMachine,
+  Receipt
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -39,6 +40,7 @@ const menuCategories = [
     items: [
       { name: 'Invoices', icon: FileDigit, path: '/admin/invoices' },
       { name: 'Revenue', icon: DollarSign, path: '/admin/revenue' },
+      { name: 'Expenses', icon: Receipt, path: '/admin/expenses' },
       { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
     ],
   },

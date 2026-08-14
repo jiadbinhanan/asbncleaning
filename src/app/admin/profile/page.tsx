@@ -7,6 +7,8 @@ import {
   ShieldCheck, Loader2, Trash2, KeyRound, Edit2, X, Check, Eye, EyeOff
 } from "lucide-react";
 import { getCloudinarySignature, updateEmployeeCredentialsAction } from "@/app/admin/employees/actions";
+import { updateActionPassword } from "./actions";
+
 
 export default function AdminProfile() {
   const supabase = createClient();
@@ -38,6 +40,13 @@ export default function AdminProfile() {
   const [passwordUpdating, setPasswordUpdating] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  // Action Password Form
+  const [actionPasswordData, setActionPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [actionPasswordUpdating, setActionPasswordUpdating] = useState(false);
+  const [showActionCurrent, setShowActionCurrent] = useState(false);
+  const [showActionNew, setShowActionNew] = useState(false);
+  const [showActionConfirm, setShowActionConfirm] = useState(false);
 
   // Image Cropping States
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -240,6 +249,26 @@ export default function AdminProfile() {
       fetchUserData();
     }
     setPasswordUpdating(false);
+  };
+
+  // 7. Action Password Update
+  const handleActionPasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!actionPasswordData.currentPassword || !actionPasswordData.newPassword) {
+      return alert("Please enter both current and new action passwords.");
+    }
+    if (actionPasswordData.newPassword !== actionPasswordData.confirmPassword) {
+      return alert("New action passwords do not match!");
+    }
+    setActionPasswordUpdating(true);
+    const res = await updateActionPassword(actionPasswordData.currentPassword, actionPasswordData.newPassword);
+    if (!res.success) {
+      alert("Error: " + res.message);
+    } else {
+      alert("Action Password updated successfully!");
+      setActionPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    }
+    setActionPasswordUpdating(false);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
@@ -498,6 +527,86 @@ export default function AdminProfile() {
                     </button>
                   </div>
                 </form>
+
+                <div className="mt-10 mb-6 border-t border-gray-100 pt-8">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Dynamic Action Password</h3>
+                  <p className="text-sm text-gray-500 mb-6">This password is required for deleting expenses and other sensitive actions.</p>
+                  
+                  <form onSubmit={handleActionPasswordUpdate} className="space-y-6 max-w-md">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Current Action Password</label>
+                      <div className="relative">
+                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <input 
+                           type={showActionCurrent ? "text" : "password"} 
+                           value={actionPasswordData.currentPassword} onChange={e => setActionPasswordData({...actionPasswordData, currentPassword: e.target.value})}
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           placeholder="Enter current action password"
+                           required
+                         />
+                         <button type="button" onClick={() => setShowActionCurrent(!showActionCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <AnimatePresence mode="wait">
+                              <motion.div key={showActionCurrent ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
+                                {showActionCurrent ? <EyeOff size={20}/> : <Eye size={20}/>}
+                              </motion.div>
+                            </AnimatePresence>
+                         </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">New Action Password</label>
+                      <div className="relative">
+                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <input 
+                           type={showActionNew ? "text" : "password"} 
+                           value={actionPasswordData.newPassword} onChange={e => setActionPasswordData({...actionPasswordData, newPassword: e.target.value})}
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           placeholder="Enter new action password"
+                           required
+                         />
+                         <button type="button" onClick={() => setShowActionNew(!showActionNew)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <AnimatePresence mode="wait">
+                              <motion.div key={showActionNew ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
+                                {showActionNew ? <EyeOff size={20}/> : <Eye size={20}/>}
+                              </motion.div>
+                            </AnimatePresence>
+                         </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Confirm New Password</label>
+                      <div className="relative">
+                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <input 
+                           type={showActionConfirm ? "text" : "password"}
+                           value={actionPasswordData.confirmPassword} onChange={e => setActionPasswordData({...actionPasswordData, confirmPassword: e.target.value})}
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           placeholder="Must match new action password"
+                           required
+                         />
+                         <button type="button" onClick={() => setShowActionConfirm(!showActionConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <AnimatePresence mode="wait">
+                              <motion.div key={showActionConfirm ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
+                                {showActionConfirm ? <EyeOff size={20}/> : <Eye size={20}/>}
+                              </motion.div>
+                            </AnimatePresence>
+                         </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <button 
+                        type="submit" disabled={actionPasswordUpdating}
+                        className="w-full py-4 bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg shadow-red-200 transition-all disabled:opacity-70"
+                      >
+                        {actionPasswordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
+                        Update Action Password
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </motion.div>
             )}
 
