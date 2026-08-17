@@ -87,7 +87,7 @@ export default function RevenueDashboard() {
         booking_extra_added_charges ( amount, item_description, charge_type )
       `).eq('status', 'finalized').gte('cleaning_date', startDateStr).lte('cleaning_date', endDateStr).order('cleaning_date', { ascending: false }),
       supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
-      supabase.from('expenses').select('*').gte('expense_date', startDateStr).lte('expense_date', endDateStr)
+      supabase.schema('expenses').from('expenses').select('*').gte('expense_date', startDateStr).lte('expense_date', endDateStr)
     ]);
 
     if (invRes.data) setInvoices(invRes.data);

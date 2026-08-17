@@ -53,7 +53,7 @@ export async function GET(
   // 1d. Expenses (Receipts) - ID is used instead of docNo
   if (!pdfUrl) {
     const { data: expense } = await supabase
-      .from("expenses")
+      .schema("expenses").from("expenses")
       .select("receipt_url")
       .eq("id", docNo)
       .maybeSingle();

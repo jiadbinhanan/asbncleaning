@@ -16,6 +16,7 @@ import {
   format, parseISO, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, 
   formatDistanceToNow, differenceInCalendarDays, subDays
 } from "date-fns";
+import FixedExpensesTab from "./FixedExpensesTab";
 
 export default function ExpensesPage() {
   const supabase = createClient();
@@ -23,6 +24,9 @@ export default function ExpensesPage() {
   const [prevMonthTotal, setPrevMonthTotal] = useState<number>(0);
   const [settings, setSettings] = useState<any>({ categories: [], payment_methods: [] });
   const [loading, setLoading] = useState(true);
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'transactions' | 'planner'>('transactions');
 
   // Filter States
   const [filterType, setFilterType] = useState<'month' | 'custom' | 'all'>('month');
@@ -110,7 +114,7 @@ export default function ExpensesPage() {
       }
 
       // Build primary query
-      let query = supabase.from("expenses").select("*").order("expense_date", { ascending: false });
+      let query = supabase.schema('expenses').from("expenses").select("*").order("expense_date", { ascending: false });
       if (startDateStr && endDateStr) {
         query = query.gte("expense_date", startDateStr).lte("expense_date", endDateStr);
       }
@@ -118,7 +122,7 @@ export default function ExpensesPage() {
       // Build previous period query for comparison stats
       let prevQuery = null;
       if (prevStartStr && prevEndStr) {
-        prevQuery = supabase.from("expenses").select("amount").gte("expense_date", prevStartStr).lte("expense_date", prevEndStr);
+        prevQuery = supabase.schema('expenses').from("expenses").select("amount").gte("expense_date", prevStartStr).lte("expense_date", prevEndStr);
       }
 
       const [expensesRes, prevRes, settingsRes] = await Promise.all([
@@ -707,10 +711,38 @@ export default function ExpensesPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-12 relative z-20 space-y-6">
+      <div className="w-full px-4 md:px-8 xl:px-12 -mt-12 relative z-20 space-y-6">
         
-        {/* Actions & Search Bar */}
-        <div className="bg-white p-4 rounded-[1.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col gap-4">
+        {/* Tab Switcher */}
+        <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-lg shadow-slate-200/50 border border-slate-100 mx-auto -mt-6 relative z-30">
+          <button 
+            onClick={() => setActiveTab('transactions')} 
+            className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800'}`}
+          >
+            Flexible Expenses
+          </button>
+          <button 
+            onClick={() => setActiveTab('planner')} 
+            className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'planner' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-800'}`}
+          >
+            Fixed Expenses
+          </button>
+        </div>
+
+        <div className={activeTab === 'planner' ? 'block' : 'hidden'}>
+          <FixedExpensesTab 
+            currentMonthDateStr={selectedMonth}
+            paymentMethods={settings.payment_methods || []}
+            refreshGlobalStats={fetchExpensesAndStats}
+            currentMonthExpenses={expenses}
+          />
+        </div>
+
+        <div className={activeTab === 'transactions' ? 'block space-y-6' : 'hidden'}>
+            
+            {/* Actions & Search Bar */}
+            <div className="bg-white p-4 rounded-[1.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col gap-4">
+
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
             {/* Search Input & Advanced Filter Toggle */}
@@ -1178,6 +1210,7 @@ export default function ExpensesPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {/* ── 9. MODALS ── */}
@@ -1214,7 +1247,7 @@ export default function ExpensesPage() {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <div className={newCategory.type === 'Fixed' ? 'md:col-span-5' : 'md:col-span-8'}>
+                        <div className="md:col-span-9">
                           <input 
                             type="text" 
                             placeholder="Category Name" 
@@ -1223,27 +1256,11 @@ export default function ExpensesPage() {
                             className="w-full p-3 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm"
                           />
                         </div>
-                        <div className={newCategory.type === 'Fixed' ? 'md:col-span-4' : 'md:col-span-4'}>
-                          <select 
-                            value={newCategory.type} 
-                            onChange={e => setNewCategory({...newCategory, type: e.target.value})} 
-                            className="w-full p-3 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm"
-                          >
-                            <option value="Fixed">Fixed Expense</option>
-                            <option value="Flexible">Flexible Expense</option>
-                          </select>
+                        <div className="md:col-span-3">
+                          <span className="w-full flex items-center h-full px-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-sm font-bold shadow-sm justify-center">
+                            Flexible
+                          </span>
                         </div>
-                        {newCategory.type === 'Fixed' && (
-                          <div className="md:col-span-3">
-                            <input 
-                              type="number" 
-                              placeholder="Default AED" 
-                              value={newCategory.default_amount} 
-                              onChange={e => setNewCategory({...newCategory, default_amount: e.target.value})} 
-                              className="w-full p-3 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm"
-                            />
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -1253,19 +1270,13 @@ export default function ExpensesPage() {
                         <thead className="bg-gray-50 border-b border-gray-100">
                           <tr>
                             <th className="p-4 text-xs font-black text-gray-500 uppercase tracking-widest">Name</th>
-                            <th className="p-4 text-xs font-black text-gray-500 uppercase tracking-widest">Type & Amount</th>
                             <th className="p-4 text-xs font-black text-gray-500 uppercase tracking-widest text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {settings.categories?.map((cat: any) => (
+                          {settings.categories?.filter((cat: any) => cat.type !== 'Fixed').map((cat: any) => (
                             <tr key={cat.id} className="hover:bg-slate-50/50">
                               <td className="p-4 font-black text-gray-900 text-sm">{cat.name}</td>
-                              <td className="p-4">
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${cat.type === 'Fixed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
-                                  {cat.type} {cat.type === 'Fixed' && `- AED ${cat.default_amount}`}
-                                </span>
-                              </td>
                               <td className="p-4 text-right">
                                 <button onClick={() => setSettings({ ...settings, categories: settings.categories.filter((c: any) => c.id !== cat.id) })} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 size={16}/></button>
                               </td>
@@ -1363,14 +1374,11 @@ export default function ExpensesPage() {
                     required
                   >
                     <option value="">Select Category...</option>
-                    <optgroup label="Fixed Expenses">
-                      {settings.categories?.filter((c: any) => c.type === 'Fixed').map((c: any) => <option key={c.id} value={c.name}>{c.name} {c.default_amount > 0 ? `(Auto: AED ${c.default_amount})` : ''}</option>)}
+                    <optgroup label="Custom Option">
+                      <option value="__OTHER__">+ Other (Custom Category)</option>
                     </optgroup>
                     <optgroup label="Flexible Expenses">
                       {settings.categories?.filter((c: any) => c.type === 'Flexible').map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </optgroup>
-                    <optgroup label="Custom Option">
-                      <option value="__OTHER__">+ Other (Custom Category)</option>
                     </optgroup>
                   </select>
                 </div>
@@ -1508,14 +1516,11 @@ export default function ExpensesPage() {
                     required
                   >
                     <option value="">Select Category...</option>
-                    <optgroup label="Fixed Expenses">
-                      {settings.categories?.filter((c: any) => c.type === 'Fixed').map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <optgroup label="Custom Option">
+                      <option value="__OTHER__">+ Other (Custom Category)</option>
                     </optgroup>
                     <optgroup label="Flexible Expenses">
                       {settings.categories?.filter((c: any) => c.type === 'Flexible').map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </optgroup>
-                    <optgroup label="Custom Option">
-                      <option value="__OTHER__">+ Other (Custom Category)</option>
                     </optgroup>
                   </select>
                 </div>

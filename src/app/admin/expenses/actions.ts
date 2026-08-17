@@ -41,6 +41,7 @@ function parseCloudinaryUrl(pdfUrl: string): {
 export async function getExpenseSettingsAction() {
   try {
     const { data, error } = await supabaseAdmin
+      .schema('expenses')
       .from("expense_settings")
       .select("*")
       .eq("id", 1)
@@ -48,7 +49,6 @@ export async function getExpenseSettingsAction() {
     
     if (error && error.code !== "PGRST116") throw error; // PGRST116 is not found
     
-    // If no settings exist yet, return defaults
     if (!data) {
       return {
         success: true,
@@ -65,6 +65,7 @@ export async function getExpenseSettingsAction() {
 export async function updateExpenseSettingsAction(categories: any[], paymentMethods: string[]) {
   try {
     const { data, error } = await supabaseAdmin
+      .schema('expenses')
       .from("expense_settings")
       .upsert({ id: 1, categories, payment_methods: paymentMethods })
       .select()
@@ -98,6 +99,7 @@ export async function addExpenseAction(
     }
 
     const { data, error } = await supabaseAdmin
+      .schema('expenses')
       .from("expenses")
       .insert([
         { 
@@ -131,18 +133,16 @@ export async function editExpenseAction(
   fileDataUrl?: string | null
 ) {
   try {
-    const { data: existing } = await supabaseAdmin.from("expenses").select("receipt_url").eq("id", id).single();
+    const { data: existing } = await supabaseAdmin.schema('expenses').from("expenses").select("receipt_url").eq("id", id).single();
     let receipt_url = existing?.receipt_url;
 
     if (fileDataUrl) {
-      // Upload new file
       const uploadRes = await cloudinary.uploader.upload(fileDataUrl, {
         folder: "expenses",
         resource_type: "auto",
       });
       receipt_url = uploadRes.secure_url;
 
-      // Delete old file if exists
       if (existing?.receipt_url) {
         const parsed = parseCloudinaryUrl(existing.receipt_url);
         if (parsed) {
@@ -152,6 +152,7 @@ export async function editExpenseAction(
     }
 
     const { data, error } = await supabaseAdmin
+      .schema('expenses')
       .from("expenses")
       .update({ 
         amount, 
@@ -176,7 +177,7 @@ export async function editExpenseAction(
 
 export async function deleteExpenseAction(id: string) {
   try {
-    const { data: existing, error: fetchError } = await supabaseAdmin.from("expenses").select("receipt_url").eq("id", id).single();
+    const { data: existing, error: fetchError } = await supabaseAdmin.schema('expenses').from("expenses").select("receipt_url").eq("id", id).single();
     if (fetchError) throw fetchError;
 
     if (existing?.receipt_url) {
@@ -186,9 +187,114 @@ export async function deleteExpenseAction(id: string) {
       }
     }
 
-    const { error: deleteError } = await supabaseAdmin.from("expenses").delete().eq("id", id);
+    const { error: deleteError } = await supabaseAdmin.schema('expenses').from("expenses").delete().eq("id", id);
     if (deleteError) throw deleteError;
 
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fixed Expense Schedules Actions
+// ---------------------------------------------------------------------------
+
+export async function getFixedSchedulesAction() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .schema('expenses')
+      .from("fixed_expense_schedules")
+      .select("*")
+      .order("created_at", { ascending: true });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function addFixedScheduleAction(
+  categoryName: string,
+  defaultAmount: number,
+  frequencyType: string,
+  frequencyInterval: number,
+  scheduleDate: number,
+  baseStartDate: string,
+  defaultDescription: string,
+  defaultPaymentMethod: string,
+  isActive: boolean
+) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .schema('expenses')
+      .from("fixed_expense_schedules")
+      .insert([
+        { 
+          category_name: categoryName,
+          default_amount: defaultAmount,
+          frequency_type: frequencyType,
+          frequency_interval: frequencyInterval,
+          schedule_date: scheduleDate,
+          base_start_date: baseStartDate,
+          default_description: defaultDescription,
+          default_payment_method: defaultPaymentMethod,
+          is_active: isActive
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function editFixedScheduleAction(
+  id: string,
+  categoryName: string,
+  defaultAmount: number,
+  frequencyType: string,
+  frequencyInterval: number,
+  scheduleDate: number,
+  baseStartDate: string,
+  defaultDescription: string,
+  defaultPaymentMethod: string,
+  isActive: boolean
+) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .schema('expenses')
+      .from("fixed_expense_schedules")
+      .update({
+        category_name: categoryName,
+        default_amount: defaultAmount,
+        frequency_type: frequencyType,
+        frequency_interval: frequencyInterval,
+        schedule_date: scheduleDate,
+        base_start_date: baseStartDate,
+        default_description: defaultDescription,
+        default_payment_method: defaultPaymentMethod,
+        is_active: isActive
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function deleteFixedScheduleAction(id: string) {
+  try {
+    const { error } = await supabaseAdmin.schema('expenses').from("fixed_expense_schedules").delete().eq("id", id);
+    if (error) throw error;
     return { success: true };
   } catch (error: any) {
     return { success: false, message: error.message };
