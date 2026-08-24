@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Filter, Clock, Calendar, 
   MapPin, AlertCircle, Camera, 
-  ChevronDown, FileCheck, CheckSquare, Users, PackagePlus, AlertTriangle
+  ChevronDown, FileCheck, CheckSquare, Users, PackagePlus, AlertTriangle, Search, Activity, FileSpreadsheet, Wallet, X
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import WorkAuditModal from "./WorkAuditModal";
@@ -28,6 +28,28 @@ export default function WorkRecords() {
   const [filterCompany, setFilterCompany] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterHasExtra, setFilterHasExtra] = useState(false);
+  
+  // --- Search State ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  
+  const searchShortcuts = [
+    { label: 'Lost and Found', value: 'Lost and Found' },
+    { label: 'Extra Price', value: 'Extra Price' },
+    { label: 'Extra Inventory', value: 'Extra Inventory' },
+    { label: 'Damaged Items', value: 'Damaged Items' }
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // --- Modal State ---
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
@@ -79,7 +101,8 @@ export default function WorkRecords() {
       `)
       .in('status', ['completed', 'finalized'])
       .gte('cleaning_date', dateFrom)
-      .lte('cleaning_date', dateTo);
+      .lte('cleaning_date', dateTo)
+      .order('id', { ascending: false });
 
     if (filterStatus) query = query.eq('status', filterStatus);
 
@@ -125,7 +148,18 @@ export default function WorkRecords() {
 
   // --- Local Filters ---
   const filteredBookings = useMemo(() => {
-    let result = bookings;
+    let result = [...bookings];
+    
+    // Sort globally first: latest date and latest time first
+    result.sort((a, b) => {
+      const dateA = new Date(a.cleaning_date).getTime();
+      const dateB = new Date(b.cleaning_date).getTime();
+      if (dateA !== dateB) return dateB - dateA;
+      
+      const timeA = a.cleaning_time ? new Date(`1970-01-01T${a.cleaning_time}`).getTime() : 0;
+      const timeB = b.cleaning_time ? new Date(`1970-01-01T${b.cleaning_time}`).getTime() : 0;
+      return timeB - timeA;
+    });
 
     if (filterCompany) {
       result = result.filter(b => {
@@ -139,19 +173,66 @@ export default function WorkRecords() {
     if (filterHasExtra) {
       result = result.filter(b => getExtraInventory(b).length > 0 || (b.booking_extra_added_charges?.length > 0));
     }
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(b => {
+        const matchesRef = b.booking_ref?.toLowerCase().includes(q) || false;
+        
+        const hasLostAndFound = b.work_logs?.[0]?.lost_found_items?.photos?.length > 0 || !!b.work_logs?.[0]?.lost_found_items?.remarks;
+        const hasExtraPrice = b.booking_extra_added_charges?.length > 0;
+        const hasExtraInventory = getExtraInventory(b).length > 0;
+        const hasDamagedItems = b.work_logs?.[0]?.damaged_items?.photos?.length > 0 || !!b.work_logs?.[0]?.damaged_items?.remarks;
+
+        if (q.includes('lost') && q.includes('found')) return hasLostAndFound || matchesRef;
+        if (q.includes('extra price')) return hasExtraPrice || matchesRef;
+        if (q.includes('extra inventory')) return hasExtraInventory || matchesRef;
+        if (q.includes('damage')) return hasDamagedItems || matchesRef;
+
+        return matchesRef;
+      });
+    }
 
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookings, filterCompany, filterHasExtra, unitConfigs]);
+  }, [bookings, filterCompany, filterHasExtra, unitConfigs, searchQuery]);
 
-  // --- Pagination ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
-  const currentItems = filteredBookings.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // --- Quick Stats ---
+  const stats = useMemo(() => {
+    let totalExtra = 0;
+    let pendingAudits = 0;
+
+    filteredBookings.forEach(b => {
+      if (b.status === 'completed') pendingAudits++;
+      
+      const extras = getExtraInventory(b);
+      const extraCharges = b.booking_extra_added_charges || [];
+      const extraInvTotal = extras.reduce((sum: number, inv: any) => sum + inv.totalPrice, 0);
+      const extraChgTotal = extraCharges.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+      totalExtra += (extraInvTotal + extraChgTotal);
+    });
+
+    return { totalBookings: filteredBookings.length, totalExtra, pendingAudits };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredBookings]);
+
+  // --- Pagination & Infinite Scroll ---
+  const [visibleCount, setVisibleCount] = useState(15);
+  const currentItems = filteredBookings.slice(0, visibleCount);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && visibleCount < filteredBookings.length) {
+        setVisibleCount(prev => prev + 15);
+      }
+    }, { threshold: 0.1 });
+    
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+    return () => observer.disconnect();
+  }, [visibleCount, filteredBookings.length]);
 
   // --- Group by Date ---
   const groupedBookings = useMemo(() => {
@@ -187,39 +268,170 @@ export default function WorkRecords() {
     return memberIds.map(id => profiles.find(p => p.id === id)).filter(Boolean);
   };
 
+  // --- Export to CSV ---
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Shift Time', 'Booking ID', 'Company', 'Unit', 'Status', 'Total Charged (AED)'];
+    
+    const rows = filteredBookings.map(b => {
+      const companyName = Array.isArray(b.units?.companies)
+        ? b.units.companies[0]?.name
+        : b.units?.companies?.name || 'Unknown';
+      
+      const extras = getExtraInventory(b);
+      const extraCharges = b.booking_extra_added_charges || [];
+      const extraInvTotal = extras.reduce((sum: number, inv: any) => sum + inv.totalPrice, 0);
+      const extraChgTotal = extraCharges.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+      const grandTotal = Number(b.price || 0) + extraInvTotal + extraChgTotal;
+
+      return [
+        b.cleaning_date,
+        b.cleaning_time,
+        b.booking_ref || '',
+        `"${companyName}"`,
+        `"${b.units?.unit_number || ''} - ${b.units?.building_name || ''}"`,
+        b.status,
+        grandTotal.toFixed(2)
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `work_records_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className='min-h-screen bg-[#F4F7FA] pb-24 font-sans relative overflow-hidden'>
 
-      {/* --- HEADER (Adjusted padding to prevent overlap) --- */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-12 md:pb-20 px-4 md:px-8 shadow-2xl relative'>
+      {/* --- HEADER (z-index 40 fixes dropdown overlap) --- */}
+      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-16 md:pb-24 px-4 md:px-8 shadow-2xl relative z-40 mb-16'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
-        <div className='relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
-          <div>
+        <div className='relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <p className='text-blue-300 font-bold uppercase tracking-widest text-xs mb-1'>Quality Control</p>
             <h1 className='text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3'>
               <FileCheck className='text-blue-500' size={32}/> Work Logs & Audits
             </h1>
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className='px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center gap-2 backdrop-blur-md'
-          >
-            <Filter size={18}/> Filters{ ' ' }
-            {showFilters
-              ? <ChevronDown size={18} className='rotate-180 transition-transform'/>
-              : <ChevronDown size={18} className='transition-transform'/>
-            }
-          </button>
+          </motion.div>
+          
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className='flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto relative z-50'>
+            {/* Advanced Search */}
+            <div className='relative w-full md:w-72' ref={searchRef}>
+              <div className='relative flex items-center'>
+                <input
+                  type='text'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSearchDropdown(true)}
+                  placeholder='Search ID or keywords...'
+                  className='w-full pl-10 pr-10 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold text-sm text-white placeholder-gray-400 outline-none transition-all backdrop-blur-md'
+                />
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' size={18} />
+                {searchQuery && (
+                  <button 
+                    onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors'
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              
+              <AnimatePresence>
+                {showSearchDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className='absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100]'
+                  >
+                    <div className='p-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50'>Quick Filters</div>
+                    {searchShortcuts.map((shortcut) => (
+                      <button
+                        key={shortcut.value}
+                        onClick={() => {
+                          setSearchQuery(shortcut.value);
+                          setShowSearchDropdown(false);
+                        }}
+                        className='w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors'
+                      >
+                        {shortcut.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            <button
+              onClick={handleExportCSV}
+              className='px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-100 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+            >
+              <FileSpreadsheet size={18}/> Export
+            </button>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className='px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+            >
+              <Filter size={18}/> Filters{ ' ' }
+              <motion.div animate={{ rotate: showFilters ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown size={18} />
+              </motion.div>
+            </button>
+          </motion.div>
         </div>
+
+        {/* --- STATS DASHBOARD (Pill-shaped, floating half outside) --- */}
+        {!loading && (
+          <div className='absolute bottom-0 left-4 right-4 md:left-8 md:right-8 translate-y-1/2 z-40 pointer-events-none'>
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, staggerChildren: 0.1 }}
+              className='grid grid-cols-1 md:grid-cols-3 gap-4 pointer-events-auto'
+            >
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-blue-50 text-blue-600 rounded-full'><Activity size={20}/></div>
+                <div>
+                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Total Records</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900'>{stats.totalBookings}</p>
+                </div>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-orange-50 text-orange-600 rounded-full'><Wallet size={20}/></div>
+                <div>
+                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Extra Revenue</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900'>AED {stats.totalExtra.toFixed(2)}</p>
+                </div>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-rose-50 text-rose-600 rounded-full'><FileCheck size={20}/></div>
+                <div>
+                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Pending Audits</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900'>{stats.pendingAudits}</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        )}
       </div>
 
-      <div className='px-4 md:px-8 -mt-6 md:-mt-10 relative z-20'>
+      <div className='px-4 md:px-8 relative z-20'>
 
         {/* --- FILTERS PANEL --- */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0, y: -20 }} 
+              animate={{ opacity: 1, height: 'auto', y: 0 }} 
+              exit={{ opacity: 0, height: 0, y: -20 }}
               className='bg-white p-6 rounded-[2rem] shadow-xl border border-gray-100 mb-8 overflow-hidden'
             >
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
@@ -235,7 +447,8 @@ export default function WorkRecords() {
                   <label className='text-[10px] font-bold text-gray-400 uppercase'>Company</label>
                   <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className='w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-900'>
                     <option value=''>All Companies</option>
-                    {companies.map((c, i) => <option key={i} value={c.name}>{c.name}</option>)}                  </select>
+                    {companies.map((c, i) => <option key={i} value={c.name}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className='text-[10px] font-bold text-gray-400 uppercase'>Status</label>
@@ -258,20 +471,35 @@ export default function WorkRecords() {
 
         {/* --- CONTENT --- */}
         {loading ? (
-          <div className='flex justify-center py-20'><Loader2 className='animate-spin text-blue-600' size={48}/></div>
+          <div className='space-y-6 mt-4'>
+            {[1, 2, 3].map(i => (
+              <div key={i} className='bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 animate-pulse ml-8'>
+                <div className='flex justify-between mb-6'>
+                   <div className='space-y-3 w-1/2'>
+                     <div className='h-4 bg-gray-200 rounded w-1/3'></div>
+                     <div className='h-6 bg-gray-200 rounded w-3/4'></div>
+                     <div className='h-4 bg-gray-200 rounded w-1/2'></div>
+                   </div>
+                   <div className='h-8 bg-gray-200 rounded w-20'></div>
+                </div>
+                <div className='h-12 bg-gray-100 rounded-xl mb-4'></div>
+                <div className='h-12 bg-gray-200 rounded-xl'></div>
+              </div>
+            ))}
+          </div>
         ) : groupedBookings.sortedDates.length === 0 ? (
-          <div className='bg-white p-12 rounded-[2rem] border border-gray-100 text-center text-gray-400 shadow-sm'>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white p-12 rounded-[2rem] border border-gray-100 text-center text-gray-400 shadow-sm'>
             <CheckSquare size={56} className='mx-auto mb-4 opacity-30 text-blue-500'/>
             <p className='text-xl font-black text-gray-800'>No work records found.</p>
-            <p className='text-sm mt-2'>Try changing the date range or filters.</p>
-          </div>
+            <p className='text-sm mt-2'>Try changing the search or filters.</p>
+          </motion.div>
         ) : (
-          <div className='space-y-10 mt-4 md:mt-0'>
+          <motion.div layout className='space-y-10 mt-4 md:mt-0'>
             {groupedBookings.sortedDates.map(dateStr => (
-              <div key={dateStr} className='space-y-5'>
+              <motion.div layout key={dateStr} className='space-y-5'>
 
-                {/* 🚨 NEW: Pill Style Date Header (Solves Mobile Overlap) 🚨 */}
-                <div className='flex items-center gap-3 pl-2'>
+                {/* Pill Style Date Header */}
+                <motion.div layout className='flex items-center gap-3 pl-2'>
                   <div className='flex items-center gap-2 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-sm border border-gray-100'>
                     <div className='p-1.5 bg-blue-100 text-blue-700 rounded-lg'><Calendar size={16} strokeWidth={2.5}/></div>
                     <h2 className='text-base md:text-lg font-black text-gray-800 tracking-tight'>
@@ -279,7 +507,7 @@ export default function WorkRecords() {
                     </h2>
                   </div>
                   <div className='h-px bg-gray-300 flex-1 ml-2 hidden md:block'></div>
-                </div>
+                </motion.div>
 
                 {/* Timeline */}
                 <div className='relative border-l-2 border-gray-200 ml-4 md:ml-6 space-y-6 pb-4'>
@@ -297,10 +525,15 @@ export default function WorkRecords() {
                     const extraInvTotal = extras.reduce((sum: number, inv: any) => sum + inv.totalPrice, 0);
                     const extraChgTotal = extraCharges.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
                     const grandTotal = Number(booking.price || 0) + extraInvTotal + extraChgTotal;
+                    
+                    const hasLostAndFound = workLog?.lost_found_items?.photos?.length > 0 || !!workLog?.lost_found_items?.remarks;
 
                     return (
                       <motion.div
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                        layout
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.005 }}
+                        transition={{ duration: 0.2 }}
                         key={booking.id}
                         className='relative pl-8 md:pl-10'
                       >
@@ -310,18 +543,35 @@ export default function WorkRecords() {
                         <div className='bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all'>
 
                           {/* Top row */}
-                          <div className='flex justify-between items-start mb-4 border-b border-gray-50 pb-4'>
+                          <div className='flex flex-col md:flex-row justify-between items-start mb-4 border-b border-gray-50 pb-4 gap-4 md:gap-0'>
                             <div>
-                              <span className='text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mb-1'>
-                                <Clock size={14} className='text-blue-500'/> Shift Time: {booking.cleaning_time}
-                              </span>
-                              <h3 className='text-xl font-black text-gray-900'>{companyName || 'Unknown Company'}</h3>
-                              <p className='text-sm font-bold text-gray-500 flex items-center gap-1.5 mt-0.5'>
+                              <div className='flex flex-wrap items-center gap-3 mb-2'>
+                                <span className='text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5'>
+                                  <Calendar size={14} className='text-blue-400'/> {format(parseISO(booking.cleaning_date), 'dd MMM yyyy')}
+                                </span>
+                                <span className='text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5'>
+                                  <Clock size={14} className='text-blue-400'/> Shift: {booking.cleaning_time}
+                                </span>
+                                {booking.booking_ref && (
+                                  <span className='px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-black tracking-wider border border-blue-100'>
+                                    ID: {booking.booking_ref}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className='text-xl font-black text-gray-900 flex flex-wrap items-center gap-3 mt-1'>
+                                {companyName || 'Unknown Company'}
+                                {hasLostAndFound && (
+                                  <span className='px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black tracking-widest uppercase border border-rose-100 flex items-center gap-1'>
+                                    Lost & Found
+                                  </span>
+                                )}
+                              </h3>
+                              <p className='text-sm font-bold text-gray-500 flex items-center gap-1.5 mt-1'>
                                 <MapPin size={14}/> Unit {booking.units?.unit_number} - {booking.units?.building_name}
                               </p>
                               <p className='text-xs font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md mt-2 inline-block border border-gray-200'>{booking.service_type}</p>
                             </div>
-                            <div className='flex flex-col items-end gap-1.5'>
+                            <div className='flex flex-col items-start md:items-end gap-1.5'>
                               <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest inline-block ${isFinalized ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                 {booking.status}
                               </span>
@@ -435,17 +685,15 @@ export default function WorkRecords() {
                     );
                   })}
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className='flex justify-center items-center gap-4 mt-10 pt-6 border-t border-gray-200 pb-10'>
-            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className='px-5 py-2.5 bg-white shadow-sm border border-gray-200 text-gray-700 font-bold rounded-xl disabled:opacity-50 transition-all hover:bg-gray-50'>Prev Page</button>
-            <span className='text-sm font-black text-gray-500 bg-gray-100 px-4 py-2 rounded-lg'>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className='px-5 py-2.5 bg-white shadow-sm border border-gray-200 text-gray-700 font-bold rounded-xl disabled:opacity-50 transition-all hover:bg-gray-50'>Next Page</button>
+        {/* Infinite Scroll trigger */}
+        {visibleCount < filteredBookings.length && (
+          <div ref={loadMoreRef} className='flex justify-center mt-10 pt-6 border-t border-gray-200 pb-10'>
+            <Loader2 className='animate-spin text-blue-500' size={32} />
           </div>
         )}
 

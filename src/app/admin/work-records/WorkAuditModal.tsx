@@ -25,7 +25,9 @@ const getDuration = (start: string, end: string) => {
 // ─── Photo Grid ──────────────────────────────────────────────────────────────
 function PhotoGrid({ photos, label }: { photos: string[]; label: string }) {
   const [expanded, setExpanded] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const visible = expanded ? photos : photos.slice(0, 4);
+  
   return (
     <div>
       <p className='text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3'>{label}</p>
@@ -37,11 +39,11 @@ function PhotoGrid({ photos, label }: { photos: string[]; label: string }) {
         <>
           <div className='grid grid-cols-3 md:grid-cols-4 gap-2'>
             {visible.map((url, i) => (
-              <a key={i} href={url} target='_blank' rel='noreferrer'
-                className='relative group h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-400 transition-all block'>
+              <button key={i} onClick={() => setLightboxImg(url)}
+                className='relative group h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm hover:border-blue-400 transition-all block w-full text-left'>
                 <img src={url} alt={`${label} ${i + 1}`} className='w-full h-full object-cover' />
                 <div className='absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black'>View</div>
-              </a>
+              </button>
             ))}
           </div>
           {photos.length > 4 && (
@@ -50,11 +52,31 @@ function PhotoGrid({ photos, label }: { photos: string[]; label: string }) {
               {expanded ? "Show less" : `+${photos.length - 4} more`}
             </button>
           )}
+
+          <AnimatePresence>
+            {lightboxImg && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"
+                onClick={() => setLightboxImg(null)}
+              >
+                <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
+                  <button onClick={() => setLightboxImg(null)} className="absolute -top-12 right-0 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors backdrop-blur-md">
+                    <X size={24} />
+                  </button>
+                  <img src={lightboxImg} alt="Lightbox" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </div>
   );
 }
+
 
 // ─── Colour-coded stat cell ───────────────────────────────────────────────────
 const CELL_STYLES: Record<string, { bg: string; text: string; border: string }> = {
