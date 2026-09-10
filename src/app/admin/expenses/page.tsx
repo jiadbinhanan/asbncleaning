@@ -24,6 +24,7 @@ export default function ExpensesPage() {
   const [prevMonthTotal, setPrevMonthTotal] = useState<number>(0);
   const [settings, setSettings] = useState<any>({ categories: [], payment_methods: [] });
   const [loading, setLoading] = useState(true);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'transactions' | 'planner'>('transactions');
@@ -59,7 +60,7 @@ export default function ExpensesPage() {
 
   // Settings State
   const [settingsTab, setSettingsTab] = useState<'categories' | 'payment_methods'>('categories');
-  const [newCategory, setNewCategory] = useState({ name: '', type: 'Fixed', default_amount: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', type: 'Flexible', default_amount: '' });
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
 
   // Selected Expense for Edit/Delete
@@ -329,7 +330,7 @@ export default function ExpensesPage() {
       }
     ];
     setSettings({ ...settings, categories: updated });
-    setNewCategory({ name: '', type: 'Fixed', default_amount: '' });
+    setNewCategory({ name: '', type: 'Flexible', default_amount: '' });
   };
 
   const handleSaveSettings = async () => {
@@ -1149,14 +1150,11 @@ export default function ExpensesPage() {
 
                                   <div className="flex items-center gap-2">
                                     {expense.receipt_url && (
-                                      <a 
-                                        href={`/api/pdf/${expense.id}?dl=0`} 
-                                        target="_blank" 
-                                        rel="noreferrer" 
+                                      <button onClick={() => setLightboxUrl(`/api/pdf/${expense.id}?dl=0`)} 
                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-black transition-colors border border-blue-200"
                                       >
                                         <Eye size={14}/> View Receipt
-                                      </a>
+                                      </button>
                                     )}
                                     
                                     <button 
@@ -1592,7 +1590,7 @@ export default function ExpensesPage() {
                   {selectedExpense?.receipt_url && !fileDataUrl && (
                     <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 mb-3 shadow-sm">
                       <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5"><ImageIcon size={14}/> Existing Receipt attached</span>
-                      <a href={`/api/pdf/${selectedExpense.id}?dl=0`} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</a>
+                      <button onClick={(e) => { e.preventDefault(); setLightboxUrl(`/api/pdf/${selectedExpense.id}?dl=0`); }} className="text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
                     </div>
                   )}
                   <p className="text-[10px] font-bold text-gray-600 mb-1">{selectedExpense?.receipt_url ? "Upload a new file to replace the existing one:" : "Upload a file:"}</p>

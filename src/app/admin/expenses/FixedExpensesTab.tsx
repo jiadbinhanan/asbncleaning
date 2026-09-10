@@ -27,6 +27,7 @@ export default function FixedExpensesTab({
 
   // UI States
   const [showSettings, setShowSettings] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   
@@ -493,9 +494,9 @@ export default function FixedExpensesTab({
                     <td className="p-4 text-right">
                       <div className="text-sm font-black text-red-600">AED {Number(expense.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
                       {expense.receipt_url && (
-                        <a href={`/api/pdf/${expense.id}?dl=0`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-blue-600 hover:text-blue-800 mt-1">
+                        <button onClick={() => setLightboxUrl(`/api/pdf/${expense.id}?dl=0`)} className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-blue-600 hover:text-blue-800 mt-1">
                           <ImageIcon size={12}/> Receipt
-                        </a>
+                          </button>
                       )}
                     </td>
                   </tr>

@@ -38,6 +38,7 @@ export default function RevenueDashboard() {
 
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
+  const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
 
   // ─── Initial Fetch (Companies) ───
   useEffect(() => {
@@ -269,6 +270,26 @@ export default function RevenueDashboard() {
 
   const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#6366f1'];
 
+  // ─── Expense Category Data ───
+  const expenseCategoryData = useMemo(() => {
+    const map: Record<string, number> = {};
+    expenses.forEach(e => {
+      const cat = e.category_name || "Uncategorized";
+      map[cat] = (map[cat] || 0) + Number(e.amount);
+    });
+    return Object.entries(map)
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses]);
+
+  const categoryColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    expenseCategoryData.forEach((cat, index) => {
+      map[cat.name] = PIE_COLORS[index % PIE_COLORS.length];
+    });
+    return map;
+  }, [expenseCategoryData]);
+
   // ─── Ledger History Combination ───
   const combinedLedger = useMemo(() => {
     const list: any[] = [];
@@ -327,6 +348,21 @@ export default function RevenueDashboard() {
             <p className="text-xs font-bold text-gray-600 flex justify-between gap-4">
               <span>Collected:</span> <span className="text-emerald-600 font-black">AED {data.collected.toLocaleString()}</span>
             </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomExpenseTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color || payload[0].payload.fill }}></div>
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{payload[0].payload.name}</p>
+            <p className="text-sm font-black text-red-600">AED {payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       );
@@ -905,6 +941,35 @@ export default function RevenueDashboard() {
 
         </div>
 
+        {/* ── EXPENSES BY CATEGORY CHART ── */}
+        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden mt-8">
+          <div className="p-6 md:p-8 border-b border-slate-100">
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><PieChartIcon size={20} className="text-red-500"/> Expenses by Category</h3>
+            <p className="text-xs font-bold text-gray-500 mt-1">Spending breakdown across categories</p>
+          </div>
+          <div className="w-full p-4 md:p-6 bg-slate-50/30 overflow-x-auto custom-scrollbar">
+            <div className="h-[350px] min-w-[600px]">
+              {expenseCategoryData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-400 font-bold">No expenses found.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={expenseCategoryData} margin={{ top: 20, right: 30, left: 0, bottom: 40 }} barSize={40}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} dy={15} angle={-30} textAnchor="end" />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
+                    <RechartsTooltip content={<CustomExpenseTooltip />} cursor={{fill: '#f8fafc'}} />
+                    <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                      {expenseCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* ── EXPENSES SUMMARY ── */}
         <div id="expense-summary" className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden mt-8 mb-8">
           <div className="p-6 md:p-8 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center shrink-0">
@@ -912,31 +977,70 @@ export default function RevenueDashboard() {
               <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><TrendingDown size={20} className="text-red-600"/> Expense Summary</h3>
               <p className="text-xs font-bold text-gray-500 mt-1">Expenses recorded in this period</p>
             </div>
-            <span className="bg-white border border-gray-200 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600">Total: AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span className="bg-white border border-gray-200 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600 shadow-sm">Total: AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
           </div>
           
-          <div className="p-4 md:p-6 overflow-x-auto bg-slate-50/30">
+          <div className="p-4 md:p-6 bg-slate-50/30">
             {expenses.length === 0 ? (
               <div className="text-center py-10 text-gray-400 font-bold">No expenses recorded for this period.</div>
             ) : (
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-white border-b border-gray-200">
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest">Date</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest">Description</th>
-                    <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-widest text-right">Amount (AED)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
-                  {expenses.map((expense) => (
-                    <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-6 font-bold text-gray-700">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</td>
-                      <td className="py-3 px-6 font-medium text-gray-600 truncate max-w-[300px]">{expense.description}</td>
-                      <td className="py-3 px-6 font-black text-red-600 text-right">{Number(expense.amount).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="space-y-3">
+                {expenses.map((expense) => {
+                  const isExpanded = expandedExpenseId === expense.id;
+                  const hasDescription = Boolean(expense.description?.trim());
+                  const description = hasDescription ? expense.description : "No description provided.";
+                  const needsExpansion = hasDescription && description.length > 150;
+                  const categoryName = expense.category_name || "Uncategorized";
+                  const tagColor = categoryColorMap[categoryName] || '#ef4444';
+
+                  return (
+                    <motion.div 
+                      key={expense.id} 
+                      layout
+                      className={`bg-white border border-gray-200 rounded-2xl p-4 md:p-5 transition-all group ${needsExpansion ? 'hover:border-blue-200 hover:shadow-md cursor-pointer' : ''}`}
+                      onClick={() => {
+                        if (needsExpansion) setExpandedExpenseId(isExpanded ? null : expense.id);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap flex-1">
+                          <span 
+                            className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-white shadow-sm"
+                            style={{ backgroundColor: tagColor }}
+                          >
+                            {categoryName}
+                          </span>
+                          <span className="text-xs font-bold text-gray-400">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</span>
+                        </div>
+                        
+                        <div className="text-right shrink-0 flex items-center justify-end gap-1.5">
+                          <span className="text-xs font-black text-blue-900">AED</span>
+                          <span className="text-lg font-black text-red-600">{Number(expense.amount).toFixed(2)}</span>
+                          
+                          {needsExpansion && (
+                            <div className={`ml-2 p-1 rounded-full transition-colors ${isExpanded ? 'bg-blue-50 text-blue-500' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-400'}`}>
+                              {isExpanded ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className={`text-sm font-medium w-full ${hasDescription ? 'text-gray-700' : 'text-gray-400 italic'}`}>
+                        {!hasDescription ? (
+                          <span>{description}</span>
+                        ) : isExpanded || !needsExpansion ? (
+                          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{description}</motion.span>
+                        ) : (
+                          <span>
+                            {description.substring(0, 150)}... 
+                            <span className="text-blue-600 font-bold text-[10px] ml-1 uppercase tracking-widest hover:underline bg-blue-50 px-1 py-0.5 rounded">Read more</span>
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
