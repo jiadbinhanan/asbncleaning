@@ -8,7 +8,7 @@ import {
   Calendar, CheckCircle2, ChevronDown, ChevronUp, 
   PackagePlus, Loader2, Building2, 
   Briefcase, FileDigit, Store, ArrowDownToLine, ArrowUpRight, Eye,
-  PieChart as PieChartIcon, Search, BarChart3, Filter, LineChart
+  PieChart as PieChartIcon, Search, BarChart3, Filter, LineChart, Info
 } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, eachDayOfInterval, isSameDay } from "date-fns";
 import { 
@@ -39,6 +39,7 @@ export default function RevenueDashboard() {
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
+  const [activeInfoCard, setActiveInfoCard] = useState<number | null>(null);
 
   // ─── Initial Fetch (Companies) ───
   useEffect(() => {
@@ -170,12 +171,29 @@ export default function RevenueDashboard() {
     // 7. Total Expenses
     const totalExpense = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
+    // 8. New Card 1 Breakdowns
+    const totalCleaningBase = filteredBookings.reduce((sum, b) => sum + (b.baseTotal || 0), 0);
+    const totalInvExtra = filteredBookings.reduce((sum, b) => sum + (b.invTotal || 0), 0);
+    const totalExtCharge = filteredBookings.reduce((sum, b) => sum + (b.extTotal || 0), 0);
+
+    // 9. New Card 2: Invoiced Work of This Period
+    const invoicedBookings = filteredBookings.filter(b => b.invoice_no);
+    const invoicedBookingsAmount = invoicedBookings.reduce((sum, b) => sum + b.grandTotal, 0);
+    const invoicedBookingsCount = invoicedBookings.length;
+    const instantPosCount = filteredInstant.length;
+
+    // 10. Actual Revenue
+    const actualRevenue = totalCollected - totalExpense;
+
     return { 
       totalBusiness, totalBilled, totalCollected, totalDue, notInvoicedAmount, 
       monthlyBilled, instantBilled, monthlyCollected, instantCollected,
       mergedInstantBilled, totalInstantAll,
       totalDiscount, monthlyDiscount, instantDiscount,
-      totalExpense
+      totalExpense,
+      totalCleaningBase, totalInvExtra, totalExtCharge,
+      invoicedBookingsAmount, invoicedBookingsCount, instantPosCount,
+      actualRevenue
     };
   }, [filteredInvoices, filteredInstant, filteredBookings, expenses]);
 
@@ -444,79 +462,168 @@ export default function RevenueDashboard() {
             className="bg-gradient-to-br from-indigo-800 to-indigo-950 text-white p-5 rounded-[2rem] shadow-xl shadow-indigo-900/20 border border-indigo-700 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-900/30 hover:-translate-y-1 transition-all duration-200"
             onClick={() => document.getElementById('charts-section')?.scrollIntoView({ behavior: 'smooth' })}
           >
+            <div className="absolute top-4 right-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(1); }} className="text-indigo-300 hover:text-white transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+            </div>
+            <AnimatePresence>
+              {activeInfoCard === 1 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-indigo-900/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-white" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-indigo-100">Total value of all cleaning jobs completed and POS sales made during this period, regardless of whether they have been billed yet.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-125 group-hover:opacity-20 transition-all duration-300"><LineChart size={80}/></div>
             <p className="text-[9px] font-black text-indigo-300 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Store size={12}/> Total Sales / Business</p>
-            <h2 className="text-2xl font-black text-white">AED {stats.totalBusiness.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <div className="mt-auto pt-2 flex justify-between items-end">
-              <p className="text-[10px] font-bold text-indigo-200">All work done in period</p>
-              <span className="text-[8px] font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">View Charts</span>
+            <h2 className="text-2xl font-black text-white mb-2">AED {stats.totalBusiness.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            
+            <div className="mt-auto relative z-10 w-full min-w-0 pt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-indigo-900/40 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider mb-0.5">Cleaning</p>
+                  <p className="text-sm font-black text-white">{stats.totalCleaningBase.toLocaleString()}</p>
+                </div>
+                <div className="bg-indigo-900/40 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider mb-0.5">Inst. POS</p>
+                  <p className="text-sm font-black text-white">{stats.totalInstantAll.toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="text-[8px] font-medium text-indigo-300/80 leading-tight flex flex-wrap gap-x-1.5 mt-2 px-1">
+                <span>Inventory: <span className="font-bold">{stats.totalInvExtra.toLocaleString()}</span></span>
+                <span>•</span>
+                <span>Extra: <span className="font-bold">{stats.totalExtCharge.toLocaleString()}</span></span>
+              </div>
             </div>
           </motion.div>
 
-          {/* Card 2: Total Work Billed */}
+          {/* Card 2: Invoiced Work of This Period */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}
             className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-blue-100/60 hover:-translate-y-1 hover:border-blue-200 transition-all duration-200"
             onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Briefcase size={80}/></div>
-            <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Total Work Billed</p>
-            <h2 className="text-2xl font-black text-gray-900">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            {stats.totalDiscount > 0 && (
-              <p className="text-[10px] font-bold text-rose-500 mt-1 flex items-center gap-1">
-                <span className="text-[9px] bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md font-black">Discount Given</span>
-                AED {stats.totalDiscount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-            )}
-            <div className="mt-auto pt-2 flex justify-between items-end">
-              <p className="text-[10px] font-bold text-gray-500">Generated Invoices & POS</p>
-              <span className="text-[8px] font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">View Work History</span>
+            <div className="absolute top-4 right-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(2); }} className="text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+            </div>
+            <AnimatePresence>
+              {activeInfoCard === 2 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-blue-600"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">Total value of cleaning jobs from this period that have had an invoice generated, plus all POS sales from this period.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><FileDigit size={80}/></div>
+            <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Invoiced Work of This Period</p>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">AED {(stats.invoicedBookingsAmount + stats.totalInstantAll).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            
+            <div className="mt-auto relative z-10 w-full min-w-0 pt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-blue-50/60 border border-blue-100/50 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">Clean ({stats.invoicedBookingsCount})</p>
+                  <p className="text-sm font-black text-gray-900">{stats.invoicedBookingsAmount.toLocaleString()}</p>
+                </div>
+                <div className="bg-blue-50/60 border border-blue-100/50 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">POS ({stats.instantPosCount})</p>
+                  <p className="text-sm font-black text-gray-900">{stats.totalInstantAll.toLocaleString()}</p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
-          {/* Card 3: Finance Overview (Collected & Due) */}
+          {/* Card 3: Invoice Generated vs Pending */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-emerald-100/60 hover:-translate-y-1 hover:border-emerald-300 transition-all duration-200"
+            className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-indigo-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-100/60 hover:-translate-y-1 hover:border-indigo-200 transition-all duration-200"
+            onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <div className="absolute top-4 right-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(3); }} className="text-indigo-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+            </div>
+            <AnimatePresence>
+              {activeInfoCard === 3 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-indigo-50/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-indigo-950" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-indigo-600"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-indigo-800">Total amount billed to clients via invoices during this period, and the value of completed jobs that are still waiting to be billed.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-indigo-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Receipt size={80}/></div>
+            
+            {/* Top section: Generated */}
+            <div className="mb-2 pb-2 border-b border-indigo-100/50">
+               <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Briefcase size={12}/> Invoice Generated</p>
+               <h2 className="text-lg font-black text-indigo-950 leading-tight">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+               {stats.totalDiscount > 0 && (
+                 <p className="mt-1 text-[10px] font-bold text-rose-500 bg-rose-50/80 border border-rose-100 px-2 py-1 rounded-md inline-block">
+                   Discount: AED {stats.totalDiscount.toLocaleString()}
+                 </p>
+               )}
+            </div>
+
+            {/* Bottom section: Pending */}
+            <div className="mt-auto">
+               <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
+               <h2 className="text-lg font-black text-indigo-800 leading-tight">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            </div>
+          </motion.div>
+
+          {/* Card 4: Collected Amount (Cyan Theme) */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-cyan-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-cyan-100/60 hover:-translate-y-1 hover:border-cyan-300 transition-all duration-200"
             onClick={() => document.getElementById('invoice-history')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Wallet size={80}/></div>
-            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Revenue</p>
-            <h2 className="text-2xl font-black text-emerald-600">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <div className="mt-3 pt-3 border-t border-emerald-50 flex flex-col gap-1">
+            <div className="absolute top-4 right-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(4); }} className="text-gray-300 hover:text-cyan-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+            </div>
+            <AnimatePresence>
+              {activeInfoCard === 4 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-cyan-950" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-cyan-600"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">Actual cash received from clients during this period for any invoices, plus the outstanding amount clients still owe.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-cyan-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Wallet size={80}/></div>
+            <p className="text-[9px] font-black text-cyan-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Amount</p>
+            <h2 className="text-2xl font-black text-cyan-600">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mt-3 pt-3 border-t border-cyan-50 flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><ArrowUpRight size={10} className="text-amber-500"/> Outstanding Dues</span>
                 <span className="text-xs font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-end mt-1">
-                <span className="text-[8px] font-bold text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">View Invoice Ledger</span>
-              </div>
             </div>
           </motion.div>
 
-          {/* Card 4: Total Expenses */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-red-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-red-100/60 hover:-translate-y-1 hover:border-red-300 transition-all duration-200"
+          {/* Card 5: Total Expenses & Actual Revenue */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.24 }}
+            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1 hover:border-slate-300 transition-all duration-200"
             onClick={() => document.getElementById('expense-summary')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-red-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><TrendingDown size={80}/></div>
-            <p className="text-[9px] font-black text-red-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><TrendingDown size={12}/> Total Expenses</p>
-            <h2 className="text-2xl font-black text-red-600">AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <div className="mt-auto pt-2 flex justify-between items-end">
-              <p className="text-[10px] font-bold text-gray-500">Money spent in period</p>
-              <span className="text-[8px] font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">View Expenses</span>
+            <div className="absolute top-4 right-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(5); }} className="text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
             </div>
-          </motion.div>
+            <AnimatePresence>
+              {activeInfoCard === 5 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-emerald-600"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600">Total money spent on expenses during this period, and your actual net revenue (Collected Amount minus Total Expenses).</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Card 5: Work Not Invoiced */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.24 }}
-            className="bg-slate-50 p-5 rounded-[2rem] border border-dashed border-slate-300 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-400 transition-all duration-200"
-            onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Receipt size={80}/></div>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
-            <h2 className="text-2xl font-black text-slate-700">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <div className="mt-auto pt-2 flex justify-between items-end">
-              <p className="text-[10px] font-bold text-slate-400">Finalized, bill pending</p>
-              <span className="text-[8px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">View Work</span>
+            {/* Top section: Expenses */}
+            <div className="mb-2 pb-2 border-b border-gray-100">
+               <p className="text-[9px] font-black text-red-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingDown size={12}/> Total Expenses</p>
+               <h2 className="text-lg font-black text-red-600 leading-tight">AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            </div>
+
+            {/* Bottom section: Actual Revenue (Green Design) */}
+            <div className="mt-auto bg-emerald-50 rounded-xl p-2.5 border border-emerald-100">
+               <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingUp size={12}/> Actual Revenue</p>
+               <h2 className="text-xl font-black text-emerald-700 leading-tight">AED {stats.actualRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             </div>
           </motion.div>
         </div>
