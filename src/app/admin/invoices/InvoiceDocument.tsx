@@ -250,10 +250,13 @@ const S = StyleSheet.create({
 });
 
 export const InvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, companyName, bookings, instantBills, instantBillsByUnit, instantBillsNoUnit, subtotal,
+  const { invoiceNo, invoice_date, invoiceDate, date, companyName, bookings, instantBills, instantBillsByUnit, instantBillsNoUnit, subtotal,
           discountPercent, discountValue, discountRemarks, finalTotal, bankDetails, invoiceMode } = data || {};
 
-  const issueDate = date ? format(parseISO(date), 'dd-MMM-yyyy') : '';
+  const rawDate = invoice_date || invoiceDate || date;
+  const issueDate = rawDate
+    ? (typeof rawDate === 'string' ? format(parseISO(rawDate.includes('T') ? rawDate : `${rawDate}T00:00:00`), 'dd-MMM-yyyy') : format(rawDate, 'dd-MMM-yyyy'))
+    : format(new Date(), 'dd-MMM-yyyy');
 
   let invoiceDuration = data?.duration;
   if (!invoiceDuration && bookings && bookings.length > 0) {

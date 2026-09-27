@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,13 +8,15 @@ import {
   CheckCircle2, AlertCircle, ShoppingCart,
   Building2, Receipt, Download, Banknote, Loader2,
   ArrowRight, Tag, Eye, Layers, FileText, Search,
-  Home, X, AlertTriangle,
+  Home, X, AlertTriangle, Calendar, SlidersHorizontal,
+  Filter, RotateCcw,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import toast from "react-hot-toast";
 import { pdf } from "@react-pdf/renderer";
 import { InstantInvoiceDocument } from "./InstantInvoiceDocument";
 import { getInstantInvoiceUploadSignature, deleteInstantInvoice } from "./actions";
+import InvoiceExportModal from "./InvoiceExportModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -109,6 +111,26 @@ export default function InstantPOS({
 
   const [loading, setLoading] = useState(false);
 
+  // ── Invoice Date & Export Modal ────────────────────────────────────────────
+  const [invoiceDate, setInvoiceDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // ── 2-Month Pagination & Infinite Scroll ───────────────────────────────────
+  const [cursorEndDate, setCursorEndDate] = useState<Date>(startOfMonth(subMonths(new Date(), 1)));
+  const [earliestInvoiceDate, setEarliestInvoiceDate] = useState<string | null>(null);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // ── Advanced Filters & Sorting (History Tab) ───────────────────────────────
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid' | 'merged'>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [dateFilterPreset, setDateFilterPreset] = useState<'loaded' | 'this_month' | 'prev_month' | 'all_time' | 'custom'>('loaded');
+  const [customFilterStart, setCustomFilterStart] = useState("");
+  const [customFilterEnd, setCustomFilterEnd] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_high' | 'amount_low'>('newest');
+
   // ── Data ───────────────────────────────────────────────────────────────────
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [history, setHistory] = useState<any[]>([]);
@@ -172,16 +194,118 @@ export default function InstantPOS({
     if (data) setInventory(data);
   };
 
+  // Initial fetch: Last 2 Months
   const fetchHistory = async () => {
     setLoading(true);
-    const [instRes, monthlyRes] = await Promise.all([
-      supabase.from("instant_invoices").select("*, subtotal, discount, discount_remarks, companies(name)").order("created_at", { ascending: false }),
-      supabase.from("invoices").select("id, invoice_no, is_paid, instant_invoice_ids").order("created_at", { ascending: false }),
+    const now = new Date();
+    const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // 2 full calendar months
+    const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
+
+    const [instRes, monthlyRes, earliestRes] = await Promise.all([
+      supabase
+        .from("instant_invoices")
+        .select("*, subtotal, discount, discount_remarks, companies(name)")
+        .gte("invoice_date", twoMonthsAgoStr)
+        .order("invoice_date", { ascending: false })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("invoices")
+        .select("id, invoice_no, is_paid, instant_invoice_ids")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("instant_invoices")
+        .select("invoice_date")
+        .order("invoice_date", { ascending: true })
+        .limit(1),
     ]);
+
     if (instRes.data) setHistory(instRes.data);
     if (monthlyRes.data) setMonthlyInvoices(monthlyRes.data);
+
+    const earliest = earliestRes.data?.[0]?.invoice_date || null;
+    setEarliestInvoiceDate(earliest);
+    if (earliest && twoMonthsAgoStr <= earliest) {
+      setHasMoreHistory(false);
+    }
     setLoading(false);
   };
+
+  const loadMoreHistory = useCallback(async () => {
+    if (loadingMore || !hasMoreHistory || dateFilterPreset !== 'loaded') return;
+    setLoadingMore(true);
+    try {
+      const nextEnd = cursorEndDate;
+      const nextStart = subMonths(nextEnd, 2);
+      const startStr = format(nextStart, 'yyyy-MM-dd');
+      const endStr = format(nextEnd, 'yyyy-MM-dd');
+
+      const { data, error } = await supabase
+        .from("instant_invoices")
+        .select("*, subtotal, discount, discount_remarks, companies(name)")
+        .gte("invoice_date", startStr)
+        .lt("invoice_date", endStr)
+        .order("invoice_date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setHistory(prev => {
+          const existingIds = new Set(prev.map(i => i.id));
+          const newItems = data.filter(i => !existingIds.has(i.id));
+          return [...prev, ...newItems];
+        });
+      }
+
+      setCursorEndDate(nextStart);
+
+      if (earliestInvoiceDate && startStr <= earliestInvoiceDate) {
+        setHasMoreHistory(false);
+      }
+    } catch (err: any) {
+      console.error("Error loading more instant bills:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [cursorEndDate, earliestInvoiceDate, hasMoreHistory, loadingMore, dateFilterPreset, supabase]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    if (activeTab !== "history" || dateFilterPreset !== "loaded" || !hasMoreHistory || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreHistory();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const target = observerTarget.current;
+    if (target) observer.observe(target);
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [activeTab, dateFilterPreset, hasMoreHistory, loadingMore, loadMoreHistory]);
+
+  // Fetch all if user selects 'all_time' filter
+  useEffect(() => {
+    if (dateFilterPreset === "all_time" && hasMoreHistory) {
+      const fetchAll = async () => {
+        setLoadingMore(true);
+        const { data } = await supabase
+          .from("instant_invoices")
+          .select("*, subtotal, discount, discount_remarks, companies(name)")
+          .order("invoice_date", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (data) {
+          setHistory(data);
+          setHasMoreHistory(false);
+        }
+        setLoadingMore(false);
+      };
+      fetchAll();
+    }
+  }, [dateFilterPreset, hasMoreHistory, supabase]);
 
   useEffect(() => {
     if (activeTab === "history") fetchHistory();
@@ -335,8 +459,10 @@ export default function InstantPOS({
           ? companies.find((c) => c.id === parseInt(selectedCompanyId))?.name
           : walkInName;
 
+      const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         invoice_no: invoiceNo,
+        invoice_date: invoiceDate,
         client_type: clientType,
         company_id: clientType === "registered" ? parseInt(selectedCompanyId) : null,
         customer_name: clientType === "walk_in" ? walkInName : null,
@@ -347,6 +473,7 @@ export default function InstantPOS({
         total_amount: totalAmount,
         is_paid: isPaid,
         merged_into_monthly: false,
+        created_by: user?.id || null,
       };
 
       const { data: invoiceDataDB, error } = await supabase.from("instant_invoices").insert([payload]).select().single();
@@ -378,7 +505,9 @@ export default function InstantPOS({
 
       const invoiceData = {
         invoiceNo,
-        date: new Date().toISOString(),
+        invoice_date: invoiceDate,
+        invoiceDate,
+        date: invoiceDate,
         customerName: customerDispName || "Walk-In Customer",
         // Pass grouped unit items for PDF rendering
         unitGroups: clientType === "registered" && selectedUnitIds.length > 0
@@ -430,6 +559,7 @@ export default function InstantPOS({
       setActiveUnitTab(0);
       setDiscount(0); setDiscountMode('manual'); setDiscountPercent(""); setDiscountRemarks("");
       setIsPaid(false);
+      setInvoiceDate(format(new Date(), "yyyy-MM-dd"));
       generateInvoiceNo();
       if (clientType === "walk_in") setWalkInName("");
       fetchInventory();
@@ -473,14 +603,108 @@ export default function InstantPOS({
 
   // ── Filtered History ───────────────────────────────────────────────────────
   const filteredHistory = useMemo(() => {
-    if (!searchQuery) return history;
-    const q = searchQuery.toLowerCase();
-    return history.filter((inv: any) => {
-      const name = inv.client_type === "registered" ? inv.companies?.name : inv.customer_name;
-      return inv.invoice_no?.toLowerCase().includes(q) || name?.toLowerCase().includes(q) ||
-        inv.total_amount?.toString().includes(q) || format(new Date(inv.created_at), "dd MMM yyyy").toLowerCase().includes(q);
+    let list = [...history];
+
+    // 1. Text Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((inv: any) => {
+        const name = inv.client_type === "registered" ? inv.companies?.name : inv.customer_name;
+        return (
+          inv.invoice_no?.toLowerCase().includes(q) ||
+          name?.toLowerCase().includes(q) ||
+          inv.total_amount?.toString().includes(q) ||
+          format(new Date(inv.invoice_date || inv.created_at), "dd MMM yyyy").toLowerCase().includes(q)
+        );
+      });
+    }
+
+    // 2. Status Filter
+    if (statusFilter === 'paid') {
+      list = list.filter(i => (i.merged_into_monthly ? monthlyInvoices.find(m => m.instant_invoice_ids?.includes(i.id))?.is_paid : i.is_paid));
+    } else if (statusFilter === 'unpaid') {
+      list = list.filter(i => (i.merged_into_monthly ? !monthlyInvoices.find(m => m.instant_invoice_ids?.includes(i.id))?.is_paid : !i.is_paid));
+    } else if (statusFilter === 'merged') {
+      list = list.filter(i => i.merged_into_monthly);
+    }
+
+    // 3. Client Filter
+    if (clientFilter === 'walk_in') {
+      list = list.filter(i => i.client_type === 'walk_in');
+    } else if (clientFilter !== 'all') {
+      list = list.filter(i => i.company_id?.toString() === clientFilter);
+    }
+
+    // 4. Date Range Filter
+    if (dateFilterPreset === 'this_month') {
+      const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+      list = list.filter(i => {
+        const d = i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd');
+        return d >= start && d <= end;
+      });
+    } else if (dateFilterPreset === 'prev_month') {
+      const prev = subMonths(new Date(), 1);
+      const start = format(startOfMonth(prev), 'yyyy-MM-dd');
+      const end = format(endOfMonth(prev), 'yyyy-MM-dd');
+      list = list.filter(i => {
+        const d = i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd');
+        return d >= start && d <= end;
+      });
+    } else if (dateFilterPreset === 'custom') {
+      if (customFilterStart) {
+        list = list.filter(i => (i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd')) >= customFilterStart);
+      }
+      if (customFilterEnd) {
+        list = list.filter(i => (i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd')) <= customFilterEnd);
+      }
+    }
+
+    // 5. Sorting
+    list.sort((a, b) => {
+      const dateA = new Date(a.invoice_date || a.created_at).getTime();
+      const dateB = new Date(b.invoice_date || b.created_at).getTime();
+      if (sortBy === 'newest') return dateB - dateA;
+      if (sortBy === 'oldest') return dateA - dateB;
+      if (sortBy === 'amount_high') return Number(b.total_amount) - Number(a.total_amount);
+      if (sortBy === 'amount_low') return Number(a.total_amount) - Number(b.total_amount);
+      return dateB - dateA;
     });
-  }, [history, searchQuery]);
+
+    return list;
+  }, [history, searchQuery, statusFilter, clientFilter, dateFilterPreset, customFilterStart, customFilterEnd, sortBy, monthlyInvoices]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== 'all') count++;
+    if (clientFilter !== 'all') count++;
+    if (dateFilterPreset !== 'loaded') count++;
+    if (sortBy !== 'newest') count++;
+    return count;
+  }, [statusFilter, clientFilter, dateFilterPreset, sortBy]);
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter('all');
+    setClientFilter('all');
+    setDateFilterPreset('loaded');
+    setCustomFilterStart("");
+    setCustomFilterEnd("");
+    setSortBy('newest');
+  };
+
+  const groupedHistory = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredHistory.forEach(inv => {
+      const d = inv.invoice_date || format(parseISO(inv.created_at), "yyyy-MM-dd");
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(inv);
+    });
+    return {
+      groups,
+      sortedDates: Object.keys(groups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
+    };
+  }, [filteredHistory]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Registered client has units selected?
@@ -524,6 +748,20 @@ export default function InstantPOS({
                       <RefreshCw size={16} />
                     </button>
                   </div>
+                </div>
+
+                {/* Invoice date */}
+                <div className="shrink-0">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                    <span>Invoice Date</span>
+                    <span className="text-[9px] text-indigo-600 font-bold lowercase ml-1">(official)</span>
+                  </p>
+                  <input
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    className="p-2.5 bg-indigo-50/50 border border-indigo-200 rounded-xl text-xs font-black text-gray-900 outline-none focus:border-indigo-400 shadow-sm"
+                  />
                 </div>
 
                 {/* Client type + selection */}
@@ -822,21 +1060,175 @@ export default function InstantPOS({
       {activeTab === "history" && (
         <motion.div key="inst-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
         <div>
+          {/* Header & Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-2xl font-black text-gray-900">Instant POS History</h2>
               <p className="text-sm font-bold text-gray-500 mt-1">View past bills, download PDFs, and manage payments.</p>
             </div>
-            <div className="px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl font-black text-sm border border-indigo-100 flex items-center gap-2">
-              <FileText size={16} /> {filteredHistory.length} Bills Total
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAdvancedFilters(prev => !prev)}
+                className={`px-4 py-2.5 rounded-xl font-black text-xs transition-all border flex items-center gap-2 shadow-sm ${
+                  showAdvancedFilters || activeFilterCount > 0
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <SlidersHorizontal size={14} />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-4 h-4 bg-indigo-600 text-white rounded-full text-[9px] flex items-center justify-center font-black">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="px-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
+              >
+                <Download size={14} />
+                <span>Export Bills</span>
+              </button>
+
+              <div className="px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl font-black text-xs border border-indigo-100 flex items-center gap-1.5 shrink-0">
+                <FileText size={14} /> {filteredHistory.length} Bills
+              </div>
             </div>
           </div>
 
-          <div className="mb-6 relative max-w-xl">
+          {/* Search bar */}
+          <div className="mb-4 relative max-w-xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input type="text" placeholder="Search by Invoice No, Customer, Amount or Date..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-indigo-500 font-bold text-gray-900 shadow-sm text-sm" />
+            <input
+              type="text"
+              placeholder="Search by Invoice No, Customer, Amount or Date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-indigo-500 font-bold text-gray-900 shadow-sm text-sm"
+            />
           </div>
+
+          {/* Advanced Filters Expandable Drawer */}
+          <AnimatePresence>
+            {showAdvancedFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-6"
+              >
+                <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <p className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                      <Filter size={14} className="text-indigo-600" /> Advanced Filter Options
+                    </p>
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={handleResetFilters}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                      >
+                        <RotateCcw size={12} /> Reset All
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Status */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Payment Status</label>
+                      <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
+                        {(['all', 'paid', 'unpaid', 'merged'] as const).map(s => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setStatusFilter(s)}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-black capitalize transition-all ${
+                              statusFilter === s ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Customer / Client */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Client Type</label>
+                      <select
+                        value={clientFilter}
+                        onChange={e => setClientFilter(e.target.value)}
+                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-indigo-500"
+                      >
+                        <option value="all">All Clients</option>
+                        <option value="walk_in">Walk-in Customers Only</option>
+                        {companies.map(c => (
+                          <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Date Presets */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Date Range</label>
+                      <select
+                        value={dateFilterPreset}
+                        onChange={e => setDateFilterPreset(e.target.value as any)}
+                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-indigo-500"
+                      >
+                        <option value="loaded">Default (2 Months + Scroll)</option>
+                        <option value="this_month">This Month</option>
+                        <option value="prev_month">Previous Month</option>
+                        <option value="all_time">All Time</option>
+                        <option value="custom">Custom Date Range</option>
+                      </select>
+                    </div>
+
+                    {/* Sorting */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Sort By</label>
+                      <select
+                        value={sortBy}
+                        onChange={e => setSortBy(e.target.value as any)}
+                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-indigo-500"
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="amount_high">Amount (High to Low)</option>
+                        <option value="amount_low">Amount (Low to High)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Custom Date Pickers */}
+                  {dateFilterPreset === 'custom' && (
+                    <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">From Date</label>
+                        <input
+                          type="date"
+                          value={customFilterStart}
+                          onChange={e => setCustomFilterStart(e.target.value)}
+                          className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">To Date</label>
+                        <input
+                          type="date"
+                          value={customFilterEnd}
+                          onChange={e => setCustomFilterEnd(e.target.value)}
+                          className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {loading ? (
             <div className="py-20 flex justify-center"><Loader2 size={36} className="animate-spin text-indigo-600" /></div>
@@ -847,118 +1239,159 @@ export default function InstantPOS({
               <p className="text-sm text-gray-500 mt-1">Generate a quick bill to see it here.</p>
             </div>
           ) : (
-            /* Wide monitor: 2 cols lg, 3 cols xl, 4 cols 2xl */
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {filteredHistory.map((inv: any, idx: number) => {
-                // Find the monthly invoice this instant invoice is merged into (if any)
-                const mergedIntoMonthly = inv.merged_into_monthly
-                  ? monthlyInvoices.find((mi: any) => mi.instant_invoice_ids?.includes(inv.id))
-                  : null;
-                // If merged, paid status is driven by the monthly invoice's paid status
-                const effectivePaid = mergedIntoMonthly ? mergedIntoMonthly.is_paid : inv.is_paid;
+            /* Timeline View grouped by Date */
+            <div className="space-y-8">
+              {groupedHistory.sortedDates.map(dateStr => (
+                <div key={dateStr} className="space-y-3">
+                  <h3 className="text-xs font-black text-gray-500 tracking-widest uppercase flex items-center gap-2 pl-1">
+                    <Calendar size={14} /> {format(parseISO(dateStr), "dd MMM yyyy")}
+                  </h3>
 
-                return (
-                <motion.div
-                  key={inv.id}
-                  initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.2, delay: idx * 0.035 }}
-                  className={`rounded-2xl border p-5 flex flex-col shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${
-                    mergedIntoMonthly
-                      ? effectivePaid ? "border-gray-200 bg-white" : "border-emerald-200 bg-emerald-50/30"
-                      : effectivePaid ? "border-gray-200 bg-white" : "border-amber-200 bg-amber-50/40"
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                      {format(new Date(inv.created_at), "dd MMM yyyy")}
-                    </span>
-                    {mergedIntoMonthly ? (
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-teal-100 text-teal-700 border-teal-300"}`}>
-                        {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><Layers size={12} /> Merged</>}
-                      </span>
-                    ) : (
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
-                        {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><AlertCircle size={12} /> Unpaid</>}
-                      </span>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    {groupedHistory.groups[dateStr].map((inv: any, idx: number) => {
+                      // Find the monthly invoice this instant invoice is merged into (if any)
+                      const mergedIntoMonthly = inv.merged_into_monthly
+                        ? monthlyInvoices.find((mi: any) => mi.instant_invoice_ids?.includes(inv.id))
+                        : null;
+                      // If merged, paid status is driven by the monthly invoice's paid status
+                      const effectivePaid = mergedIntoMonthly ? mergedIntoMonthly.is_paid : inv.is_paid;
+
+                      return (
+                        <motion.div
+                          key={inv.id}
+                          initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.2, delay: idx * 0.035 }}
+                          className={`rounded-2xl border p-5 flex flex-col shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${
+                            mergedIntoMonthly
+                              ? effectivePaid ? "border-gray-200 bg-white" : "border-emerald-200 bg-emerald-50/30"
+                              : effectivePaid ? "border-gray-200 bg-white" : "border-amber-200 bg-amber-50/40"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1">
+                              <Calendar size={10} />
+                              {format(parseISO(inv.invoice_date || inv.created_at), "dd MMM yyyy")}
+                            </span>
+                            {mergedIntoMonthly ? (
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-teal-100 text-teal-700 border-teal-300"}`}>
+                                {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><Layers size={12} /> Merged</>}
+                              </span>
+                            ) : (
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
+                                {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><AlertCircle size={12} /> Unpaid</>}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-base font-black text-gray-900 mb-0.5">{inv.invoice_no}</h4>
+                          <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-2">
+                            {inv.client_type === "registered" ? <Building2 size={13} className="text-blue-500" /> : <UserCircle size={13} className="text-orange-500" />}
+                            {inv.client_type === "registered" ? inv.companies?.name : inv.customer_name}
+                          </p>
+
+                          {/* Merged into monthly invoice info */}
+                          {mergedIntoMonthly && (
+                            <div className="mb-3 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+                              <p className="text-[9px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Merged with Monthly</p>
+                              <p className="text-[11px] font-black text-teal-700">{mergedIntoMonthly.invoice_no}</p>
+                              {!effectivePaid && (
+                                <p className="text-[9px] font-bold text-teal-400 mt-0.5">Paid when monthly invoice is paid</p>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="mt-auto pt-4 border-t border-gray-100 flex items-end justify-between">
+                            <div>
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Net Total</p>
+                              {Number(inv.discount || 0) > 0 && (
+                                <p className="text-[9px] font-bold text-rose-400 flex items-center gap-1 mb-0.5">
+                                  <span className="line-through text-gray-400">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
+                                  <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
+                                </p>
+                              )}
+                              <p className="text-xl font-black text-indigo-700">AED {Number(inv.total_amount).toFixed(2)}</p>
+                              {inv.discount_remarks && (
+                                <p className="text-[8px] font-bold text-gray-400 mt-0.5 max-w-[120px] leading-tight">{inv.discount_remarks}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {/* Mark paid — only for non-merged, unpaid invoices */}
+                              {!mergedIntoMonthly && !effectivePaid && (
+                                <button onClick={() => handleMarkAsPaid(inv.id)} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-sm active:scale-95" title="Mark as Paid">
+                                  <CheckCircle2 size={17} />
+                                </button>
+                              )}
+                              {/* Mark unpaid — only for non-merged, paid invoices */}
+                              {!mergedIntoMonthly && effectivePaid && (
+                                <button onClick={() => handleMarkAsUnpaid(inv.id)} className="p-2.5 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-colors border border-amber-200" title="Mark as Unpaid">
+                                  <AlertCircle size={17} />
+                                </button>
+                              )}
+                              {/* Delete — only non-merged, unpaid */}
+                              {!mergedIntoMonthly && !effectivePaid && (
+                                <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete">
+                                  <Trash2 size={17} />
+                                </button>
+                              )}
+                              {inv.pdf_url ? (
+                                <>
+                                  <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl transition-colors" title="View PDF">
+                                    <Eye size={17} />
+                                  </a>
+                                  <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-sm" title="Download PDF">
+                                    <Download size={17} />
+                                  </a>
+                                </>
+                              ) : (
+                                <button onClick={() => toast("PDF not available for old drafts.", { icon: "📄" })}
+                                  className="px-3 py-2.5 bg-gray-900 text-white text-xs font-black rounded-xl">
+                                  No PDF
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-
-                  <h4 className="text-base font-black text-gray-900 mb-0.5">{inv.invoice_no}</h4>
-                  <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-2">
-                    {inv.client_type === "registered" ? <Building2 size={13} className="text-blue-500" /> : <UserCircle size={13} className="text-orange-500" />}
-                    {inv.client_type === "registered" ? inv.companies?.name : inv.customer_name}
-                  </p>
-
-                  {/* Merged into monthly invoice info */}
-                  {mergedIntoMonthly && (
-                    <div className="mb-3 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
-                      <p className="text-[9px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Merged with Monthly</p>
-                      <p className="text-[11px] font-black text-teal-700">{mergedIntoMonthly.invoice_no}</p>
-                      {!effectivePaid && (
-                        <p className="text-[9px] font-bold text-teal-400 mt-0.5">Paid when monthly invoice is paid</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-end justify-between">
-                    <div>
-                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Net Total</p>
-                      {Number(inv.discount || 0) > 0 && (
-                        <p className="text-[9px] font-bold text-rose-400 flex items-center gap-1 mb-0.5">
-                          <span className="line-through text-gray-400">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
-                          <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
-                        </p>
-                      )}
-                      <p className="text-xl font-black text-indigo-700">AED {Number(inv.total_amount).toFixed(2)}</p>
-                      {inv.discount_remarks && (
-                        <p className="text-[8px] font-bold text-gray-400 mt-0.5 max-w-[120px] leading-tight">{inv.discount_remarks}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {/* Mark paid — only for non-merged, unpaid invoices */}
-                      {!mergedIntoMonthly && !effectivePaid && (
-                        <button onClick={() => handleMarkAsPaid(inv.id)} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-sm active:scale-95" title="Mark as Paid">
-                          <CheckCircle2 size={17} />
-                        </button>
-                      )}
-                      {/* Mark unpaid — only for non-merged, paid invoices */}
-                      {!mergedIntoMonthly && effectivePaid && (
-                        <button onClick={() => handleMarkAsUnpaid(inv.id)} className="p-2.5 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-colors border border-amber-200" title="Mark as Unpaid">
-                          <AlertCircle size={17} />
-                        </button>
-                      )}
-                      {/* Delete — only non-merged, unpaid */}
-                      {!mergedIntoMonthly && !effectivePaid && (
-                        <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete">
-                          <Trash2 size={17} />
-                        </button>
-                      )}
-                      {inv.pdf_url ? (
-                        <>
-                          <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl transition-colors" title="View PDF">
-                            <Eye size={17} />
-                          </a>
-                          <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-all shadow-sm" title="Download PDF">
-                            <Download size={17} />
-                          </a>
-                        </>
-                      ) : (
-                        <button onClick={() => toast("PDF not available for old drafts.", { icon: "📄" })}
-                          className="px-3 py-2.5 bg-gray-900 text-white text-xs font-black rounded-xl">
-                          No PDF
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
+
+          {/* Infinite Scroll Sentinel */}
+          <div ref={observerTarget} className="pt-8 pb-4 text-center">
+            {loadingMore ? (
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/60 py-3 px-5 rounded-2xl mx-auto w-fit border border-indigo-100 shadow-sm">
+                <Loader2 size={16} className="animate-spin text-indigo-600" />
+                <span>Loading previous 2 months of instant bills...</span>
+              </div>
+            ) : hasMoreHistory && dateFilterPreset === 'loaded' ? (
+              <button
+                onClick={loadMoreHistory}
+                className="px-5 py-2.5 bg-white border border-gray-200 hover:border-indigo-400 text-gray-600 hover:text-indigo-700 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95"
+              >
+                Load Older Bills (Previous 2 Months)
+              </button>
+            ) : (
+              <p className="text-[11px] font-bold text-gray-400">
+                {history.length > 0 ? "All historical instant bills loaded." : ""}
+              </p>
+            )}
+          </div>
+
         </div>
         </motion.div>
       )}
       </AnimatePresence>
+
+      {/* Export Modal */}
+      <InvoiceExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        type="instant"
+        companies={companies}
+      />
     </div>
   );
 }

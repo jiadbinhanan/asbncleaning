@@ -197,11 +197,16 @@ const S = StyleSheet.create({
 });
 
 export const InstantInvoiceDocument = ({ data }: any) => {
-  const { invoiceNo, date, customerName, items, unitGroups, subtotal, 
+  const { invoiceNo, invoice_date, invoiceDate, date, customerName, items, unitGroups, subtotal, 
           discountPercent, discountValue, discountRemarks, finalTotal, bankDetails } = data || {};
 
-  const issueDate = date ? format(new Date(date), "dd-MMM-yyyy") : "";
-  const issueTime = date ? format(new Date(date), "hh:mm a") : "";
+  const rawDate = invoice_date || invoiceDate || date;
+  const issueDate = rawDate
+    ? format(new Date(typeof rawDate === 'string' && !rawDate.includes('T') ? `${rawDate}T12:00:00` : rawDate), "dd-MMM-yyyy")
+    : format(new Date(), "dd-MMM-yyyy");
+  const issueTime = rawDate && typeof rawDate === 'string' && rawDate.includes('T')
+    ? format(new Date(rawDate), "hh:mm a")
+    : format(new Date(), "hh:mm a");
 
   return (
     <Document>

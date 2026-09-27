@@ -7,13 +7,15 @@ import {
   Loader2, FileText, Search, History, PlusCircle,
   Building2, Calendar, Download, Eye, FileDigit,
   Tag, PackagePlus, RefreshCw, AlertCircle, CheckCircle2,
-  Trash2, AlertTriangle, X, CreditCard,
+  Trash2, AlertTriangle, X, CreditCard, Filter,
+  SlidersHorizontal, ArrowUpDown, ChevronDown, FileSpreadsheet, RotateCcw,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { pdf } from '@react-pdf/renderer';
 import { InvoiceDocument } from "./InvoiceDocument";
 import { getInvoiceUploadSignature, deleteMonthlyInvoice } from "./actions";
 import InstantPOS from "./InstantPOS";
+import InvoiceExportModal from "./InvoiceExportModal";
 import toast, { Toaster } from "react-hot-toast";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,6 +201,26 @@ export default function InvoiceManagement() {
   const [allInstantInvoices, setAllInstantInvoices] = useState<any[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
+  // ── Invoice Date & Export Modal ────────────────────────────────────────────
+  const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // ── 2-Month Pagination & Infinite Scroll ───────────────────────────────────
+  const [cursorEndDate, setCursorEndDate] = useState<Date>(startOfMonth(subMonths(new Date(), 1)));
+  const [earliestInvoiceDate, setEarliestInvoiceDate] = useState<string | null>(null);
+  const [hasMoreInvoices, setHasMoreInvoices] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // ── Advanced Filters & Sorting (History Tab) ───────────────────────────────
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [companyFilter, setCompanyFilter] = useState<string>('all');
+  const [dateFilterPreset, setDateFilterPreset] = useState<'loaded' | 'this_month' | 'prev_month' | 'all_time' | 'custom'>('loaded');
+  const [customFilterStart, setCustomFilterStart] = useState("");
+  const [customFilterEnd, setCustomFilterEnd] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_high' | 'amount_low'>('newest');
+
   // ── Generate Tab States ────────────────────────────────────────────────────
   const [selectedCompany, setSelectedCompany] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -241,35 +263,135 @@ export default function InvoiceManagement() {
   const [popoverData, setPopoverData] = useState<{ booking: any, x: number, y: number } | null>(null);
   const [popoverDeleting, setPopoverDeleting] = useState(false);
 
-  // ── 1. Initial data fetch ──────────────────────────────────────────────────
+  // ── 1. Initial data fetch (Default: Last 2 Months) ─────────────────────────
   useEffect(() => {
     const initData = async () => {
       setLoadingInitial(true);
-      const [compRes, invRes, ucRes, instRes] = await Promise.all([
+      const now = new Date();
+      const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // Covers previous month + current month = 2 months
+      const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
+
+      const [compRes, invRes, ucRes, instRes, earliestRes] = await Promise.all([
         supabase.from('companies').select('id, name').order('name'),
-        supabase.from('invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('invoices')
+          .select('*')
+          .gte('invoice_date', twoMonthsAgoStr)
+          .order('invoice_date', { ascending: false })
+          .order('created_at', { ascending: false }),
         supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
-        supabase.from('instant_invoices').select('id, invoice_no, is_paid, merged_into_monthly, total_amount').order('created_at', { ascending: false }),
+        supabase.from('instant_invoices')
+          .select('id, invoice_no, is_paid, merged_into_monthly, total_amount, invoice_date')
+          .order('invoice_date', { ascending: false }),
+        supabase.from('invoices')
+          .select('invoice_date')
+          .order('invoice_date', { ascending: true })
+          .limit(1),
       ]);
+
       if (compRes.data) setCompanies(compRes.data);
       if (invRes.data) setInvoices(invRes.data);
       if (ucRes.data) setUnitConfigs(ucRes.data);
       if (instRes.data) setAllInstantInvoices(instRes.data);
+
+      const earliest = earliestRes.data?.[0]?.invoice_date || null;
+      setEarliestInvoiceDate(earliest);
+      if (earliest && twoMonthsAgoStr <= earliest) {
+        setHasMoreInvoices(false);
+      }
+
       setLoadingInitial(false);
     };
     initData();
   }, [supabase]);
 
+  // ── 1b. Load Older 2-Month Chunks (Infinite Scroll) ───────────────────────
+  const loadMoreInvoices = useCallback(async () => {
+    if (loadingMore || !hasMoreInvoices || dateFilterPreset !== 'loaded') return;
+    setLoadingMore(true);
+    try {
+      const nextEnd = cursorEndDate;
+      const nextStart = subMonths(nextEnd, 2);
+      const startStr = format(nextStart, 'yyyy-MM-dd');
+      const endStr = format(nextEnd, 'yyyy-MM-dd');
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .gte('invoice_date', startStr)
+        .lt('invoice_date', endStr)
+        .order('invoice_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setInvoices(prev => {
+          const existingIds = new Set(prev.map(i => i.id));
+          const newItems = data.filter(i => !existingIds.has(i.id));
+          return [...prev, ...newItems];
+        });
+      }
+
+      setCursorEndDate(nextStart);
+
+      if (earliestInvoiceDate && startStr <= earliestInvoiceDate) {
+        setHasMoreInvoices(false);
+      }
+    } catch (err: any) {
+      console.error("Error loading more invoices:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [cursorEndDate, earliestInvoiceDate, hasMoreInvoices, loadingMore, dateFilterPreset, supabase]);
+
+  // IntersectionObserver for bottom infinite scroll sentinel
+  useEffect(() => {
+    if (activeTab !== 'history' || dateFilterPreset !== 'loaded' || !hasMoreInvoices || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreInvoices();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const target = observerTarget.current;
+    if (target) observer.observe(target);
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [activeTab, dateFilterPreset, hasMoreInvoices, loadingMore, loadMoreInvoices]);
+
+  // Fetch all if user selects 'all_time' filter
+  useEffect(() => {
+    if (dateFilterPreset === 'all_time' && hasMoreInvoices) {
+      const fetchAll = async () => {
+        setLoadingMore(true);
+        const { data } = await supabase
+          .from('invoices')
+          .select('*')
+          .order('invoice_date', { ascending: false })
+          .order('created_at', { ascending: false });
+        if (data) {
+          setInvoices(data);
+          setHasMoreInvoices(false);
+        }
+        setLoadingMore(false);
+      };
+      fetchAll();
+    }
+  }, [dateFilterPreset, hasMoreInvoices, supabase]);
+
   // ── 2. Auto-generate Invoice Number ───────────────────────────────────────
   const generateMonthlyInvoiceNo = useCallback(() => {
-    if (selectedCompany && startDate) {
-      const dateObj = new Date(startDate);
+    if (selectedCompany && (invoiceDate || startDate)) {
+      const dateObj = new Date(invoiceDate || startDate);
       const year = dateObj.getFullYear().toString().slice(-2);
       const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
       const compShort = companies.find(c => c.id.toString() === selectedCompany)?.name?.slice(0, 4).toUpperCase() || "INV";
       setInvoiceNo(`BTM/${year}${month}-${compShort}-${Math.floor(100 + Math.random() * 900)}`);
     }
-  }, [selectedCompany, startDate, companies]);
+  }, [selectedCompany, startDate, invoiceDate, companies]);
 
   useEffect(() => { generateMonthlyInvoiceNo(); }, [generateMonthlyInvoiceNo]);
 
@@ -403,7 +525,9 @@ export default function InvoiceManagement() {
 
       const invoiceData = {
         invoiceNo,
-        date: new Date().toISOString(),
+        invoice_date: invoiceDate,
+        invoiceDate,
+        date: invoiceDate,
         companyName: compName,
         bookings: validBookings,
         instantBills: selInstantBills,
@@ -425,14 +549,30 @@ export default function InvoiceManagement() {
       formData.append("signature", signature); formData.append("folder", folderPath); formData.append("public_id", publicId);
       const uploadData = await (await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: "POST", body: formData })).json();
       if (!uploadData.secure_url) throw new Error("Cloudinary upload failed");
-      const { error: invError } = await supabase.from('invoices').insert([{ company_id: parseInt(selectedCompany), company_name: compName, invoice_no: invoiceNo, start_date: startDate, end_date: endDate, subtotal, discount: discountValue, discount_remarks: discountRemarks, total_amount: finalTotal, pdf_url: uploadData.secure_url, booking_ids: validBookings.map(b => b.id), instant_invoice_ids: selectedInstantBillIds }]);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: invError } = await supabase.from('invoices').insert([{ 
+        company_id: parseInt(selectedCompany), 
+        company_name: compName, 
+        invoice_no: invoiceNo, 
+        invoice_date: invoiceDate,
+        start_date: startDate, 
+        end_date: endDate, 
+        subtotal, 
+        discount: discountValue, 
+        discount_remarks: discountRemarks, 
+        total_amount: finalTotal, 
+        pdf_url: uploadData.secure_url, 
+        booking_ids: validBookings.map(b => b.id), 
+        instant_invoice_ids: selectedInstantBillIds,
+        created_by: user?.id || null,
+      }]);
       if (invError) throw invError;
       if (validBookings.length > 0) await supabase.from('bookings').update({ invoice_no: invoiceNo }).in('id', validBookings.map(b => b.id));
       if (selectedInstantBillIds.length > 0) await supabase.from('instant_invoices').update({ merged_into_monthly: true }).in('id', selectedInstantBillIds);
       toast.success("Invoice Generated & Saved!");
-      const { data: newHistory } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      const { data: newHistory } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false }).order('created_at', { ascending: false });
       if (newHistory) setInvoices(newHistory);
-      const { data: newInstant } = await supabase.from('instant_invoices').select('id, invoice_no, is_paid, merged_into_monthly, total_amount').order('created_at', { ascending: false });
+      const { data: newInstant } = await supabase.from('instant_invoices').select('id, invoice_no, is_paid, merged_into_monthly, total_amount, invoice_date').order('invoice_date', { ascending: false });
       if (newInstant) setAllInstantInvoices(newInstant);
       setActiveTab('history');
     } catch (err: any) { toast.error("Error: " + err.message); } finally { setGenerating(false); }
@@ -500,14 +640,94 @@ export default function InvoiceManagement() {
 
   // ── History filters ────────────────────────────────────────────────────────
   const filteredHistory = useMemo(() => {
-    if (!searchQuery) return invoices;
-    const q = searchQuery.toLowerCase();
-    return invoices.filter(i => i.invoice_no?.toLowerCase().includes(q) || i.company_name?.toLowerCase().includes(q));
-  }, [invoices, searchQuery]);
+    let list = [...invoices];
+
+    // 1. Search Query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(i => 
+        i.invoice_no?.toLowerCase().includes(q) || 
+        i.company_name?.toLowerCase().includes(q)
+      );
+    }
+
+    // 2. Status Filter
+    if (statusFilter === 'paid') {
+      list = list.filter(i => i.is_paid);
+    } else if (statusFilter === 'unpaid') {
+      list = list.filter(i => !i.is_paid);
+    }
+
+    // 3. Company Filter
+    if (companyFilter !== 'all') {
+      list = list.filter(i => i.company_id?.toString() === companyFilter);
+    }
+
+    // 4. Date Range Filter
+    if (dateFilterPreset === 'this_month') {
+      const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+      list = list.filter(i => {
+        const d = i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd');
+        return d >= start && d <= end;
+      });
+    } else if (dateFilterPreset === 'prev_month') {
+      const prev = subMonths(new Date(), 1);
+      const start = format(startOfMonth(prev), 'yyyy-MM-dd');
+      const end = format(endOfMonth(prev), 'yyyy-MM-dd');
+      list = list.filter(i => {
+        const d = i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd');
+        return d >= start && d <= end;
+      });
+    } else if (dateFilterPreset === 'custom') {
+      if (customFilterStart) {
+        list = list.filter(i => (i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd')) >= customFilterStart);
+      }
+      if (customFilterEnd) {
+        list = list.filter(i => (i.invoice_date || format(parseISO(i.created_at), 'yyyy-MM-dd')) <= customFilterEnd);
+      }
+    }
+
+    // 5. Sorting
+    list.sort((a, b) => {
+      const dateA = new Date(a.invoice_date || a.created_at).getTime();
+      const dateB = new Date(b.invoice_date || b.created_at).getTime();
+      if (sortBy === 'newest') return dateB - dateA;
+      if (sortBy === 'oldest') return dateA - dateB;
+      if (sortBy === 'amount_high') return Number(b.total_amount) - Number(a.total_amount);
+      if (sortBy === 'amount_low') return Number(a.total_amount) - Number(b.total_amount);
+      return dateB - dateA;
+    });
+
+    return list;
+  }, [invoices, searchQuery, statusFilter, companyFilter, dateFilterPreset, customFilterStart, customFilterEnd, sortBy]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== 'all') count++;
+    if (companyFilter !== 'all') count++;
+    if (dateFilterPreset !== 'loaded') count++;
+    if (sortBy !== 'newest') count++;
+    return count;
+  }, [statusFilter, companyFilter, dateFilterPreset, sortBy]);
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter('all');
+    setCompanyFilter('all');
+    setDateFilterPreset('loaded');
+    setCustomFilterStart("");
+    setCustomFilterEnd("");
+    setSortBy('newest');
+  };
 
   const groupedHistory = useMemo(() => {
     const groups: Record<string, any[]> = {};
-    filteredHistory.forEach(inv => { const d = format(parseISO(inv.created_at), "yyyy-MM-dd"); if (!groups[d]) groups[d] = []; groups[d].push(inv); });
+    filteredHistory.forEach(inv => { 
+      const d = inv.invoice_date || format(parseISO(inv.created_at), "yyyy-MM-dd"); 
+      if (!groups[d]) groups[d] = []; 
+      groups[d].push(inv); 
+    });
     return { groups, sortedDates: Object.keys(groups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) };
   }, [filteredHistory]);
 
@@ -610,6 +830,18 @@ export default function InvoiceManagement() {
                           <option value="">Select Company...</option>
                           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1 flex items-center justify-between">
+                          <span>Invoice Date</span>
+                          <span className="text-[9px] text-blue-600 font-bold lowercase">(official issue date)</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={invoiceDate}
+                          onChange={e => setInvoiceDate(e.target.value)}
+                          className="w-full p-2.5 bg-blue-50/40 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900 shadow-sm"
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -810,10 +1042,167 @@ export default function InvoiceManagement() {
             {/* ── HISTORY TAB ── */}
             {activeTab === 'history' && (
               <motion.div key="monthly-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
-                <div className="mb-6 relative max-w-xl">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input type="text" placeholder="Search by Company or Invoice ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-blue-500 font-bold text-gray-900 shadow-sm text-sm" />
+                
+                {/* Search & Actions Bar */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+                  <div className="relative flex-1 max-w-xl">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search by Company or Invoice ID..." 
+                      value={searchQuery} 
+                      onChange={e => setSearchQuery(e.target.value)} 
+                      className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-blue-500 font-bold text-gray-900 shadow-sm text-sm" 
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowAdvancedFilters(prev => !prev)}
+                      className={`px-4 py-3.5 rounded-2xl font-black text-xs transition-all border flex items-center gap-2 shadow-sm ${
+                        showAdvancedFilters || activeFilterCount > 0
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <SlidersHorizontal size={15} />
+                      <span>Filters</span>
+                      {activeFilterCount > 0 && (
+                        <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-[10px] flex items-center justify-center font-black">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setIsExportModalOpen(true)}
+                      className="px-4 py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
+                    >
+                      <Download size={15} />
+                      <span>Export Data</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Advanced Filters Expandable Drawer */}
+                <AnimatePresence>
+                  {showAdvancedFilters && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden mb-6"
+                    >
+                      <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                          <p className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                            <Filter size={14} className="text-blue-600" /> Advanced History Filters
+                          </p>
+                          {activeFilterCount > 0 && (
+                            <button
+                              onClick={handleResetFilters}
+                              className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                            >
+                              <RotateCcw size={12} /> Reset All
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* Payment Status */}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Payment Status</label>
+                            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
+                              {(['all', 'paid', 'unpaid'] as const).map(s => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setStatusFilter(s)}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-black capitalize transition-all ${
+                                    statusFilter === s ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                                  }`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Company Dropdown */}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Company</label>
+                            <select
+                              value={companyFilter}
+                              onChange={e => setCompanyFilter(e.target.value)}
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                            >
+                              <option value="all">All Companies</option>
+                              {companies.map(c => (
+                                <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Date Range Preset */}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Date Range</label>
+                            <select
+                              value={dateFilterPreset}
+                              onChange={e => setDateFilterPreset(e.target.value as any)}
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                            >
+                              <option value="loaded">Default (2 Months + Scroll)</option>
+                              <option value="this_month">This Month</option>
+                              <option value="prev_month">Previous Month</option>
+                              <option value="all_time">All Time</option>
+                              <option value="custom">Custom Date Range</option>
+                            </select>
+                          </div>
+
+                          {/* Sorting */}
+                          <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Sort By</label>
+                            <select
+                              value={sortBy}
+                              onChange={e => setSortBy(e.target.value as any)}
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                            >
+                              <option value="newest">Newest First</option>
+                              <option value="oldest">Oldest First</option>
+                              <option value="amount_high">Amount (High to Low)</option>
+                              <option value="amount_low">Amount (Low to High)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Custom Date Pickers if 'custom' is selected */}
+                        {dateFilterPreset === 'custom' && (
+                          <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
+                            <div>
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Start Date</label>
+                              <input
+                                type="date"
+                                value={customFilterStart}
+                                onChange={e => setCustomFilterStart(e.target.value)}
+                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">End Date</label>
+                              <input
+                                type="date"
+                                value={customFilterEnd}
+                                onChange={e => setCustomFilterEnd(e.target.value)}
+                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="space-y-8">
                   {groupedHistory.sortedDates.length === 0 ? (
                     <div className="text-center p-16 bg-white rounded-3xl border border-gray-100 text-gray-400 font-bold">No invoices found.</div>
@@ -842,9 +1231,12 @@ export default function InvoiceManagement() {
                                   </span>
                                 </div>
                                 <p className="text-xs font-bold text-gray-600 flex items-center gap-1.5"><Building2 size={12} className="text-gray-400" /> {inv.company_name}</p>
+                                <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest flex items-center gap-1">
+                                  <Calendar size={11} /> Issue Date: {format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}
+                                </p>
                                 {inv.start_date && inv.end_date && (
-                                  <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">
-                                    {format(parseISO(inv.start_date), 'dd MMM')} – {format(parseISO(inv.end_date), 'dd MMM yyyy')}
+                                  <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
+                                    Work: {format(parseISO(inv.start_date), 'dd MMM')} – {format(parseISO(inv.end_date), 'dd MMM yyyy')}
                                   </p>
                                 )}
                               </div>
@@ -904,6 +1296,28 @@ export default function InvoiceManagement() {
                     </div>
                   ))}
                 </div>
+
+                {/* Infinite Scroll Sentinel */}
+                <div ref={observerTarget} className="pt-8 pb-4 text-center">
+                  {loadingMore ? (
+                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-blue-600 bg-blue-50/60 py-3 px-5 rounded-2xl mx-auto w-fit border border-blue-100 shadow-sm">
+                      <Loader2 size={16} className="animate-spin text-blue-600" />
+                      <span>Loading previous 2 months of invoices...</span>
+                    </div>
+                  ) : hasMoreInvoices && dateFilterPreset === 'loaded' ? (
+                    <button
+                      onClick={loadMoreInvoices}
+                      className="px-5 py-2.5 bg-white border border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-700 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95"
+                    >
+                      Load Older Invoices (Previous 2 Months)
+                    </button>
+                  ) : (
+                    <p className="text-[11px] font-bold text-gray-400">
+                      {invoices.length > 0 ? "All historical invoices loaded." : ""}
+                    </p>
+                  )}
+                </div>
+
               </motion.div>
             )}
             </AnimatePresence>
@@ -916,6 +1330,14 @@ export default function InvoiceManagement() {
           />
         )}
       </div>
+
+      {/* Export Modal */}
+      <InvoiceExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        type="monthly"
+        companies={companies}
+      />
     </div>
   );
 }

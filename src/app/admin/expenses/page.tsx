@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -20,6 +21,8 @@ import FixedExpensesTab from "./FixedExpensesTab";
 
 export default function ExpensesPage() {
   const supabase = createClient();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [prevMonthTotal, setPrevMonthTotal] = useState<number>(0);
   const [settings, setSettings] = useState<any>({ categories: [], payment_methods: [] });
@@ -609,13 +612,13 @@ export default function ExpensesPage() {
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { cellWidth: 8, halign: "center" },
+        0: { cellWidth: 12, halign: "center" },
         1: { cellWidth: 20 },
         2: { cellWidth: 32, fontStyle: "bold" },
         3: { cellWidth: 18, halign: "center" },
         4: { cellWidth: "auto" },
         5: { cellWidth: 25 },
-        6: { cellWidth: 26, halign: "right", fontStyle: "bold", textColor: [220, 38, 38] },
+        6: { cellWidth: 22, halign: "right", fontStyle: "bold", textColor: [220, 38, 38] },
       },
       foot: [
         [
@@ -736,6 +739,7 @@ export default function ExpensesPage() {
             paymentMethods={settings.payment_methods || []}
             refreshGlobalStats={fetchExpensesAndStats}
             currentMonthExpenses={expenses}
+            categories={settings.categories || []}
           />
         </div>
 
@@ -1141,7 +1145,7 @@ export default function ExpensesPage() {
                                 <div className="flex flex-wrap justify-between items-center gap-4 pt-3 border-t border-gray-100">
                                   <div className="text-xs font-bold text-gray-400 flex flex-wrap items-center gap-3">
                                     <span>Created on {format(parseISO(expense.expense_date), 'dd MMMM yyyy')}</span>
-                                    {expense.updated_at && expense.updated_at !== expense.created_at && (
+                                    {expense.updated_at && (
                                       <span className="text-blue-600 flex items-center gap-1">
                                         <History size={13}/> Last edited {formatDistanceToNow(new Date(expense.updated_at))} ago
                                       </span>
@@ -1212,12 +1216,13 @@ export default function ExpensesPage() {
       </div>
 
       {/* ── 9. MODALS ── */}
-      <AnimatePresence>
+      {mounted && typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
         
         {/* Settings Modal (Fixed Button Overflow) */}
         {isSettingsModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/75" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
                 <h2 className="text-xl font-black text-gray-900 flex items-center gap-2"><Settings size={24} className="text-blue-500"/> Expense Settings</h2>
@@ -1329,8 +1334,8 @@ export default function ExpensesPage() {
 
         {/* Add Expense Modal (Clean "Other" Category without emoji) */}
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/75" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
                 <h2 className="text-xl font-black text-gray-900">Add New Expense</h2>
@@ -1462,8 +1467,8 @@ export default function ExpensesPage() {
 
         {/* Edit Expense Modal (Clean "Other" Category without emoji) */}
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/75" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
                 <h2 className="text-xl font-black text-gray-900">Edit Expense</h2>
@@ -1619,8 +1624,8 @@ export default function ExpensesPage() {
 
         {/* Delete Confirmation Modal */}
         {isDeleteModalOpen && selectedExpense && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/75" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden relative z-10 text-center">
               <div className="p-8">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 text-red-600"><Trash2 size={32} /></div>
@@ -1645,7 +1650,56 @@ export default function ExpensesPage() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+              {/* Receipt Lightbox Modal */}
+        {lightboxUrl && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setLightboxUrl(null)} 
+              className="absolute inset-0 bg-black/80 cursor-pointer" 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }} 
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-10 flex flex-col"
+            >
+              <div className="p-4 bg-gray-900 text-white flex justify-between items-center shrink-0">
+                <span className="font-bold text-sm flex items-center gap-2">
+                  <Receipt size={16} className="text-blue-400" /> Receipt Preview
+                </span>
+                <div className="flex items-center gap-2">
+                  <a 
+                    href={lightboxUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Open in Tab
+                  </a>
+                  <button 
+                    onClick={() => setLightboxUrl(null)} 
+                    className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 p-2 bg-gray-100 flex items-center justify-center overflow-auto min-h-[300px] max-h-[calc(90vh-60px)]">
+                <iframe 
+                  src={lightboxUrl} 
+                  className="w-full h-full min-h-[500px] rounded-lg border-0 bg-white" 
+                  title="Receipt"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>,
+        document.body
+      )}
       
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
