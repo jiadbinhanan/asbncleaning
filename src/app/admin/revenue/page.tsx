@@ -180,7 +180,7 @@ export default function RevenueDashboard() {
     const invoicedBookings = filteredBookings.filter(b => b.invoice_no);
     const invoicedBookingsAmount = invoicedBookings.reduce((sum, b) => sum + b.grandTotal, 0);
     const invoicedBookingsCount = invoicedBookings.length;
-    const instantPosCount = filteredInstant.length;
+    const unmergedInstantCount = filteredInstant.filter(i => !i.merged_into_monthly).length;
 
     // 10. Actual Revenue
     const actualRevenue = totalCollected - totalExpense;
@@ -192,7 +192,7 @@ export default function RevenueDashboard() {
       totalDiscount, monthlyDiscount, instantDiscount,
       totalExpense,
       totalCleaningBase, totalInvExtra, totalExtCharge,
-      invoicedBookingsAmount, invoicedBookingsCount, instantPosCount,
+      invoicedBookingsAmount, invoicedBookingsCount, unmergedInstantCount,
       actualRevenue
     };
   }, [filteredInvoices, filteredInstant, filteredBookings, expenses]);
@@ -344,6 +344,76 @@ export default function RevenueDashboard() {
               <span className="text-sm font-black text-gray-900">AED {p.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
             </div>
           ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomBarTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      // payload contains data for the hovered bar (Monthly or Instant POS)
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-4 rounded-2xl shadow-2xl border border-gray-200 min-w-[200px]">
+          <p className="text-sm font-black text-gray-900 mb-3 border-b border-gray-100 pb-2">{label}</p>
+          
+          {label === 'Monthly' && (
+            <>
+              <div className="flex justify-between items-center gap-6 mb-1.5">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-slate-400"></div>
+                  Contract Billed:
+                </span>
+                <span className="text-sm font-black text-gray-900">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              {data.MergedPOS > 0 && (
+                <div className="flex justify-between items-center gap-6 mb-1.5">
+                  <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-indigo-500"></div>
+                    Merged POS:
+                  </span>
+                  <span className="text-sm font-black text-gray-900">AED {data.MergedPOS.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500"></div>
+                  Collected:
+                </span>
+                <span className="text-sm font-black text-emerald-600">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </>
+          )}
+
+          {label === 'Instant POS' && (
+            <>
+              <div className="flex justify-between items-center gap-6 mb-1">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-slate-400"></div>
+                  Total Billed:
+                </span>
+                <span className="text-sm font-black text-gray-900">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="pl-4 mb-2 space-y-1">
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-[10px] font-bold text-gray-500">↳ Individual:</span>
+                  <span className="text-[10px] font-black text-gray-700">AED {stats.instantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-[10px] font-bold text-gray-500">↳ Merged:</span>
+                  <span className="text-[10px] font-black text-indigo-500">AED {stats.mergedInstantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500"></div>
+                  Collected:
+                </span>
+                <span className="text-sm font-black text-emerald-600">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </>
+          )}
         </div>
       );
     }
@@ -509,14 +579,14 @@ export default function RevenueDashboard() {
               {activeInfoCard === 2 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
                   <h4 className="font-bold mb-2 flex items-center gap-2 text-blue-600"><Info size={14}/> How is this calculated?</h4>
-                  <p className="text-xs leading-relaxed text-gray-600">Total value of cleaning jobs from this period that have had an invoice generated, plus all POS sales from this period.</p>
+                  <p className="text-xs leading-relaxed text-gray-600">Total value of cleaning jobs from this period that have had an invoice generated, plus individual (unmerged) POS sales from this period.</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><FileDigit size={80}/></div>
             <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Invoiced Work of This Period</p>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">AED {(stats.invoicedBookingsAmount + stats.totalInstantAll).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">AED {(stats.invoicedBookingsAmount + stats.instantBilled).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             
             <div className="mt-auto relative z-10 w-full min-w-0 pt-1">
               <div className="grid grid-cols-2 gap-2">
@@ -525,8 +595,8 @@ export default function RevenueDashboard() {
                   <p className="text-sm font-black text-gray-900">{stats.invoicedBookingsAmount.toLocaleString()}</p>
                 </div>
                 <div className="bg-blue-50/60 border border-blue-100/50 rounded-lg p-2 flex flex-col justify-center">
-                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">POS ({stats.instantPosCount})</p>
-                  <p className="text-sm font-black text-gray-900">{stats.totalInstantAll.toLocaleString()}</p>
+                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">POS ({stats.unmergedInstantCount})</p>
+                  <p className="text-sm font-black text-gray-900">{stats.instantBilled.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -670,7 +740,7 @@ export default function RevenueDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} dy={8} interval={0} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
-                    <RechartsTooltip content={<CustomAreaTooltip />} cursor={{fill: 'transparent'}} />
+                    <RechartsTooltip content={<CustomBarTooltip />} cursor={{fill: 'transparent'}} />
                     <Bar dataKey="Billed" stackId="a" fill="#94a3b8" radius={[0, 0, 4, 4]} maxBarSize={32} />
                     <Bar dataKey="MergedPOS" stackId="a" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={32} />
                     <Bar dataKey="Collected" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={32} />
@@ -712,10 +782,14 @@ export default function RevenueDashboard() {
                     <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
                     <div>
                       <p className="text-[8px] font-bold text-gray-400">Total Billed</p>
-                      <p className="text-[10px] font-black text-gray-800">AED {stats.totalInstantAll.toLocaleString()}</p>
+                      <p className="text-[10px] font-black text-gray-800 mb-0.5">AED {stats.totalInstantAll.toLocaleString()}</p>
+                      <div className="text-[8px] space-y-0.5 border-l border-gray-200 pl-1.5 ml-0.5">
+                        <p className="text-gray-500 font-medium">Indiv: <span className="font-bold text-gray-700">{stats.instantBilled.toLocaleString()}</span></p>
+                        <p className="text-indigo-400 font-medium">Merged: <span className="font-bold text-indigo-500">{stats.mergedInstantBilled.toLocaleString()}</span></p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 mt-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
                     <div>
                       <p className="text-[8px] font-bold text-gray-400">Collected</p>
