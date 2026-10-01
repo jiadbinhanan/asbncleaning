@@ -418,13 +418,13 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
     (async()=>{
       const { data } = await supabase
         .from('instant_invoices')
-        .select('total_amount, created_at')
-        .gte('created_at',`${dateFrom}T00:00:00`)
-        .lte('created_at',`${dateTo}T23:59:59`);
+        .select('total_amount, invoice_date, created_at')
+        .gte('invoice_date', dateFrom)
+        .lte('invoice_date', dateTo);
       if(data){
         const m: Record<string,number>={};
         data.forEach((d:any)=>{
-          const day = format(parseISO(d.created_at),'yyyy-MM-dd');
+          const day = d.invoice_date || format(parseISO(d.created_at),'yyyy-MM-dd');
           m[day]=(m[day]||0)+Number(d.total_amount);
         });
         setPosMap(m);
@@ -822,8 +822,8 @@ function InvoiceCard({ invoices, dateFrom, dateTo }: { invoices:any[]; dateFrom:
   useEffect(()=>{
     (async()=>{
       const {data} = await supabase.from('instant_invoices')
-        .select('id,total_amount,is_paid,company_id,customer_name,client_type,created_at')
-        .gte('created_at',`${dateFrom}T00:00:00`).lte('created_at',`${dateTo}T23:59:59`);
+        .select('id,total_amount,is_paid,company_id,customer_name,client_type,invoice_date,created_at')
+        .gte('invoice_date', dateFrom).lte('invoice_date', dateTo);
       if(data) setInstantInv(data);
     })();
   },[dateFrom,dateTo]);
@@ -1157,7 +1157,7 @@ export default function AdminDashboard() {
         .lte('cleaning_date', fe),
 
         supabase.from('invoices')
-          .select('id,company_name,total_amount,created_at,is_paid,start_date,end_date')
+          .select('id,company_name,total_amount,invoice_date,created_at,is_paid,start_date,end_date')
           .lte('start_date', fe)
           .gte('end_date', fs),
       ]);

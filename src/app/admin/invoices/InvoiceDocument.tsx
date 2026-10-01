@@ -417,7 +417,12 @@ export const InvoiceDocument = ({ data }: any) => {
 
                     {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => {
                       const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-                      const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                      const rawBillDate = matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at;
+                      const billDateStr = rawBillDate
+                        ? (typeof rawBillDate === 'string'
+                            ? format(parseISO(rawBillDate.includes('T') ? rawBillDate : `${rawBillDate}T00:00:00`), 'dd-MMM-yyyy')
+                            : format(rawBillDate, 'dd-MMM-yyyy'))
+                        : '';
                       return (
                         <React.Fragment key={`pos-u-${eIdx}`}>
                           {/* Half Width Left Aligned Orange Box */}
@@ -473,7 +478,12 @@ export const InvoiceDocument = ({ data }: any) => {
 
               {instantBillsNoUnit.map((entry: any, eIdx: number) => {
                 const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-                const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                const rawBillDate = matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at;
+                const billDateStr = rawBillDate
+                  ? (typeof rawBillDate === 'string'
+                      ? format(parseISO(rawBillDate.includes('T') ? rawBillDate : `${rawBillDate}T00:00:00`), 'dd-MMM-yyyy')
+                      : format(rawBillDate, 'dd-MMM-yyyy'))
+                  : '';
                 return (
                   <React.Fragment key={`pos-nou-${eIdx}`}>
                     {/* Half Width Left Aligned Orange Box */}

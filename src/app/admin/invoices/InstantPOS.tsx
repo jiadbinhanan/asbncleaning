@@ -136,6 +136,7 @@ export default function InstantPOS({
   const [history, setHistory] = useState<any[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [monthlyInvoices, setMonthlyInvoices] = useState<any[]>([]);
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
 
   // ── Invoice Header ─────────────────────────────────────────────────────────
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -201,7 +202,7 @@ export default function InstantPOS({
     const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // 2 full calendar months
     const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
 
-    const [instRes, monthlyRes, earliestRes] = await Promise.all([
+    const [instRes, monthlyRes, earliestRes, profRes] = await Promise.all([
       supabase
         .from("instant_invoices")
         .select("*, subtotal, discount, discount_remarks, companies(name)")
@@ -211,16 +212,27 @@ export default function InstantPOS({
       supabase
         .from("invoices")
         .select("id, invoice_no, is_paid, instant_invoice_ids")
+        .order("invoice_date", { ascending: false })
         .order("created_at", { ascending: false }),
       supabase
         .from("instant_invoices")
         .select("invoice_date")
         .order("invoice_date", { ascending: true })
         .limit(1),
+      supabase
+        .from("profiles")
+        .select("id, username, full_name"),
     ]);
 
     if (instRes.data) setHistory(instRes.data);
     if (monthlyRes.data) setMonthlyInvoices(monthlyRes.data);
+    if (profRes.data) {
+      const pMap: Record<string, string> = {};
+      profRes.data.forEach((p: any) => {
+        pMap[p.id] = p.username || p.full_name || 'Admin';
+      });
+      setProfilesMap(pMap);
+    }
 
     const earliest = earliestRes.data?.[0]?.invoice_date || null;
     setEarliestInvoiceDate(earliest);
@@ -1268,10 +1280,17 @@ export default function InstantPOS({
                           }`}
                         >
                           <div className="flex justify-between items-start mb-4">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1">
-                              <Calendar size={10} />
-                              {format(parseISO(inv.invoice_date || inv.created_at), "dd MMM yyyy")}
-                            </span>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1">
+                                <Calendar size={10} />
+                                {format(parseISO(inv.invoice_date || inv.created_at), "dd MMM yyyy")}
+                              </span>
+                              {inv.created_at && (
+                                <p className="text-[9px] font-medium text-gray-400 mt-1 pl-0.5">
+                                  Created: {format(new Date(inv.created_at), "dd MMM yyyy, hh:mm a")}{inv.created_by && profilesMap[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ""}
+                                </p>
+                              )}
+                            </div>
                             {mergedIntoMonthly ? (
                               <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-teal-100 text-teal-700 border-teal-300"}`}>
                                 {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><Layers size={12} /> Merged</>}

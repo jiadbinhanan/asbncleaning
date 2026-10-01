@@ -72,12 +72,14 @@ function DeleteConfirmModal({
 function InvoicedPopover({
   data,
   invoices,
+  profilesMap,
   onClose,
   onDelete,
   deleting,
 }: {
   data: { booking: any, x: number, y: number };
   invoices: any[];
+  profilesMap?: Record<string, string>;
   onClose: () => void;
   onDelete: (inv: any) => void;
   deleting: boolean;
@@ -145,7 +147,15 @@ function InvoicedPopover({
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total Billed</p>
               <p className="text-xl font-black text-green-600">AED {Number(inv.total_amount).toFixed(2)}</p>
             </div>
-            <p className="text-[10px] font-bold text-gray-400">{format(parseISO(inv.created_at), 'dd MMM yyyy')}</p>
+            <div className="text-right">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Invoice Date</p>
+              <p className="text-[10px] font-black text-gray-700">{format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}</p>
+              {inv.created_at && (
+                <p className="text-[9px] font-bold text-gray-400 mt-0.5">
+                  Created: {format(new Date(inv.created_at), 'dd MMM yyyy, hh:mm a')}{inv.created_by && profilesMap?.[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ''}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -262,6 +272,7 @@ export default function InvoiceManagement() {
   // ── Inline Popover State ───────────────────────────────────────────────────
   const [popoverData, setPopoverData] = useState<{ booking: any, x: number, y: number } | null>(null);
   const [popoverDeleting, setPopoverDeleting] = useState(false);
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
 
   // ── 1. Initial data fetch (Default: Last 2 Months) ─────────────────────────
   useEffect(() => {
@@ -271,7 +282,7 @@ export default function InvoiceManagement() {
       const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // Covers previous month + current month = 2 months
       const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
 
-      const [compRes, invRes, ucRes, instRes, earliestRes] = await Promise.all([
+      const [compRes, invRes, ucRes, instRes, earliestRes, profRes] = await Promise.all([
         supabase.from('companies').select('id, name').order('name'),
         supabase.from('invoices')
           .select('*')
@@ -286,12 +297,20 @@ export default function InvoiceManagement() {
           .select('invoice_date')
           .order('invoice_date', { ascending: true })
           .limit(1),
+        supabase.from('profiles').select('id, username, full_name'),
       ]);
 
       if (compRes.data) setCompanies(compRes.data);
       if (invRes.data) setInvoices(invRes.data);
       if (ucRes.data) setUnitConfigs(ucRes.data);
       if (instRes.data) setAllInstantInvoices(instRes.data);
+      if (profRes.data) {
+        const pMap: Record<string, string> = {};
+        profRes.data.forEach((p: any) => {
+          pMap[p.id] = p.username || p.full_name || 'Admin';
+        });
+        setProfilesMap(pMap);
+      }
 
       const earliest = earliestRes.data?.[0]?.invoice_date || null;
       setEarliestInvoiceDate(earliest);
@@ -419,7 +438,7 @@ export default function InvoiceManagement() {
     const { data: instantData } = await supabase
       .from('instant_invoices').select('*')
       .eq('company_id', companyId).eq('is_paid', false).eq('merged_into_monthly', false)
-      .gte('created_at', `${startDate}T00:00:00.000Z`).lte('created_at', `${endDate}T23:59:59.999Z`);
+      .gte('invoice_date', startDate).lte('invoice_date', endDate);
 
     if (bError) { toast.error("Error fetching bookings"); setLoadingFetch(false); return; }
     setUnpaidInstantBills(instantData || []);
@@ -750,6 +769,7 @@ export default function InvoiceManagement() {
           <InvoicedPopover
             data={popoverData}
             invoices={invoices}
+            profilesMap={profilesMap}
             onClose={() => setPopoverData(null)}
             onDelete={handlePopoverDelete}
             deleting={popoverDeleting}
@@ -918,7 +938,16 @@ export default function InvoiceManagement() {
                                       <input type="checkbox" checked={selectedInstantBillIds.includes(bill.id)} onChange={() => toggleInstantBill(bill.id)} className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer" />
                                       <div>
                                         <p className="text-sm font-black text-gray-800">{bill.invoice_no}</p>
-                                        <p className="text-[10px] font-bold text-gray-500">{format(new Date(bill.created_at), 'dd MMM yyyy, hh:mm a')}</p>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <p className="text-[10px] font-black text-amber-800">
+                                            Date: {format(parseISO(bill.invoice_date || bill.created_at), 'dd MMM yyyy')}
+                                          </p>
+                                          {bill.created_at && (
+                                            <span className="text-[9px] font-medium text-gray-400">
+                                              (Created: {format(new Date(bill.created_at), 'dd MMM, hh:mm a')}{bill.created_by && profilesMap[bill.created_by] ? ` by ${profilesMap[bill.created_by]}` : ''})
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                     <p className="text-sm font-black text-amber-700">AED {Number(bill.total_amount).toFixed(2)}</p>
@@ -1232,8 +1261,13 @@ export default function InvoiceManagement() {
                                 </div>
                                 <p className="text-xs font-bold text-gray-600 flex items-center gap-1.5"><Building2 size={12} className="text-gray-400" /> {inv.company_name}</p>
                                 <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest flex items-center gap-1">
-                                  <Calendar size={11} /> Issue Date: {format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}
+                                  <Calendar size={11} /> Invoice Date: {format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}
                                 </p>
+                                {inv.created_at && (
+                                  <p className="text-[9px] font-medium text-gray-400 mt-0.5">
+                                    Created: {format(new Date(inv.created_at), 'dd MMM yyyy, hh:mm a')}{inv.created_by && profilesMap[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ''}
+                                  </p>
+                                )}
                                 {inv.start_date && inv.end_date && (
                                   <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
                                     Work: {format(parseISO(inv.start_date), 'dd MMM')} – {format(parseISO(inv.end_date), 'dd MMM yyyy')}
