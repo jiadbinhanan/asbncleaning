@@ -136,6 +136,26 @@ export default function InstantPOS({
   const [history, setHistory] = useState<any[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [monthlyInvoices, setMonthlyInvoices] = useState<any[]>([]);
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+  const profilesMapRef = useRef<Record<string, string>>({});
+  profilesMapRef.current = profilesMap;
+
+  // ── Helper: Scope profile lookup only to creator IDs that the page needs ─────
+  const loadProfilesForIds = useCallback(async (ids: (string | null | undefined)[]) => {
+    const validIds = ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0);
+    const missingIds = Array.from(new Set(validIds.filter(id => !profilesMapRef.current[id])));
+    if (missingIds.length === 0) return;
+    const { data } = await supabase.from("profiles").select("id, username, full_name").in("id", missingIds);
+    if (data && data.length > 0) {
+      setProfilesMap(prev => {
+        const next = { ...prev };
+        data.forEach((p: any) => {
+          next[p.id] = p.username || p.full_name || "Admin";
+        });
+        return next;
+      });
+    }
+  }, [supabase]);
 
   // ── Invoice Header ─────────────────────────────────────────────────────────
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -211,6 +231,7 @@ export default function InstantPOS({
       supabase
         .from("invoices")
         .select("id, invoice_no, is_paid, instant_invoice_ids")
+        .order("invoice_date", { ascending: false })
         .order("created_at", { ascending: false }),
       supabase
         .from("instant_invoices")
@@ -219,7 +240,10 @@ export default function InstantPOS({
         .limit(1),
     ]);
 
-    if (instRes.data) setHistory(instRes.data);
+    if (instRes.data) {
+      setHistory(instRes.data);
+      loadProfilesForIds(instRes.data.map((i: any) => i.created_by));
+    }
     if (monthlyRes.data) setMonthlyInvoices(monthlyRes.data);
 
     const earliest = earliestRes.data?.[0]?.invoice_date || null;
@@ -255,6 +279,7 @@ export default function InstantPOS({
           const newItems = data.filter(i => !existingIds.has(i.id));
           return [...prev, ...newItems];
         });
+        loadProfilesForIds(data.map((i: any) => i.created_by));
       }
 
       setCursorEndDate(nextStart);
@@ -267,7 +292,7 @@ export default function InstantPOS({
     } finally {
       setLoadingMore(false);
     }
-  }, [cursorEndDate, earliestInvoiceDate, hasMoreHistory, loadingMore, dateFilterPreset, supabase]);
+  }, [cursorEndDate, earliestInvoiceDate, hasMoreHistory, loadingMore, dateFilterPreset, supabase, loadProfilesForIds]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -299,13 +324,14 @@ export default function InstantPOS({
           .order("created_at", { ascending: false });
         if (data) {
           setHistory(data);
+          loadProfilesForIds(data.map((i: any) => i.created_by));
           setHasMoreHistory(false);
         }
         setLoadingMore(false);
       };
       fetchAll();
     }
-  }, [dateFilterPreset, hasMoreHistory, supabase]);
+  }, [dateFilterPreset, hasMoreHistory, supabase, loadProfilesForIds]);
 
   useEffect(() => {
     if (activeTab === "history") fetchHistory();
@@ -1268,10 +1294,17 @@ export default function InstantPOS({
                           }`}
                         >
                           <div className="flex justify-between items-start mb-4">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1">
-                              <Calendar size={10} />
-                              {format(parseISO(inv.invoice_date || inv.created_at), "dd MMM yyyy")}
-                            </span>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1">
+                                <Calendar size={10} />
+                                {format(parseISO(inv.invoice_date || inv.created_at), "dd MMM yyyy")}
+                              </span>
+                              {inv.created_at && (
+                                <p className="text-[9px] font-medium text-gray-400 mt-1 pl-0.5">
+                                  Created: {format(new Date(inv.created_at), "dd MMM yyyy, hh:mm a")}{inv.created_by && profilesMap[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ""}
+                                </p>
+                              )}
+                            </div>
                             {mergedIntoMonthly ? (
                               <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border flex items-center gap-1 ${effectivePaid ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-teal-100 text-teal-700 border-teal-300"}`}>
                                 {effectivePaid ? <><CheckCircle2 size={12} /> Paid</> : <><Layers size={12} /> Merged</>}

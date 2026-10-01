@@ -80,8 +80,8 @@ export default function RevenueDashboard() {
     }
 
     const [invRes, instRes, bookRes, configRes, expRes] = await Promise.all([
-      supabase.from('invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id, instant_invoice_ids').gte('end_date', `${startDateStr}T00:00:00.000Z`).lte('end_date', `${endDateStr}T23:59:59.999Z`),
-      supabase.from('instant_invoices').select('id, invoice_no, subtotal, discount, total_amount, is_paid, created_at, payment_date, client_type, customer_name, merged_into_monthly, pdf_url, company_id, companies(name)').gte('created_at', `${startDateStr}T00:00:00.000Z`).lte('created_at', `${endDateStr}T23:59:59.999Z`),
+      supabase.from('invoices').select('id, invoice_no, invoice_date, subtotal, discount, total_amount, is_paid, created_at, payment_date, company_name, start_date, end_date, pdf_url, company_id, instant_invoice_ids').gte('end_date', `${startDateStr}T00:00:00.000Z`).lte('end_date', `${endDateStr}T23:59:59.999Z`),
+      supabase.from('instant_invoices').select('id, invoice_no, invoice_date, subtotal, discount, total_amount, is_paid, created_at, payment_date, client_type, customer_name, merged_into_monthly, pdf_url, company_id, companies(name)').gte('invoice_date', startDateStr).lte('invoice_date', endDateStr),
       supabase.from('bookings').select(`
         id, cleaning_date, status, price, invoice_no, unit_id, booking_ref, service_type,
         units ( unit_number, building_name, company_id, companies (name) ),
@@ -211,10 +211,10 @@ export default function RevenueDashboard() {
 
     return days.map(day => {
       const bookedToday = filteredBookings.filter(b => isSameDay(parseISO(b.cleaning_date), day)).reduce((sum, b) => sum + b.grandTotal, 0);
-      const instantToday = filteredInstant.filter(i => isSameDay(parseISO(i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
+      const instantToday = filteredInstant.filter(i => isSameDay(parseISO(i.invoice_date || i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
 
-      const collMonthly = filteredInvoices.filter(i => i.is_paid && isSameDay(parseISO(i.payment_date || i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
-      const collInstant = filteredInstant.filter(i => i.is_paid && !i.merged_into_monthly && isSameDay(parseISO(i.payment_date || i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
+      const collMonthly = filteredInvoices.filter(i => i.is_paid && isSameDay(parseISO(i.payment_date || i.invoice_date || i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
+      const collInstant = filteredInstant.filter(i => i.is_paid && !i.merged_into_monthly && isSameDay(parseISO(i.payment_date || i.invoice_date || i.created_at), day)).reduce((sum, i) => sum + Number(i.total_amount), 0);
 
       return {
         date: format(day, 'dd MMM'),
@@ -318,12 +318,12 @@ export default function RevenueDashboard() {
         .map((iid: string) => instantInvoices.find((ii: any) => ii.id === iid))
         .filter(Boolean);
       const mergedAmount = mergedInstants.reduce((sum: number, inst: any) => sum + Number(inst.total_amount), 0);
-      list.push({ ...inv, origin: 'Monthly Contract', date: inv.created_at, name: inv.company_name, mergedAmount, mergedInstants });
+      list.push({ ...inv, origin: 'Monthly Contract', date: inv.invoice_date || inv.created_at, name: inv.company_name, mergedAmount, mergedInstants });
     });
 
     filteredInstant.filter(i => !i.merged_into_monthly).forEach(i => {
       const name = i.client_type === 'registered' ? i.companies?.name : i.customer_name;
-      list.push({ ...i, origin: 'Instant POS', date: i.created_at, name });
+      list.push({ ...i, origin: 'Instant POS', date: i.invoice_date || i.created_at, name });
     });
 
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

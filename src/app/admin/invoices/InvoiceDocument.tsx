@@ -249,14 +249,24 @@ const S = StyleSheet.create({
   pageBandText: { fontSize: 7, color: C.textMuted, fontWeight: 600 },
 });
 
+const fmtBillDate = (raw: any): string => {
+  if (!raw) return '';
+  try {
+    const d = typeof raw === 'string'
+      ? parseISO(raw.includes('T') ? raw : `${raw}T00:00:00`)
+      : new Date(raw);
+    return isNaN(d.getTime()) ? '' : format(d, 'dd-MMM-yyyy');
+  } catch {
+    return '';
+  }
+};
+
 export const InvoiceDocument = ({ data }: any) => {
   const { invoiceNo, invoice_date, invoiceDate, date, companyName, bookings, instantBills, instantBillsByUnit, instantBillsNoUnit, subtotal,
           discountPercent, discountValue, discountRemarks, finalTotal, bankDetails, invoiceMode } = data || {};
 
   const rawDate = invoice_date || invoiceDate || date;
-  const issueDate = rawDate
-    ? (typeof rawDate === 'string' ? format(parseISO(rawDate.includes('T') ? rawDate : `${rawDate}T00:00:00`), 'dd-MMM-yyyy') : format(rawDate, 'dd-MMM-yyyy'))
-    : format(new Date(), 'dd-MMM-yyyy');
+  const issueDate = fmtBillDate(rawDate) || format(new Date(), 'dd-MMM-yyyy');
 
   let invoiceDuration = data?.duration;
   if (!invoiceDuration && bookings && bookings.length > 0) {
@@ -417,7 +427,7 @@ export const InvoiceDocument = ({ data }: any) => {
 
                     {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => {
                       const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-                      const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                      const billDateStr = fmtBillDate(matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at);
                       return (
                         <React.Fragment key={`pos-u-${eIdx}`}>
                           {/* Half Width Left Aligned Orange Box */}
@@ -473,7 +483,7 @@ export const InvoiceDocument = ({ data }: any) => {
 
               {instantBillsNoUnit.map((entry: any, eIdx: number) => {
                 const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-                const billDateStr = matchedBill?.created_at ? format(parseISO(matchedBill.created_at), 'dd-MMM-yyyy') : '';
+                const billDateStr = fmtBillDate(matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at);
                 return (
                   <React.Fragment key={`pos-nou-${eIdx}`}>
                     {/* Half Width Left Aligned Orange Box */}
