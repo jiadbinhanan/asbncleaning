@@ -137,7 +137,6 @@ export default function InstantPOS({
   const [units, setUnits] = useState<Unit[]>([]);
   const [monthlyInvoices, setMonthlyInvoices] = useState<any[]>([]);
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
-<<<<<<< HEAD
   const profilesMapRef = useRef<Record<string, string>>({});
   profilesMapRef.current = profilesMap;
 
@@ -157,8 +156,6 @@ export default function InstantPOS({
       });
     }
   }, [supabase]);
-=======
->>>>>>> 859f88a5094c4131c5098d3b0d4466a691ca7dbb
 
   // ── Invoice Header ─────────────────────────────────────────────────────────
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -224,7 +221,7 @@ export default function InstantPOS({
     const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // 2 full calendar months
     const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
 
-    const [instRes, monthlyRes, earliestRes, profRes] = await Promise.all([
+    const [instRes, monthlyRes, earliestRes] = await Promise.all([
       supabase
         .from("instant_invoices")
         .select("*, subtotal, discount, discount_remarks, companies(name)")
@@ -241,9 +238,6 @@ export default function InstantPOS({
         .select("invoice_date")
         .order("invoice_date", { ascending: true })
         .limit(1),
-      supabase
-        .from("profiles")
-        .select("id, username, full_name"),
     ]);
 
     if (instRes.data) {
@@ -251,13 +245,6 @@ export default function InstantPOS({
       loadProfilesForIds(instRes.data.map((i: any) => i.created_by));
     }
     if (monthlyRes.data) setMonthlyInvoices(monthlyRes.data);
-    if (profRes.data) {
-      const pMap: Record<string, string> = {};
-      profRes.data.forEach((p: any) => {
-        pMap[p.id] = p.username || p.full_name || 'Admin';
-      });
-      setProfilesMap(pMap);
-    }
 
     const earliest = earliestRes.data?.[0]?.invoice_date || null;
     setEarliestInvoiceDate(earliest);

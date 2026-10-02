@@ -427,16 +427,7 @@ export const InvoiceDocument = ({ data }: any) => {
 
                     {instantBillsByUnit[unitId].map((entry: any, eIdx: number) => {
                       const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-<<<<<<< HEAD
                       const billDateStr = fmtBillDate(matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at);
-=======
-                      const rawBillDate = matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at;
-                      const billDateStr = rawBillDate
-                        ? (typeof rawBillDate === 'string'
-                            ? format(parseISO(rawBillDate.includes('T') ? rawBillDate : `${rawBillDate}T00:00:00`), 'dd-MMM-yyyy')
-                            : format(rawBillDate, 'dd-MMM-yyyy'))
-                        : '';
->>>>>>> 859f88a5094c4131c5098d3b0d4466a691ca7dbb
                       return (
                         <React.Fragment key={`pos-u-${eIdx}`}>
                           {/* Half Width Left Aligned Orange Box */}
@@ -492,16 +483,7 @@ export const InvoiceDocument = ({ data }: any) => {
 
               {instantBillsNoUnit.map((entry: any, eIdx: number) => {
                 const matchedBill = instantBills?.find((b: any) => b.invoice_no === entry.billNo);
-<<<<<<< HEAD
                 const billDateStr = fmtBillDate(matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at);
-=======
-                const rawBillDate = matchedBill?.invoice_date || matchedBill?.invoiceDate || matchedBill?.created_at;
-                const billDateStr = rawBillDate
-                  ? (typeof rawBillDate === 'string'
-                      ? format(parseISO(rawBillDate.includes('T') ? rawBillDate : `${rawBillDate}T00:00:00`), 'dd-MMM-yyyy')
-                      : format(rawBillDate, 'dd-MMM-yyyy'))
-                  : '';
->>>>>>> 859f88a5094c4131c5098d3b0d4466a691ca7dbb
                 return (
                   <React.Fragment key={`pos-nou-${eIdx}`}>
                     {/* Half Width Left Aligned Orange Box */}
