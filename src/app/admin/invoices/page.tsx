@@ -273,6 +273,7 @@ export default function InvoiceManagement() {
   const [popoverData, setPopoverData] = useState<{ booking: any, x: number, y: number } | null>(null);
   const [popoverDeleting, setPopoverDeleting] = useState(false);
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+<<<<<<< HEAD
   const profilesMapRef = useRef<Record<string, string>>({});
   profilesMapRef.current = profilesMap;
 
@@ -292,6 +293,8 @@ export default function InvoiceManagement() {
       });
     }
   }, [supabase]);
+=======
+>>>>>>> 859f88a5094c4131c5098d3b0d4466a691ca7dbb
 
   // ── 1. Initial data fetch (Default: Last 2 Months) ─────────────────────────
   useEffect(() => {
@@ -301,7 +304,7 @@ export default function InvoiceManagement() {
       const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // Covers previous month + current month = 2 months
       const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
 
-      const [compRes, invRes, ucRes, instRes, earliestRes] = await Promise.all([
+      const [compRes, invRes, ucRes, instRes, earliestRes, profRes] = await Promise.all([
         supabase.from('companies').select('id, name').order('name'),
         supabase.from('invoices')
           .select('*')
@@ -316,6 +319,7 @@ export default function InvoiceManagement() {
           .select('invoice_date')
           .order('invoice_date', { ascending: true })
           .limit(1),
+        supabase.from('profiles').select('id, username, full_name'),
       ]);
 
       if (compRes.data) setCompanies(compRes.data);
@@ -325,6 +329,13 @@ export default function InvoiceManagement() {
       }
       if (ucRes.data) setUnitConfigs(ucRes.data);
       if (instRes.data) setAllInstantInvoices(instRes.data);
+      if (profRes.data) {
+        const pMap: Record<string, string> = {};
+        profRes.data.forEach((p: any) => {
+          pMap[p.id] = p.username || p.full_name || 'Admin';
+        });
+        setProfilesMap(pMap);
+      }
 
       const earliest = earliestRes.data?.[0]?.invoice_date || null;
       setEarliestInvoiceDate(earliest);
