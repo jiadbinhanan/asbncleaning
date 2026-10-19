@@ -120,9 +120,18 @@ export default function TeamLoginForm() {
         whileTap={{ scale: 0.98 }}
         disabled={loading} 
         type="submit" 
-        className="w-full py-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-2xl font-black text-lg hover:shadow-lg hover:shadow-teal-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        className={`w-full py-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-2xl font-black text-lg hover:shadow-lg hover:shadow-teal-500/25 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+          loading ? 'opacity-90 ring-2 ring-teal-400/50' : ''
+        }`}
       >
-        {loading ? <DotsLoader size="xs" variant="white" /> : <>Start Shift <ArrowRight size={20} /><Kbd variant="glass" size="xs">↵</Kbd></>}
+        {loading ? (
+          <DotsLoader size="sm" variant="white" label="Starting Shift..." />
+        ) : (
+          <>
+            Start Shift <ArrowRight size={20} />
+            <Kbd variant="glass" size="xs">↵</Kbd>
+          </>
+        )}
       </motion.button>
     </form>
   );

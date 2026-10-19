@@ -133,10 +133,12 @@ export default function AdminLoginForm() {
         whileTap={{ scale: 0.98 }}
         disabled={loading}
         type="submit"
-        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 dark:shadow-none hover:shadow-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        className={`w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 dark:shadow-none hover:shadow-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+          loading ? 'opacity-90 ring-2 ring-purple-400/50' : ''
+        }`}
       >
         {loading ? (
-          <DotsLoader size="xs" variant="white" />
+          <DotsLoader size="sm" variant="white" label="Verifying Admin Access..." />
         ) : (
           <>
             Access Admin Panel <ArrowRight size={18} />

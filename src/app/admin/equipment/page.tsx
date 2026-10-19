@@ -312,8 +312,59 @@ export default function EquipmentSetup() {
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden">
       
-      {/* 1. PREMIUM HEADER — Titanium Teal & Aqua Prism Waves (dark) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-teal-500/20 dark:shadow-[0_12px_40px_rgba(20,184,166,0.15)]">
+      {/* 1. MOBILE DEDICATED STICKY HEADER (Under TopNav h-16) */}
+      <div className="md:hidden sticky top-16 z-30 bg-[#0A192F]/95 dark:bg-[#070b14]/95 backdrop-blur-md border-b border-teal-500/20 px-3 py-2.5 text-white shadow-lg space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <Package size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-teal-300/80 leading-none">Inventory</p>
+              <h1 className="text-sm font-black text-white truncate">Equipment Setup</h1>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchInitialData}
+            aria-label="Refresh Equipment"
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all shrink-0"
+          >
+            <RotateCw size={15} />
+          </button>
+        </div>
+
+        {/* 3-View Segmented Switch on Mobile */}
+        <div className="flex bg-white/10 dark:bg-white/5 p-0.5 rounded-xl border border-white/10 w-full">
+          <button
+            onClick={() => setActiveView('master')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+              activeView === 'master' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <LayoutGrid size={13} /> Master
+          </button>
+          <button
+            onClick={() => setActiveView('templates')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+              activeView === 'templates' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <FileText size={13} /> Templates
+          </button>
+          <button
+            onClick={() => setActiveView('config')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+              activeView === 'config' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Settings size={13} /> Setups
+          </button>
+        </div>
+      </div>
+
+      {/* 2. PREMIUM HEADER (DESKTOP VIEW — 100% UNCHANGED) */}
+      <div className="hidden md:block bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-teal-500/20 dark:shadow-[0_12px_40px_rgba(20,184,166,0.15)]">
         {/* Light mode gradient */}
         <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
 
@@ -396,7 +447,7 @@ export default function EquipmentSetup() {
         </div>
       </div>
 
-      <div className="px-4 md:px-8 -mt-10 relative z-20">
+      <div className="px-3 md:px-8 mt-2 md:-mt-10 relative z-20 w-full max-w-full overflow-x-hidden">
         {loading ? (
           <TableSkeleton rows={6} cols={4} />
         ) : (
@@ -570,51 +621,53 @@ export default function EquipmentSetup() {
     <Trash2 size={14}/> Delete Template
   </button>
 </div>
-                      <table className="w-full text-left">
-                        <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                          <tr><th className="p-4">Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Price</th><th className="p-4 text-right">Action</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                        {templateConfigs.map((c: any) => (
-  <tr key={c.equipment_id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors group">
-    {editingTemplateItem === c.equipment_id ? (
-      <>
-        <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
-        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.qty} onChange={e => setEditTemplateItemData({...editTemplateItemData, qty: e.target.value})} className="w-20 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
-        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.price} onChange={e => setEditTemplateItemData({...editTemplateItemData, price: e.target.value})} className="w-24 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
-        <td className="p-4 text-right flex justify-end gap-2">
-          <button onClick={async () => {
-            const template = templates.find(t => t.id.toString() === selectedTemplate);
-            if (!template) return;
-            const updatedItems = template.items.map((i: any) =>
-              i.equipment_id === c.equipment_id
-                ? { ...i, standard_qty: parseInt(editTemplateItemData.qty) || 0, extra_unit_price: parseFloat(editTemplateItemData.price) || 0 }
-                : i
-            );
-            const { data, error } = await supabase.from('equipment_templates').update({ items: updatedItems }).eq('id', selectedTemplate).select();
-            if (data) {
-              setTemplates(templates.map(t => t.id.toString() === selectedTemplate ? data[0] : t));
-              setEditingTemplateItem(null);
-            } else alert(error?.message);
-          }} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
-          <button onClick={() => setEditingTemplateItem(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
-        </td>
-      </>
-    ) : (
-      <>
-        <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
-        <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.standard_qty}</td>
-        <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.extra_unit_price}</td>
-        <td className="p-4 text-right space-x-2">
-          <button onClick={() => { setEditingTemplateItem(c.equipment_id); setEditTemplateItemData({ qty: c.standard_qty.toString(), price: c.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={16}/></button>
-          <button onClick={() => deleteTemplateItem(c.equipment_id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
-        </td>
-      </>
-    )}
-  </tr>
-))}
-                        </tbody>
-                      </table>
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left">
+                          <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            <tr><th className="p-4">Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Price</th><th className="p-4 text-right">Action</th></tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                          {templateConfigs.map((c: any) => (
+    <tr key={c.equipment_id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors group">
+      {editingTemplateItem === c.equipment_id ? (
+        <>
+          <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+          <td className="p-4 text-center"><input type="number" value={editTemplateItemData.qty} onChange={e => setEditTemplateItemData({...editTemplateItemData, qty: e.target.value})} className="w-20 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+          <td className="p-4 text-center"><input type="number" value={editTemplateItemData.price} onChange={e => setEditTemplateItemData({...editTemplateItemData, price: e.target.value})} className="w-24 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+          <td className="p-4 text-right flex justify-end gap-2">
+            <button onClick={async () => {
+              const template = templates.find(t => t.id.toString() === selectedTemplate);
+              if (!template) return;
+              const updatedItems = template.items.map((i: any) =>
+                i.equipment_id === c.equipment_id
+                  ? { ...i, standard_qty: parseInt(editTemplateItemData.qty) || 0, extra_unit_price: parseFloat(editTemplateItemData.price) || 0 }
+                  : i
+              );
+              const { data, error } = await supabase.from('equipment_templates').update({ items: updatedItems }).eq('id', selectedTemplate).select();
+              if (data) {
+                setTemplates(templates.map(t => t.id.toString() === selectedTemplate ? data[0] : t));
+                setEditingTemplateItem(null);
+              } else alert(error?.message);
+            }} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
+            <button onClick={() => setEditingTemplateItem(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
+          </td>
+        </>
+      ) : (
+        <>
+          <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+          <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.standard_qty}</td>
+          <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.extra_unit_price}</td>
+          <td className="p-4 text-right space-x-2">
+            <button onClick={() => { setEditingTemplateItem(c.equipment_id); setEditTemplateItemData({ qty: c.standard_qty.toString(), price: c.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={16}/></button>
+            <button onClick={() => deleteTemplateItem(c.equipment_id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
+          </td>
+        </>
+      )}
+    </tr>
+  ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </motion.div>
                   ) : (
                     <div className="h-full bg-gray-50 dark:bg-[#0c1427] rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 gap-4 min-h-[400px]">
@@ -756,41 +809,43 @@ export default function EquipmentSetup() {
                         </div>
                         <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-black border border-white/20 shadow-inner">{unitConfigs.length} Items</span>
                       </div>
-                      <table className="w-full text-left">
-                        <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                          <tr><th className="p-4">Equipment Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Charge</th><th className="p-4 text-right">Action</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                          {unitConfigs.map(config => (
-                            <tr key={config.id} className="hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 transition-colors group">
-                              {editingConfigId === config.id ? (
-                                <>
-                                  <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name}</td>
-                                  <td className="p-4 text-center"><input type="number" value={editConfigData.qty} onChange={e => setEditConfigData({...editConfigData, qty: e.target.value})} className="w-20 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
-                                  <td className="p-4 text-center"><input type="number" value={editConfigData.price} onChange={e => setEditConfigData({...editConfigData, price: e.target.value})} className="w-24 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
-                                  <td className="p-4 text-right flex justify-end gap-2">
-                                    <button onClick={() => saveEditUnitConfig(config.id)} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
-                                    <button onClick={() => setEditingConfigId(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
-                                  </td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name} <br/><TypeBadge type={config.equipment_master?.item_type}/></td>
-                                  <td className="p-4 text-center"><span className="bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 px-3 py-1.5 rounded-md font-black text-xs border border-gray-200 dark:border-slate-700">{config.standard_qty} Qty</span></td>
-                                  <td className="p-4 text-center font-black text-gray-900 dark:text-white">{config.extra_unit_price} AED</td>
-                                  <td className="p-4 text-right space-x-2">
-                                    <button onClick={() => { setEditingConfigId(config.id); setEditConfigData({ qty: config.standard_qty.toString(), price: config.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Edit2 size={18}/></button>
-                                    <button onClick={() => deleteConfig(config.id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
-                                  </td>
-                                </>
-                              )}
-                            </tr>
-                          ))}
-                          {unitConfigs.length === 0 && (
-                            <tr><td colSpan={4} className="p-16 text-center text-gray-400 dark:text-slate-500 font-bold"><Info size={40} className="mx-auto mb-2 opacity-20"/> No items configured. Apply a template or add manually.</td></tr>
-                          )}
-                        </tbody>
-                      </table>
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left">
+                          <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            <tr><th className="p-4">Equipment Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Charge</th><th className="p-4 text-right">Action</th></tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                            {unitConfigs.map(config => (
+                              <tr key={config.id} className="hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 transition-colors group">
+                                {editingConfigId === config.id ? (
+                                  <>
+                                    <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name}</td>
+                                    <td className="p-4 text-center"><input type="number" value={editConfigData.qty} onChange={e => setEditConfigData({...editConfigData, qty: e.target.value})} className="w-20 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+                                    <td className="p-4 text-center"><input type="number" value={editConfigData.price} onChange={e => setEditConfigData({...editConfigData, price: e.target.value})} className="w-24 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+                                    <td className="p-4 text-right flex justify-end gap-2">
+                                      <button onClick={() => saveEditUnitConfig(config.id)} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
+                                      <button onClick={() => setEditingConfigId(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name} <br/><TypeBadge type={config.equipment_master?.item_type}/></td>
+                                    <td className="p-4 text-center"><span className="bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 px-3 py-1.5 rounded-md font-black text-xs border border-gray-200 dark:border-slate-700">{config.standard_qty} Qty</span></td>
+                                    <td className="p-4 text-center font-black text-gray-900 dark:text-white">{config.extra_unit_price} AED</td>
+                                    <td className="p-4 text-right space-x-2">
+                                      <button onClick={() => { setEditingConfigId(config.id); setEditConfigData({ qty: config.standard_qty.toString(), price: config.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Edit2 size={18}/></button>
+                                      <button onClick={() => deleteConfig(config.id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ))}
+                            {unitConfigs.length === 0 && (
+                              <tr><td colSpan={4} className="p-16 text-center text-gray-400 dark:text-slate-500 font-bold"><Info size={40} className="mx-auto mb-2 opacity-20"/> No items configured. Apply a template or add manually.</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </motion.div>
                   ) : (
                     <div className="h-full bg-gray-50 dark:bg-[#0c1427] rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 gap-4 min-h-[500px]">

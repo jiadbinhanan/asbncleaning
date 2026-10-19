@@ -132,10 +132,12 @@ export default function SupervisorLoginForm() {
         whileTap={{ scale: 0.98 }}
         disabled={loading}
         type="submit"
-        className="w-full py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 hover:shadow-xl hover:from-orange-700 hover:to-amber-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        className={`w-full py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 hover:shadow-xl hover:from-orange-700 hover:to-amber-700 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+          loading ? 'opacity-90 ring-2 ring-amber-400/50' : ''
+        }`}
       >
         {loading ? (
-          <DotsLoader size="xs" variant="white" />
+          <DotsLoader size="sm" variant="white" label="Signing in..." />
         ) : (
           <>
             Access Supervisor Panel <ArrowRight size={18} />

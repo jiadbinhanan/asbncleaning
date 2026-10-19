@@ -23,6 +23,7 @@ export default function AdminLaundryManagement() {
   // Tabs
   const [activeTab, setActiveTab] = useState<'send' | 'receive'>('send');
   const [viewMode, setViewMode] = useState<'pending' | 'history'>('pending');
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const fetchLaundry = async () => {
     setLoading(true);
@@ -231,8 +232,102 @@ export default function AdminLaundryManagement() {
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden">
       
-      {/* 1. PREMIUM ADMIN HEADER — Bioluminescent Ocean & Tidal Waves (dark) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.18)]">
+      {/* 1. MOBILE DEDICATED STICKY HEADER (Under TopNav h-16) */}
+      <div className="md:hidden sticky top-16 z-30 bg-[#0A192F]/95 dark:bg-[#070b14]/95 backdrop-blur-md border-b border-cyan-500/20 px-3 py-2.5 text-white shadow-lg space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <WashingMachine size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-cyan-300/80 leading-none">Operations</p>
+              <h1 className="text-sm font-black text-white truncate">Laundry Hub</h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+              aria-label="Toggle Search"
+              className={`p-1.5 rounded-lg border transition-all ${
+                showMobileSearch || searchQuery
+                  ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/40"
+                  : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+              }`}
+            >
+              <Search size={15} />
+            </button>
+            <button
+              onClick={fetchLaundry}
+              aria-label="Refresh Laundry"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all"
+            >
+              <RotateCw size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Dual Segmented Controls on Mobile */}
+        <div className="flex items-center gap-2">
+          {/* Dispatch vs Receive */}
+          <div className="flex bg-white/10 dark:bg-white/5 p-0.5 rounded-xl border border-white/10 flex-1">
+            <button
+              onClick={() => { setActiveTab('send'); setViewMode('pending'); }}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+                activeTab === 'send' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Send size={12} /> Dispatch
+            </button>
+            <button
+              onClick={() => { setActiveTab('receive'); setViewMode('pending'); }}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+                activeTab === 'receive' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <PackageCheck size={12} /> Receive
+            </button>
+          </div>
+
+          {/* Action vs History */}
+          <div className="flex bg-white/10 dark:bg-white/5 p-0.5 rounded-xl border border-white/10 shrink-0">
+            <button
+              onClick={() => setViewMode('pending')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                viewMode === 'pending' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Action
+            </button>
+            <button
+              onClick={() => setViewMode('history')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                viewMode === 'history' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <History size={11} /> History
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsible Mobile Search Input */}
+        {showMobileSearch && (
+          <div className="relative pt-1 animate-fadeIn">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cyan-300" size={14} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search Ref, Unit..."
+              className="w-full pl-8 pr-3 py-1.5 bg-white/10 border border-white/20 rounded-lg text-xs font-bold text-white placeholder:text-gray-400 outline-none focus:bg-white/20 focus:border-cyan-400/50"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 2. PREMIUM ADMIN HEADER (DESKTOP VIEW — 100% UNCHANGED) */}
+      <div className="hidden md:block bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.18)]">
         {/* Light mode gradient */}
         <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
 
@@ -301,7 +396,6 @@ export default function AdminLaundryManagement() {
               </h1>
            </div>
            
-           {/* 🚨 FIXED: Used flex-col-reverse for mobile (Tabs top, Search bottom) and md:flex-row for desktop */}
            <div className="flex flex-col-reverse md:flex-row items-center gap-4 w-full md:w-auto">
              
              {/* Search Bar */}
@@ -342,10 +436,10 @@ export default function AdminLaundryManagement() {
         </div>
       </div>
 
-      <div className="px-4 md:px-8 -mt-8 relative z-20">
+      <div className="px-3 md:px-8 mt-2 md:-mt-8 relative z-20 w-full max-w-full overflow-x-hidden">
         
-        {/* SUB-TABS (Pending / History) */}
-        <div className="flex bg-white dark:bg-[#0c1427] p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 w-fit mb-6">
+        {/* SUB-TABS (Pending / History) - Hidden on Mobile since mobile header has segmented controls */}
+        <div className="hidden md:flex bg-white dark:bg-[#0c1427] p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 w-fit mb-6">
             <button onClick={() => setViewMode('pending')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${viewMode === 'pending' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'}`}>
               Action Needed
             </button>

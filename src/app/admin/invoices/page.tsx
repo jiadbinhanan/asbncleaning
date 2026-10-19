@@ -821,7 +821,7 @@ export default function InvoiceManagement() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       <Toaster position="top-center" />
 
       {/* Delete modal (History tab) */}
@@ -843,110 +843,200 @@ export default function InvoiceManagement() {
         )}
       </AnimatePresence>
 
-      {/* ── HEADER — Electric Sapphire & Cyber Violet Waves (dark) ── */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 shadow-2xl relative overflow-hidden dark:border-b dark:border-indigo-500/20 dark:shadow-[0_12px_40px_rgba(99,102,241,0.15)]">
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
-
-        {/* Dark mode multi-color sapphire violet gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #040817 0%, #0a1332 20%, #161042 42%, #0f1f45 68%, #050d22 100%)' }} />
-
-        {/* Dark mode glowing sapphire orbs */}
-        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-indigo-600/22 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/18 rounded-full blur-[90px] pointer-events-none' />
-        <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[80px] pointer-events-none' />
-
-        {/* Dark mode SVG Electric Sapphire Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="inv-page-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.32" />
-                <stop offset="35%" stopColor="#6366F1" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.20" />
-                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.08" />
-              </linearGradient>
-              <linearGradient id="inv-page-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.28" />
-                <stop offset="40%" stopColor="#38BDF8" stopOpacity="0.22" />
-                <stop offset="75%" stopColor="#1E40AF" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.05" />
-              </linearGradient>
-              <linearGradient id="inv-page-crest1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#818CF8" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#C084FC" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="inv-page-crest2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#818CF8" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="inv-page-glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#inv-page-wave1)" />
-            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#inv-page-crest1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#inv-page-glow)" />
-            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#inv-page-wave2)" />
-            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#inv-page-crest2)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#inv-page-crest1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between py-6 gap-6">
-
-          {/* Left: Title */}
-          <div className="shrink-0 w-full md:w-auto">
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-              <FileDigit className="text-blue-500 dark:text-cyan-400" size={30} /> Billing & Invoices
-            </h1>
-            <p className="text-blue-300 dark:text-indigo-200 font-bold mt-1 text-sm">Generate automated PDF invoices and manage billing history.</p>
+      {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#040817]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-indigo-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+        {/* Top bar */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-indigo-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <FileDigit size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Invoices
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-indigo-300/80">
+                {activeMainTab === 'monthly' ? (activeTab === 'history' ? `${filteredHistory.length} invoices` : 'Monthly Billing') : 'Instant POS'}
+              </p>
+            </div>
           </div>
 
-          {/* Right: Navigation (Stacked, 2 on top, 2 on bottom) */}
-          <div className="shrink-0 flex flex-col gap-2 w-full max-w-[260px] md:self-end">
-            {/* Row 1: Invoice type */}
-            <div className="flex bg-white/10 p-1 rounded-xl border border-white/10 gap-1 w-full">
-              <button
-                onClick={() => setActiveMainTab('monthly')}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeMainTab === 'monthly' ? 'bg-blue-600 text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <Calendar size={13} /> Monthly
-              </button>
-              <button
-                onClick={() => setActiveMainTab('instant')}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <PackagePlus size={13} /> Instant POS
-              </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {activeTab === 'history' && (
+              <>
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                    showAdvancedFilters || activeFilterCount > 0 ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+                  }`}
+                  title="Filters"
+                  aria-label="Filters"
+                >
+                  <SlidersHorizontal size={15} />
+                </button>
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="p-2 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Export"
+                  aria-label="Export"
+                >
+                  <Download size={15} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Dual Segmented Controls */}
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+          {/* Main Tab (Monthly / Instant) */}
+          <div className="flex bg-gray-100 dark:bg-[#0c1427] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800">
+            <button
+              onClick={() => setActiveMainTab('monthly')}
+              className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
+                activeMainTab === 'monthly' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              }`}
+            >
+              <Calendar size={11} /> Monthly
+            </button>
+            <button
+              onClick={() => setActiveMainTab('instant')}
+              className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
+                activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              }`}
+            >
+              <PackagePlus size={11} /> POS
+            </button>
+          </div>
+
+          {/* Sub Tab (Generate / History) */}
+          <div className="flex bg-gray-100 dark:bg-[#0c1427] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800">
+            <button
+              onClick={() => setActiveTab('generate')}
+              className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
+                activeTab === 'generate' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-gray-500 dark:text-slate-400'
+              }`}
+            >
+              <PlusCircle size={11} /> New
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
+                activeTab === 'history' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-gray-500 dark:text-slate-400'
+              }`}
+            >
+              <History size={11} /> History
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 shadow-2xl relative overflow-hidden dark:border-b dark:border-indigo-500/20 dark:shadow-[0_12px_40px_rgba(99,102,241,0.15)]">
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color sapphire violet gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #040817 0%, #0a1332 20%, #161042 42%, #0f1f45 68%, #050d22 100%)' }} />
+
+          {/* Dark mode glowing sapphire orbs */}
+          <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-indigo-600/22 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/18 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[80px] pointer-events-none' />
+
+          {/* Dark mode SVG Electric Sapphire Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="inv-page-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#6366F1" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.08" />
+                </linearGradient>
+                <linearGradient id="inv-page-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.28" />
+                  <stop offset="40%" stopColor="#38BDF8" stopOpacity="0.22" />
+                  <stop offset="75%" stopColor="#1E40AF" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="inv-page-crest1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#818CF8" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#C084FC" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="inv-page-crest2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#818CF8" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="inv-page-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#inv-page-wave1)" />
+              <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#inv-page-crest1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#inv-page-glow)" />
+              <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#inv-page-wave2)" />
+              <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#inv-page-crest2)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#inv-page-crest1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between py-6 gap-6">
+
+            {/* Left: Title */}
+            <div className="shrink-0 w-full md:w-auto">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+                <FileDigit className="text-blue-500 dark:text-cyan-400" size={30} /> Billing & Invoices
+              </h1>
+              <p className="text-blue-300 dark:text-indigo-200 font-bold mt-1 text-sm">Generate automated PDF invoices and manage billing history.</p>
             </div>
-            {/* Row 2: Action */}
-            <div className="flex bg-white/10 p-1 rounded-xl border border-white/10 gap-1 w-full">
-              <button
-                onClick={() => setActiveTab('generate')}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeTab === 'generate' ? (activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'bg-blue-600 text-white shadow') : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <PlusCircle size={13} /> {activeMainTab === 'instant' ? 'New Bill' : 'Generate New'}
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeTab === 'history' ? (activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'bg-blue-600 text-white shadow') : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-              >
-                <History size={13} /> View History
-              </button>
+
+            {/* Right: Navigation (Stacked, 2 on top, 2 on bottom) */}
+            <div className="shrink-0 flex flex-col gap-2 w-full max-w-[260px] md:self-end">
+              {/* Row 1: Invoice type */}
+              <div className="flex bg-white/10 p-1 rounded-xl border border-white/10 gap-1 w-full">
+                <button
+                  onClick={() => setActiveMainTab('monthly')}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeMainTab === 'monthly' ? 'bg-blue-600 text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <Calendar size={13} /> Monthly
+                </button>
+                <button
+                  onClick={() => setActiveMainTab('instant')}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <PackagePlus size={13} /> Instant POS
+                </button>
+              </div>
+              {/* Row 2: Action */}
+              <div className="flex bg-white/10 p-1 rounded-xl border border-white/10 gap-1 w-full">
+                <button
+                  onClick={() => setActiveTab('generate')}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeTab === 'generate' ? (activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'bg-blue-600 text-white shadow') : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <PlusCircle size={13} /> {activeMainTab === 'instant' ? 'New Bill' : 'Generate New'}
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1.5 ${activeTab === 'history' ? (activeMainTab === 'instant' ? 'bg-indigo-500 text-white shadow' : 'bg-blue-600 text-white shadow') : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <History size={13} /> View History
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="w-full px-6 md:px-10 pt-8 relative z-10">
+      <div className="w-full px-3 md:px-10 pt-4 md:pt-8 relative z-10 max-w-full overflow-x-hidden">
 
         {activeMainTab === 'monthly' ? (
           <>

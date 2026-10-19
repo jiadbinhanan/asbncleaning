@@ -334,77 +334,140 @@ export default function AdminTeamManagement() {
   // JSX
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen pb-20 font-sans text-gray-800 dark:text-slate-200 bg-[#F8FAFC] dark:bg-[#070b14]">
+    <div className="min-h-screen pb-20 font-sans text-gray-800 dark:text-slate-200 bg-[#F8FAFC] dark:bg-[#070b14] w-full max-w-full overflow-x-hidden">
 
-      {/* HEADER */}
-      <div className="bg-gradient-to-br from-[#050d1a] via-[#0b192e] to-[#04121d] dark:from-[#030914] dark:via-[#071326] dark:to-[#040e1a] text-white pt-10 pb-24 px-6 md:px-12 shadow-2xl relative overflow-hidden transition-all duration-300">
-        {/* Dark mode Ambient Glow Orbs */}
-        <div className="absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-600/20 rounded-full blur-[90px] pointer-events-none" />
-        <div className="absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-teal-500/15 rounded-full blur-[80px] pointer-events-none" />
+      {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#040e1a]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <Briefcase size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Team Directory
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+                {activeTab === 'active' ? `${activeTeams.length} squads` : `${archivedTeams.length} archived`}
+              </p>
+            </div>
+          </div>
 
-        {/* Dark mode SVG Oceanic Waves */}
-        <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block">
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="teams-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.30" />
-                <stop offset="40%" stopColor="#3B82F6" stopOpacity="0.22" />
-                <stop offset="75%" stopColor="#6366F1" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#14B8A6" stopOpacity="0.10" />
-              </linearGradient>
-              <linearGradient id="teams-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.26" />
-                <stop offset="50%" stopColor="#2DD4BF" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.12" />
-              </linearGradient>
-              <linearGradient id="teams-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.95" />
-                <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#818CF8" stopOpacity="0.85" />
-              </linearGradient>
-              <linearGradient id="teams-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.90" />
-                <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.90" />
-                <stop offset="100%" stopColor="#6366F1" stopOpacity="0.80" />
-              </linearGradient>
-              <filter id="teams-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#teams-grad-wave1)" />
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#teams-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#teams-glow-cyan)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#teams-grad-wave2)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#teams-crest-2)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#teams-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* New Squad */}
+            <button
+              onClick={openCreateModal}
+              className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+            >
+              <UserPlus size={14} /> Add
+            </button>
+          </div>
         </div>
 
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
-
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-              <Briefcase className="text-cyan-400" size={36} /> Team Directory
-            </h1>
-            <p className="text-cyan-200/80 font-bold mt-2">Manage daily shift squads and agent allocations</p>
-          </div>
+        {/* Tab Pill Buttons */}
+        <div className="flex bg-gray-100 dark:bg-[#081528] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800 mt-2">
           <button
-            onClick={openCreateModal}
-            className="px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-black transition-all flex items-center gap-2 shadow-lg shadow-cyan-900/40"
+            onClick={() => { setActiveTab('active'); closeAssignPanel(); }}
+            className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all ${
+              activeTab === 'active' ? 'bg-white dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 shadow-sm' : 'text-gray-500 dark:text-slate-400'
+            }`}
           >
-            <UserPlus size={16} /> Add New Squad
+            Active Roster
           </button>
+          <button
+            onClick={() => { setActiveTab('archived'); closeAssignPanel(); }}
+            className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all ${
+              activeTab === 'archived' ? 'bg-white dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 shadow-sm' : 'text-gray-500 dark:text-slate-400'
+            }`}
+          >
+            Archived History
+          </button>
+        </div>
+
+        {activeTab === 'archived' && (
+          <div className="flex items-center gap-2 mt-2 bg-gray-50 dark:bg-[#0c1a30] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-cyan-500/20">
+            <Filter size={14} className="text-cyan-500 shrink-0" />
+            <input
+              type="date"
+              value={archiveDate}
+              onChange={e => setArchiveDate(e.target.value)}
+              className="bg-transparent outline-none text-gray-700 dark:text-slate-200 font-bold text-xs w-full cursor-pointer"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-[#050d1a] via-[#0b192e] to-[#04121d] dark:from-[#030914] dark:via-[#071326] dark:to-[#040e1a] text-white pt-10 pb-24 px-6 md:px-12 shadow-2xl relative overflow-hidden transition-all duration-300">
+          {/* Dark mode Ambient Glow Orbs */}
+          <div className="absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-600/20 rounded-full blur-[90px] pointer-events-none" />
+          <div className="absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-teal-500/15 rounded-full blur-[80px] pointer-events-none" />
+
+          {/* Dark mode SVG Oceanic Waves */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block">
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="teams-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.30" />
+                  <stop offset="40%" stopColor="#3B82F6" stopOpacity="0.22" />
+                  <stop offset="75%" stopColor="#6366F1" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#14B8A6" stopOpacity="0.10" />
+                </linearGradient>
+                <linearGradient id="teams-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.26" />
+                  <stop offset="50%" stopColor="#2DD4BF" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.12" />
+                </linearGradient>
+                <linearGradient id="teams-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.95" />
+                  <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#818CF8" stopOpacity="0.85" />
+                </linearGradient>
+                <linearGradient id="teams-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.90" />
+                  <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.90" />
+                  <stop offset="100%" stopColor="#6366F1" stopOpacity="0.80" />
+                </linearGradient>
+                <filter id="teams-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#teams-grad-wave1)" />
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#teams-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#teams-glow-cyan)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#teams-grad-wave2)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#teams-crest-2)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#teams-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                <Briefcase className="text-cyan-400" size={36} /> Team Directory
+              </h1>
+              <p className="text-cyan-200/80 font-bold mt-2">Manage daily shift squads and agent allocations</p>
+            </div>
+            <button
+              onClick={openCreateModal}
+              className="px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-black transition-all flex items-center gap-2 shadow-lg shadow-cyan-900/40"
+            >
+              <UserPlus size={16} /> Add New Squad
+            </button>
+          </div>
         </div>
       </div>
 
       {/* MAIN */}
-      <div className="px-4 md:px-8 -mt-10 relative z-20">
+      <div className="px-3 md:px-8 mt-2 md:-mt-10 relative z-20 w-full max-w-full overflow-x-hidden">
 
-        {/* Tabs & Top Filters */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Tabs & Top Filters (Desktop Only) */}
+        <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex bg-white dark:bg-[#060e1d]/80 dark:backdrop-blur-xl border border-gray-200 dark:border-cyan-500/20 p-1.5 rounded-2xl w-full md:w-auto shadow-sm">
             <button
               onClick={() => { setActiveTab('active'); closeAssignPanel(); }}

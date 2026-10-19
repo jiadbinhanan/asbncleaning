@@ -340,119 +340,179 @@ export default function CompanyManagement() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] font-sans pb-24">
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] font-sans pb-24 w-full max-w-full overflow-x-hidden">
         <Toaster position="top-center" />
-        {/* PREMIUM HEADER */}
-        <div className="bg-gradient-to-br from-[#080d1e] via-[#0f1730] to-[#121426] dark:from-[#050914] dark:via-[#091224] dark:to-[#080b18] text-white pt-10 pb-24 px-6 md:px-12 shadow-2xl relative overflow-hidden transition-all duration-300">
-          {/* Dark mode Ambient Glow Orbs */}
-          <div className="absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-700/20 rounded-full blur-[90px] pointer-events-none" />
-          <div className="absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-amber-500/15 rounded-full blur-[80px] pointer-events-none" />
 
-          {/* Dark mode SVG Golden Sapphire Waves */}
-          <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block">
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="comp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.30" />
-                  <stop offset="35%" stopColor="#6366F1" stopOpacity="0.22" />
-                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.10" />
-                </linearGradient>
-                <linearGradient id="comp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.26" />
-                  <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.18" />
-                  <stop offset="80%" stopColor="#4F46E5" stopOpacity="0.14" />
-                  <stop offset="100%" stopColor="#EAB308" stopOpacity="0.08" />
-                </linearGradient>
-                <linearGradient id="comp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.95" />
-                  <stop offset="50%" stopColor="#818CF8" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0.90" />
-                </linearGradient>
-                <linearGradient id="comp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.90" />
-                  <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.90" />
-                  <stop offset="100%" stopColor="#6366F1" stopOpacity="0.80" />
-                </linearGradient>
-                <filter id="comp-glow-sapphire" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3.5" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#comp-grad-wave1)" />
-              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#comp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#comp-glow-sapphire)" />
-              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#comp-grad-wave2)" />
-              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#comp-crest-2)" strokeWidth="2" strokeLinecap="round" />
-              <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#comp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-            </svg>
-          </div>
+        {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+        <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#050914]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-blue-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-amber-500/20 text-blue-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Building2 size={18} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                  Properties
+                </h1>
+                <p className="text-[10px] font-bold text-gray-500 dark:text-blue-300/80">
+                  {companies.length} clients registered
+                </p>
+              </div>
+            </div>
 
-          {/* Light mode decorative orbs */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden"></div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* View Toggle */}
+              <div className="flex bg-gray-100 dark:bg-slate-800 p-0.5 rounded-lg border border-gray-200 dark:border-slate-700">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+                  title="Grid View"
+                >
+                  <Grid size={14} />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+                  title="List View"
+                >
+                  <List size={14} />
+                </button>
+              </div>
 
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-           <div>
-             <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-               <Building2 className="text-blue-400 dark:text-amber-400" size={36}/> Client & Property Management
-             </h1>
-             <p className="text-blue-200 dark:text-blue-200/80 font-bold mt-2">Oversee all registered client companies and their respective properties.</p>
-           </div>
+              {/* Refresh */}
+              <button
+                onClick={fetchEverything}
+                disabled={loading}
+                className="p-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg border border-gray-200 dark:border-slate-700"
+                title="Refresh"
+              >
+                {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={14} />}
+              </button>
 
-           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-
-             {/* View Toggle */}
-             <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 items-center gap-1">
-               <button 
-                 onClick={() => setViewMode('grid')} 
-                 className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
-                 title="Grid View (1)"
-               >
-                 <Grid size={16}/>
-                 <Kbd variant="glass" size="xs">1</Kbd>
-               </button>
-               <button 
-                 onClick={() => setViewMode('list')} 
-                 className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
-                 title="List View (2)"
-               >
-                 <List size={16}/>
-                 <Kbd variant="glass" size="xs">2</Kbd>
-               </button>
-             </div>
-
-             {/* Refresh Button */}
-             <button
-               onClick={fetchEverything}
-               disabled={loading}
-               className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
-               title="Refresh (Alt+R)"
-             >
-               {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16}/>}
-               <Kbd variant="glass" size="xs">Alt+R</Kbd>
-             </button>
-
-             {/* Export Buttons */}
-             {viewMode === 'list' && (
-               <div className="flex gap-2">
-                 <button onClick={exportToPDF} className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-sm transition-all"><FileText size={16}/> PDF</button>
-                 <button onClick={exportToExcel} className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-sm transition-all"><Table size={16}/> Excel</button>
-               </div>
-             )}
-
-             <button 
-               onClick={() => setIsAddCompanyOpen(true)}
-               className="flex-1 md:flex-none px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/30"
-               title="Add Client (Alt+N)"
-             >
-               <Plus size={16}/> Add Client
-               <Kbd variant="glass" size="xs">Alt+N</Kbd>
-             </button>
-           </div>
+              {/* Add Client */}
+              <button
+                onClick={() => setIsAddCompanyOpen(true)}
+                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+              >
+                <Plus size={14} /> Add
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="px-4 md:px-8 -mt-12 relative z-20">
+        {/* ── DESKTOP PREMIUM HEADER (hidden md:block — 100% untouched) ── */}
+        <div className="hidden md:block">
+          <div className="bg-gradient-to-br from-[#080d1e] via-[#0f1730] to-[#121426] dark:from-[#050914] dark:via-[#091224] dark:to-[#080b18] text-white pt-10 pb-24 px-6 md:px-12 shadow-2xl relative overflow-hidden transition-all duration-300">
+            {/* Dark mode Ambient Glow Orbs */}
+            <div className="absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-700/20 rounded-full blur-[90px] pointer-events-none" />
+            <div className="absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-amber-500/15 rounded-full blur-[80px] pointer-events-none" />
+
+            {/* Dark mode SVG Golden Sapphire Waves */}
+            <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block">
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="comp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.30" />
+                    <stop offset="35%" stopColor="#6366F1" stopOpacity="0.22" />
+                    <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#D97706" stopOpacity="0.10" />
+                  </linearGradient>
+                  <linearGradient id="comp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.26" />
+                    <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.18" />
+                    <stop offset="80%" stopColor="#4F46E5" stopOpacity="0.14" />
+                    <stop offset="100%" stopColor="#EAB308" stopOpacity="0.08" />
+                  </linearGradient>
+                  <linearGradient id="comp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.95" />
+                    <stop offset="50%" stopColor="#818CF8" stopOpacity="0.95" />
+                    <stop offset="100%" stopColor="#FBBF24" stopOpacity="0.90" />
+                  </linearGradient>
+                  <linearGradient id="comp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.90" />
+                    <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.90" />
+                    <stop offset="100%" stopColor="#6366F1" stopOpacity="0.80" />
+                  </linearGradient>
+                  <filter id="comp-glow-sapphire" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3.5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#comp-grad-wave1)" />
+                <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#comp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#comp-glow-sapphire)" />
+                <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#comp-grad-wave2)" />
+                <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#comp-crest-2)" strokeWidth="2" strokeLinecap="round" />
+                <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#comp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+              </svg>
+            </div>
+
+            {/* Light mode decorative orbs */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden"></div>
+
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+             <div>
+               <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                 <Building2 className="text-blue-400 dark:text-amber-400" size={36}/> Client & Property Management
+               </h1>
+               <p className="text-blue-200 dark:text-blue-200/80 font-bold mt-2">Oversee all registered client companies and their respective properties.</p>
+             </div>
+
+             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+
+               {/* View Toggle */}
+               <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 items-center gap-1">
+                 <button 
+                   onClick={() => setViewMode('grid')} 
+                   className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
+                   title="Grid View (1)"
+                 >
+                   <Grid size={16}/>
+                   <Kbd variant="glass" size="xs">1</Kbd>
+                 </button>
+                 <button 
+                   onClick={() => setViewMode('list')} 
+                   className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
+                   title="List View (2)"
+                 >
+                   <List size={16}/>
+                   <Kbd variant="glass" size="xs">2</Kbd>
+                 </button>
+               </div>
+
+               {/* Refresh Button */}
+               <button
+                 onClick={fetchEverything}
+                 disabled={loading}
+                 className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
+                 title="Refresh (Alt+R)"
+               >
+                 {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16}/>}
+                 <Kbd variant="glass" size="xs">Alt+R</Kbd>
+               </button>
+
+               {/* Export Buttons */}
+               {viewMode === 'list' && (
+                 <div className="flex gap-2">
+                   <button onClick={exportToPDF} className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-sm transition-all"><FileText size={16}/> PDF</button>
+                   <button onClick={exportToExcel} className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-sm transition-all"><Table size={16}/> Excel</button>
+                 </div>
+               )}
+
+               <button 
+                 onClick={() => setIsAddCompanyOpen(true)}
+                 className="flex-1 md:flex-none px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/30"
+                 title="Add Client (Alt+N)"
+               >
+                 <Plus size={16}/> Add Client
+                 <Kbd variant="glass" size="xs">Alt+N</Kbd>
+               </button>
+             </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-3 md:px-8 mt-3 md:-mt-12 relative z-20">
           {loading ? (
             <div className="bg-white dark:bg-[#0c1427]/80 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-blue-500/20">
               {viewMode === 'list' ? <TableSkeleton rows={5} /> : <CardGridSkeleton count={4} />}

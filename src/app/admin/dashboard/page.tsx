@@ -1254,8 +1254,8 @@ export default function AdminDashboard() {
   const rangeBookings = data.bookings.filter(b => b.cleaning_date >= dateFrom && b.cleaning_date <= dateTo);
 
   return (
-    <div className="min-h-screen bg-transparent pb-24 font-sans">
-      <div className="w-full px-4 md:px-6 xl:px-8 2xl:px-10 pt-6 space-y-5">
+    <div className="min-h-screen bg-transparent pb-24 font-sans w-full max-w-full overflow-x-hidden">
+      <div className="w-full max-w-full overflow-x-hidden px-3 md:px-6 xl:px-8 2xl:px-10 pt-3 md:pt-6 space-y-4 md:space-y-5">
 
         <WelcomeHeader
           adminProfile={adminProfile}

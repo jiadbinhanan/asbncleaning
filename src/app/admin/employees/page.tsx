@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { createEmployeeAction, deleteEmployeeAction, updateEmployeeCredentialsAction } from './actions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Plus, Search, RotateCw, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Plus, Search, RotateCw, KeyRound, Eye, EyeOff, X } from 'lucide-react';
 import ProfileSlideOver from '@/components/admin/employees/ProfileSlideOver';
 import Image from 'next/image';
 import { CardGridSkeleton } from '@/components/common/Skeleton';
@@ -30,6 +30,7 @@ export default function EmployeeManagement() {
 
   // UI States
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<Profile | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,108 +152,192 @@ export default function EmployeeManagement() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans w-full max-w-full overflow-x-hidden">
 
-      {/* Header — Electric Cobalt & Radiant Cyan Waves (dark) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative overflow-hidden dark:border-b dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]">
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
-
-        {/* Dark mode multi-color cobalt cyan gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #030816 0%, #081533 20%, #0d2350 42%, #08344e 68%, #031022 100%)' }} />
-
-        {/* Dark mode glowing cobalt orbs */}
-        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-blue-600/25 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/20 rounded-full blur-[90px] pointer-events-none' />
-
-        {/* Dark mode SVG Electric Cobalt Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="emp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#2563EB" stopOpacity="0.32" />
-                <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#0D9488" stopOpacity="0.20" />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.08" />
-              </linearGradient>
-              <linearGradient id="emp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.28" />
-                <stop offset="40%" stopColor="#3B82F6" stopOpacity="0.22" />
-                <stop offset="75%" stopColor="#6366F1" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#0284C7" stopOpacity="0.05" />
-              </linearGradient>
-              <linearGradient id="emp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#22D3EE" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#818CF8" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#A5F3FC" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="emp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#67E8F9" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="emp-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#emp-grad-wave1)" />
-            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#emp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#emp-glow-cyan)" />
-            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#emp-grad-wave2)" />
-            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#emp-crest-2)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#emp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-              <User className="text-blue-500 dark:text-cyan-400" size={30} /> Employee Directory
-            </h1>
-            <p className="text-blue-300 dark:text-cyan-200/80 font-bold mt-1 text-sm">Manage Supervisors & Cleaning Agents</p>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search staff... [/]"
-                className="w-full pl-10 pr-9 py-2.5 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-gray-400 font-medium text-sm"
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                <Kbd variant="glass" size="xs">/</Kbd>
-              </div>
+      {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#030816]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <User size={18} />
             </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Staff Directory
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+                {filteredEmployees.length} active staff
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Search Toggle */}
+            <button
+              onClick={() => setShowMobileSearch(prev => !prev)}
+              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              }`}
+              title="Search staff"
+            >
+              <Search size={16} />
+            </button>
+
+            {/* Refresh */}
             <button
               onClick={() => {
                 setLoading(true);
                 fetchEmployees();
               }}
-              title="Refresh Directory (Alt+R)"
+              title="Refresh Directory"
               aria-label="Refresh Directory"
-              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/15 transition-all flex items-center justify-center"
+              className="p-2 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
-              <RotateCw size={18} />
+              <RotateCw size={16} />
             </button>
+
+            {/* Add Staff */}
             <button
               onClick={() => setIsAddOpen(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap text-sm"
+              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
             >
-              <Plus size={18} /> Add Staff
-              <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
+              <Plus size={14} /> Add
             </button>
+          </div>
+        </div>
+
+        {/* Collapsible Mobile Search Bar */}
+        <AnimatePresence>
+          {showMobileSearch && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="pt-2 overflow-hidden"
+            >
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  placeholder="Search by name, username..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <Search size={14} className="absolute left-2.5 text-gray-400" />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-2.5 text-gray-400 hover:text-gray-600">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative overflow-hidden dark:border-b dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]">
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color cobalt cyan gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #030816 0%, #081533 20%, #0d2350 42%, #08344e 68%, #031022 100%)' }} />
+
+          {/* Dark mode glowing cobalt orbs */}
+          <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-blue-600/25 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/20 rounded-full blur-[90px] pointer-events-none' />
+
+          {/* Dark mode SVG Electric Cobalt Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="emp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#2563EB" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#0D9488" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.08" />
+                </linearGradient>
+                <linearGradient id="emp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.28" />
+                  <stop offset="40%" stopColor="#3B82F6" stopOpacity="0.22" />
+                  <stop offset="75%" stopColor="#6366F1" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#0284C7" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="emp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#22D3EE" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#818CF8" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#A5F3FC" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="emp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#67E8F9" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="emp-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#emp-grad-wave1)" />
+              <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#emp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#emp-glow-cyan)" />
+              <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#emp-grad-wave2)" />
+              <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#emp-crest-2)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#emp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+                <User className="text-blue-500 dark:text-cyan-400" size={30} /> Employee Directory
+              </h1>
+              <p className="text-blue-300 dark:text-cyan-200/80 font-bold mt-1 text-sm">Manage Supervisors & Cleaning Agents</p>
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search staff... [/]"
+                  className="w-full pl-10 pr-9 py-2.5 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-gray-400 font-medium text-sm"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Kbd variant="glass" size="xs">/</Kbd>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setLoading(true);
+                  fetchEmployees();
+                }}
+                title="Refresh Directory (Alt+R)"
+                aria-label="Refresh Directory"
+                className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/15 transition-all flex items-center justify-center"
+              >
+                <RotateCw size={18} />
+              </button>
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap text-sm"
+              >
+                <Plus size={18} /> Add Staff
+                <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-6 md:px-10 pt-8">
+      <div className="px-3 md:px-10 pt-4 md:pt-8 w-full max-w-full overflow-x-hidden">
 
       {/* Employee Grid */}
       {loading ? (

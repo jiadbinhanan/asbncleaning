@@ -172,8 +172,42 @@ export default function ChecklistManagement() {
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans">
 
-      {/* Header — Indigo Matrix & Neon Emerald Waves (dark) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative overflow-hidden dark:border-b dark:border-emerald-500/20 dark:shadow-[0_12px_40px_rgba(16,185,129,0.15)]">
+      {/* 1. MOBILE DEDICATED STICKY HEADER (Under TopNav h-16) */}
+      <div className="md:hidden sticky top-16 z-30 bg-[#0A192F]/95 dark:bg-[#070b14]/95 backdrop-blur-md border-b border-emerald-500/20 px-3 py-2.5 text-white shadow-lg">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <ClipboardList size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-300/80 leading-none">Operations</p>
+              <h1 className="text-sm font-black text-white truncate flex items-center gap-1.5">
+                Checklists <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-normal">({templates.length})</span>
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={fetchTemplates}
+              disabled={loading}
+              aria-label="Refresh templates"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all"
+            >
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
+            </button>
+            <button
+              onClick={() => handleOpenEditor()}
+              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-sm transition-all flex items-center gap-1"
+            >
+              <Plus size={14} /> New
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. PREMIUM HEADER (DESKTOP VIEW — 100% UNCHANGED) */}
+      <div className="hidden md:block bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 py-6 shadow-2xl relative overflow-hidden dark:border-b dark:border-emerald-500/20 dark:shadow-[0_12px_40px_rgba(16,185,129,0.15)]">
         {/* Light mode gradient */}
         <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
 
@@ -244,7 +278,7 @@ export default function ChecklistManagement() {
       </div>
 
       {/* Content */}
-      <div className="px-6 md:px-10 pt-8">
+      <div className="px-3 md:px-10 pt-3 md:pt-8 w-full max-w-full overflow-x-hidden">
 
       {/* Templates List */}
       {loading ? (
@@ -256,18 +290,18 @@ export default function ChecklistManagement() {
           <p className="text-gray-400 dark:text-slate-500 text-sm">Create a master checklist to reuse in bookings.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {templates.map((template) => (
             <motion.div 
               key={template.id}
               whileHover={{ y: -5 }}
-              className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all relative group"
+              className="bg-white dark:bg-[#0c1427] p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all relative group"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/40 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                  <ClipboardList size={24} />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 dark:bg-blue-950/40 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <ClipboardList size={22} />
                 </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                    <button onClick={() => handleOpenEditor(template)} className="p-2 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 dark:hover:text-blue-400 text-gray-600 dark:text-slate-300 rounded-lg transition-colors"><LayoutTemplate size={16}/></button>
                    <button onClick={() => handleDelete(template.id)} className="p-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500 dark:text-red-400 rounded-lg transition-colors"><Trash2 size={16}/></button>
                 </div>

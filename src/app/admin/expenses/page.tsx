@@ -725,112 +725,231 @@ export default function ExpensesPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       
-      {/* ── CONSTANT HEADER — Molten Amber & Sunset Ruby Waves (dark) ── */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-8 pb-20 px-6 md:px-12 shadow-2xl relative z-10 overflow-hidden dark:border-b dark:border-amber-500/20 dark:shadow-[0_12px_40px_rgba(245,158,11,0.15)]">
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
-
-        {/* Dark mode multi-color amber sunset gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #0d0605 0%, #1c0c08 20%, #2b110a 40%, #240c14 65%, #12050e 85%, #080206 100%)' }} />
-
-        {/* Dark mode glowing amber orbs */}
-        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-amber-500/22 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-rose-600/20 rounded-full blur-[90px] pointer-events-none' />
-        <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-orange-500/15 rounded-full blur-[80px] pointer-events-none' />
-
-        {/* Dark mode SVG Molten Amber Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="exp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.32" />
-                <stop offset="35%" stopColor="#F97316" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#F43F5E" stopOpacity="0.20" />
-                <stop offset="100%" stopColor="#9F1239" stopOpacity="0.08" />
-              </linearGradient>
-              <linearGradient id="exp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FB7185" stopOpacity="0.28" />
-                <stop offset="40%" stopColor="#FBBF24" stopOpacity="0.22" />
-                <stop offset="75%" stopColor="#BE123C" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.05" />
-              </linearGradient>
-              <linearGradient id="exp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#FDE047" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#FB7185" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="exp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#F97316" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#FDE047" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="exp-glow-amber" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#exp-grad-wave1)" />
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#exp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#exp-glow-amber)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#exp-grad-wave2)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#exp-crest-2)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M0,220 C360,260 680,170 1020,230 C1240,270 1380,200 1440,210" stroke="url(#exp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden"/>
-
-        <div className="w-full relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-              <TrendingUp className="text-blue-500 dark:text-amber-400" size={36}/> Expense Management
-            </h1>
-            <p className="text-blue-200 dark:text-amber-200/80 font-medium mt-2">Track company expenses, receipts, and historical data.</p>
+      {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0814]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-amber-500/20 shadow-sm transition-colors mb-3">
+        {/* Top slim bar */}
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <TrendingUp size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Expense Management
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-amber-300/80 capitalize">
+                {filterType === 'month' ? `Month: ${selectedMonth}` : filterType === 'custom' ? 'Custom Date' : 'All Expenses'}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-            {/* Filter Controls */}
-            <div className="flex flex-wrap items-center gap-2 bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 w-full md:w-auto">
-              <Filter size={16} className="text-blue-400 ml-2 shrink-0 hidden md:block"/>
-              <button 
-                onClick={() => setFilterType('month')} 
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
-              >
-                By Month
-              </button>
-              <button 
-                onClick={() => setFilterType('custom')} 
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
-              >
-                Custom Date
-              </button>
-              <button 
-                onClick={() => setFilterType('all')} 
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'all' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
-              >
-                All Data
-              </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Quick Add Expense Button */}
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg font-black text-xs shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all"
+            >
+              <Plus size={14} /> Add
+            </button>
+
+            {/* Refresh Button */}
+            <button
+              onClick={fetchExpensesAndStats}
+              disabled={loading}
+              className="p-1.5 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              title="Refresh Expenses"
+              aria-label="Refresh Expenses"
+            >
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Controls (Month / Custom / All) */}
+        <div className="flex items-center gap-1.5 px-3 pb-2.5 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setFilterType('month')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+              filterType === 'month'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+            }`}
+          >
+            By Month
+          </button>
+          <button
+            onClick={() => setFilterType('custom')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+              filterType === 'custom'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+            }`}
+          >
+            Custom Date
+          </button>
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+              filterType === 'all'
+                ? 'bg-slate-700 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+            }`}
+          >
+            All Data
+          </button>
+        </div>
+
+        {/* Sub-pickers for month or custom */}
+        <AnimatePresence>
+          {filterType === 'month' && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-3 pb-2.5 flex items-center gap-2 overflow-hidden"
+            >
+              <span className="text-xs font-bold text-gray-500 dark:text-slate-400">Month:</span>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+              />
+            </motion.div>
+          )}
+          {filterType === 'custom' && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-3 pb-2.5 flex items-center gap-1.5 overflow-hidden"
+            >
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+              />
+              <span className="text-gray-400 text-xs">-</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── DESKTOP HEADER (100% UNTOUCHED & PERFECT) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-8 pb-20 px-6 md:px-12 shadow-2xl relative z-10 overflow-hidden dark:border-b dark:border-amber-500/20 dark:shadow-[0_12px_40px_rgba(245,158,11,0.15)]">
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color amber sunset gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #0d0605 0%, #1c0c08 20%, #2b110a 40%, #240c14 65%, #12050e 85%, #080206 100%)' }} />
+
+          {/* Dark mode glowing amber orbs */}
+          <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-amber-500/22 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-rose-600/20 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-orange-500/15 rounded-full blur-[80px] pointer-events-none' />
+
+          {/* Dark mode SVG Molten Amber Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="exp-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#F97316" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#F43F5E" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="#9F1239" stopOpacity="0.08" />
+                </linearGradient>
+                <linearGradient id="exp-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#FB7185" stopOpacity="0.28" />
+                  <stop offset="40%" stopColor="#FBBF24" stopOpacity="0.22" />
+                  <stop offset="75%" stopColor="#BE123C" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="exp-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FDE047" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#FB7185" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="exp-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#F97316" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FDE047" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="exp-glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#exp-grad-wave1)" />
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#exp-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#exp-glow-amber)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#exp-grad-wave2)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#exp-crest-2)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,220 C360,260 680,170 1020,230 C1240,270 1380,200 1440,210" stroke="url(#exp-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden"/>
+
+          <div className="w-full relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                <TrendingUp className="text-blue-500 dark:text-amber-400" size={36}/> Expense Management
+              </h1>
+              <p className="text-blue-200 dark:text-amber-200/80 font-medium mt-2">Track company expenses, receipts, and historical data.</p>
             </div>
 
-            {/* Sub-filters based on selection */}
-            <AnimatePresence mode="wait">
-              {filterType === 'month' && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl backdrop-blur-md w-full md:w-auto border border-white/10">
-                  <span className="text-xs font-bold text-blue-300 pl-2">Select:</span>
-                  <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-sm font-black text-white outline-none px-2 py-1 w-full dark-color-scheme" />
-                </motion.div>
-              )}
-              {filterType === 'custom' && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl backdrop-blur-md w-full md:w-auto border border-white/10">
-                  <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className="bg-transparent text-xs font-black text-white outline-none px-2 py-1 dark-color-scheme" />
-                  <span className="text-white/50">-</span>
-                  <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className="bg-transparent text-xs font-black text-white outline-none px-2 py-1 dark-color-scheme" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+              {/* Filter Controls */}
+              <div className="flex flex-wrap items-center gap-2 bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 w-full md:w-auto">
+                <Filter size={16} className="text-blue-400 ml-2 shrink-0 hidden md:block"/>
+                <button 
+                  onClick={() => setFilterType('month')} 
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
+                >
+                  By Month
+                </button>
+                <button 
+                  onClick={() => setFilterType('custom')} 
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Custom Date
+                </button>
+                <button 
+                  onClick={() => setFilterType('all')} 
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${filterType === 'all' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}
+                >
+                  All Data
+                </button>
+              </div>
+
+              {/* Sub-filters based on selection */}
+              <AnimatePresence mode="wait">
+                {filterType === 'month' && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl backdrop-blur-md w-full md:w-auto border border-white/10">
+                    <span className="text-xs font-bold text-blue-300 pl-2">Select:</span>
+                    <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-sm font-black text-white outline-none px-2 py-1 w-full dark-color-scheme" />
+                  </motion.div>
+                )}
+                {filterType === 'custom' && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl backdrop-blur-md w-full md:w-auto border border-white/10">
+                    <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className="bg-transparent text-xs font-black text-white outline-none px-2 py-1 dark-color-scheme" />
+                    <span className="text-white/50">-</span>
+                    <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className="bg-transparent text-xs font-black text-white outline-none px-2 py-1 dark-color-scheme" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
@@ -1043,8 +1162,75 @@ export default function ExpensesPage() {
           </AnimatePresence>
         </div>
 
-        {/* ── 3. ANIMATED SUMMARY & KPI CARDS SECTION ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* ── MOBILE KPI CARDS (md:hidden) ── */}
+        <div className="md:hidden grid grid-cols-2 gap-2.5">
+          {/* Card 1: Total Spent */}
+          <div className="bg-white dark:bg-[#0c1427] p-3.5 rounded-2xl shadow-sm border border-red-200/80 dark:border-rose-500/30 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">Total Spent</span>
+              <div className="p-1 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                <DollarSign size={13} />
+              </div>
+            </div>
+            <p className="text-base font-black text-red-600 dark:text-rose-400 leading-tight">
+              AED {stats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </p>
+            <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 truncate">
+              {stats.count} entries
+            </p>
+          </div>
+
+          {/* Card 2: Prev Period */}
+          <div className="bg-white dark:bg-[#0c1427] p-3.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-slate-400">Prior Period</span>
+              <div className="p-1 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+                <CalendarDays size={13} />
+              </div>
+            </div>
+            <p className="text-base font-black text-gray-900 dark:text-white leading-tight">
+              AED {prevMonthTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </p>
+            <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 truncate">
+              {stats.percentChange !== 0 ? `${stats.percentChange <= 0 ? '↓' : '↑'} ${Math.abs(stats.percentChange).toFixed(1)}% vs prior` : 'Benchmark'}
+            </p>
+          </div>
+
+          {/* Card 3: Avg Spend */}
+          <div className="bg-white dark:bg-[#0c1427] p-3.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">Average</span>
+              <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                <Layers size={13} />
+              </div>
+            </div>
+            <p className="text-base font-black text-blue-600 dark:text-blue-400 leading-tight">
+              AED {stats.avgSpend.toFixed(0)}
+            </p>
+            <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 truncate">
+              Per transaction
+            </p>
+          </div>
+
+          {/* Card 4: Top Category */}
+          <div className="bg-white dark:bg-[#0c1427] p-3.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">Top Category</span>
+              <div className="p-1 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                <PieChart size={13} />
+              </div>
+            </div>
+            <p className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate" title={stats.topCatName}>
+              {stats.topCatName}
+            </p>
+            <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 truncate">
+              AED {stats.topCatAmount.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* ── 3. DESKTOP ANIMATED SUMMARY & KPI CARDS SECTION (hidden md:grid, 100% UNTOUCHED) ── */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Card 1: Selected Period Spend */}
           <motion.div 

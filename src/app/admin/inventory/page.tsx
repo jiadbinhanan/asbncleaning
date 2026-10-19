@@ -169,81 +169,138 @@ export default function InventoryManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative">
-      
-      {/* Premium Header — Prism Horizon & Molten Amethyst Waves (dark) */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-12 pb-24 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-amber-500/20 dark:shadow-[0_12px_40px_rgba(245,158,11,0.15)]">
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-hidden">
 
-        {/* Dark mode multi-color prism obsidian gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #06060d 0%, #150826 18%, #200e38 38%, #17183e 62%, #0d1a29 82%, #05070f 100%)' }} />
+      {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#06060d]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-amber-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Package size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Inventory
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-amber-300/80">
+                {activeTab === 'stock' ? `${filteredEquipment.length} equipment` : `${ledgerLogs.length} logs`}
+              </p>
+            </div>
+          </div>
 
-        {/* Dark mode glowing prism orbs */}
-        <div className='absolute -top-12 -right-12 w-96 h-96 hidden dark:block bg-purple-600/25 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute bottom-0 -left-10 w-80 h-80 hidden dark:block bg-amber-500/22 rounded-full blur-[90px] pointer-events-none' />
-        <div className='absolute top-1/4 left-1/3 w-72 h-72 hidden dark:block bg-blue-600/18 rounded-full blur-[85px] pointer-events-none' />
-        <div className='absolute -bottom-10 right-1/4 w-64 h-64 hidden dark:block bg-emerald-500/15 rounded-full blur-[80px] pointer-events-none' />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Refresh */}
+            <button
+              onClick={fetchData}
+              title="Refresh Inventory"
+              aria-label="Refresh Inventory"
+              className="p-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg border border-gray-200 dark:border-slate-700"
+            >
+              <RotateCw size={14} />
+            </button>
 
-        {/* Dark mode SVG Prism Horizon Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="inv-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.32" />
-                <stop offset="35%" stopColor="#3B82F6" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#10B981" stopOpacity="0.08" />
-              </linearGradient>
-              <linearGradient id="inv-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.28" />
-                <stop offset="40%" stopColor="#D97706" stopOpacity="0.20" />
-                <stop offset="75%" stopColor="#8B5CF6" stopOpacity="0.16" />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
-              </linearGradient>
-              <linearGradient id="inv-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#C084FC" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#818CF8" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#34D399" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="inv-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#FCD34D" stopOpacity="0.95" />
-                <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#FB923C" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="inv-glow-purple" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-              <filter id="inv-glow-gold" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="4.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            {/* Background Prism Wave */}
-            <path d="M0,160 C300,80 580,240 880,140 C1180,40 1340,200 1440,120 L1440,320 L0,320 Z" fill="url(#inv-grad-wave1)" />
-            <path d="M0,160 C300,80 580,240 880,140 C1180,40 1340,200 1440,120" stroke="url(#inv-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#inv-glow-purple)" />
-            {/* Foreground Molten Wave */}
-            <path d="M0,220 C280,270 520,130 800,210 C1080,290 1280,150 1440,200 L1440,320 L0,320 Z" fill="url(#inv-grad-wave2)" />
-            <path d="M0,220 C280,270 520,130 800,210 C1080,290 1280,150 1440,200" stroke="url(#inv-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#inv-glow-gold)" />
-          </svg>
+            {/* Adjust Stock */}
+            <button
+              onClick={() => openAdjustModal()}
+              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+            >
+              <ArrowRightLeft size={14} /> Adjust
+            </button>
+          </div>
         </div>
 
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+        {/* Tab Switcher */}
+        <div className="flex bg-gray-100 dark:bg-slate-800 p-0.5 rounded-xl border border-gray-200 dark:border-slate-700 mt-2">
+          <button
+            onClick={() => setActiveTab('stock')}
+            className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'stock' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+            }`}
+          >
+            <Package size={13} /> Current Stock
+          </button>
+          <button
+            onClick={() => setActiveTab('ledger')}
+            className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'ledger' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+            }`}
+          >
+            <History size={13} /> Ledger Logs
+          </button>
+        </div>
+      </div>
 
-        <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 w-full">
-        
-           <div className="w-full xl:w-auto">
+      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-12 pb-24 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-amber-500/20 dark:shadow-[0_12px_40px_rgba(245,158,11,0.15)]">
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color prism obsidian gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #06060d 0%, #150826 18%, #200e38 38%, #17183e 62%, #0d1a29 82%, #05070f 100%)' }} />
+
+          {/* Dark mode glowing prism orbs */}
+          <div className='absolute -top-12 -right-12 w-96 h-96 hidden dark:block bg-purple-600/25 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 -left-10 w-80 h-80 hidden dark:block bg-amber-500/22 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute top-1/4 left-1/3 w-72 h-72 hidden dark:block bg-blue-600/18 rounded-full blur-[85px] pointer-events-none' />
+          <div className='absolute -bottom-10 right-1/4 w-64 h-64 hidden dark:block bg-emerald-500/15 rounded-full blur-[80px] pointer-events-none' />
+
+          {/* Dark mode SVG Prism Horizon Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="inv-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#3B82F6" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#10B981" stopOpacity="0.08" />
+                </linearGradient>
+                <linearGradient id="inv-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.28" />
+                  <stop offset="40%" stopColor="#D97706" stopOpacity="0.20" />
+                  <stop offset="75%" stopColor="#8B5CF6" stopOpacity="0.16" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="inv-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#C084FC" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#818CF8" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#34D399" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="inv-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FCD34D" stopOpacity="0.95" />
+                  <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FB923C" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="inv-glow-purple" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="inv-glow-gold" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,160 C300,80 580,240 880,140 C1180,40 1340,200 1440,120 L1440,320 L0,320 Z" fill="url(#inv-grad-wave1)" />
+              <path d="M0,160 C300,80 580,240 880,140 C1180,40 1340,200 1440,120" stroke="url(#inv-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#inv-glow-purple)" />
+              <path d="M0,220 C280,270 520,130 800,210 C1080,290 1280,150 1440,200 L1440,320 L0,320 Z" fill="url(#inv-grad-wave2)" />
+              <path d="M0,220 C280,270 520,130 800,210 C1080,290 1280,150 1440,200" stroke="url(#inv-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#inv-glow-gold)" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
+          <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 w-full">
+            <div className="w-full xl:w-auto">
               <p className="text-blue-300 dark:text-amber-300 font-bold uppercase tracking-widest text-xs mb-1">Master Inventory & Ledger</p>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-                 <Package className="text-blue-500 dark:text-amber-400 shrink-0" size={36}/> Stock Management
+                <Package className="text-blue-500 dark:text-amber-400 shrink-0" size={36}/> Stock Management
               </h1>
-           </div>
-           
-           {/* View Switcher with flex-wrap to prevent overflow */}
-           <div className="flex flex-wrap items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full xl:w-auto">
+            </div>
+
+            {/* View Switcher with flex-wrap to prevent overflow */}
+            <div className="flex flex-wrap items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full xl:w-auto">
               <button 
                 onClick={() => setActiveTab('stock')}
                 className={`flex-1 sm:flex-none px-4 md:px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'stock' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
@@ -264,11 +321,12 @@ export default function InventoryManagement() {
               >
                 <RotateCw size={16} />
               </button>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 md:px-8 -mt-12 relative z-20">
+      <div className="px-3 md:px-8 mt-2 md:-mt-12 relative z-20 w-full max-w-full overflow-x-hidden">
         
         {/* ======================= STOCK VIEW ======================= */}
         {activeTab === 'stock' && (
@@ -328,8 +386,9 @@ export default function InventoryManagement() {
 
         {/* ======================= LEDGER VIEW ======================= */}
         {activeTab === 'ledger' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-            <div className="overflow-x-auto">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] rounded-2xl md:rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+            {/* Desktop Table View (100% untouched) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-[#090d1a] border-b border-gray-100 dark:border-slate-800">
@@ -372,6 +431,48 @@ export default function InventoryManagement() {
               </table>
               {ledgerLogs.length === 0 && (
                 <div className="p-10 text-center text-gray-400 dark:text-slate-500 font-bold">No transaction history found.</div>
+              )}
+            </div>
+
+            {/* Mobile Native Card View (md:hidden) */}
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-slate-800/80">
+              {ledgerLogs.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 dark:text-slate-500 font-bold text-sm">No transaction history found.</div>
+              ) : (
+                ledgerLogs.map(log => (
+                  <div key={log.id} className="p-3.5 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-sm text-gray-900 dark:text-white leading-tight truncate">
+                          {log.equipment_master?.item_name}
+                        </p>
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold mt-0.5">
+                          {format(new Date(log.created_at), 'dd MMM yyyy, hh:mm a')}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        {log.transaction_type === 'in' 
+                          ? <span className="inline-flex items-center gap-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase"><Plus size={10}/> IN</span>
+                          : <span className="inline-flex items-center gap-0.5 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase"><Minus size={10}/> OUT</span>
+                        }
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-50 dark:border-slate-800/60">
+                      <span className="text-[10px] text-gray-500 dark:text-slate-400 font-bold">Qty: <strong className="text-gray-900 dark:text-white font-black">{log.quantity}</strong></span>
+                      <span className="text-[10px] text-gray-500 dark:text-slate-400 font-bold">Balance: <strong className="text-blue-600 dark:text-blue-400 font-black">{log.balance_after}</strong></span>
+                      {log.units?.unit_number && (
+                        <span className="text-[9px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-gray-700 dark:text-slate-300 font-black">
+                          Unit {log.units.unit_number}
+                        </span>
+                      )}
+                    </div>
+                    {log.remarks && (
+                      <p className="text-[10px] text-gray-500 dark:text-slate-400 italic truncate">
+                        {log.remarks}
+                      </p>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </motion.div>

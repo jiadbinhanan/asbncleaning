@@ -92,10 +92,10 @@ export default function WelcomeHeader({ adminProfile, dateFrom, setDateFrom, dat
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 md:p-8">
+      <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 md:p-8">
 
         {/* LEFT: Avatar + Greeting */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4 sm:gap-5">
           {/* Avatar ring */}
           <div className="relative shrink-0">
             <motion.div
@@ -104,43 +104,43 @@ export default function WelcomeHeader({ adminProfile, dateFrom, setDateFrom, dat
               className="absolute inset-[-3px] rounded-full"
               style={{ background: 'conic-gradient(from 0deg, #6366f1, #8b5cf6, #06b6d4, #6366f1)', borderRadius: '50%' }}
             />
-            <div className="relative w-16 h-16 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center z-10">
-              {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <UserCircle size={36} className="text-slate-400" />}
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center z-10">
+              {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <UserCircle size={32} className="text-slate-400" />}
             </div>
             {/* Online dot */}
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-400 rounded-full border-2 border-slate-900 z-20 shadow-lg shadow-emerald-500/50" />
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-400 rounded-full border-2 border-slate-900 z-20 shadow-lg shadow-emerald-500/50" />
           </div>
 
           <div>
-            <div className="mb-1.5">
-              <span className="text-xs font-bold text-indigo-300 dark:text-cyan-300 uppercase tracking-[0.2em]">{greeting}</span>
+            <div className="mb-1">
+              <span className="text-[10px] sm:text-xs font-bold text-indigo-300 dark:text-cyan-300 uppercase tracking-[0.2em]">{greeting}</span>
             </div>
-            <h1 className="text-3xl font-black text-white leading-none tracking-tight">{firstName}</h1>
-            <div className="flex items-center gap-2 mt-2.5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 dark:bg-slate-900/60 border border-white/15 dark:border-slate-700/60 backdrop-blur-md shadow-sm">
+            <h1 className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">{firstName}</h1>
+            <div className="flex items-center gap-2 mt-2 sm:mt-2.5">
+              <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 dark:bg-slate-900/60 border border-white/15 dark:border-slate-700/60 backdrop-blur-md shadow-sm">
                 <Calendar size={12} className="text-indigo-400 dark:text-cyan-300 shrink-0" />
-                <span className="text-xs font-bold text-slate-100 dark:text-slate-200 tracking-wide">{todayFormatted}</span>
+                <span className="text-[11px] sm:text-xs font-bold text-slate-100 dark:text-slate-200 tracking-wide">{todayFormatted}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* RIGHT: Date filter */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
           <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold uppercase tracking-widest whitespace-nowrap">
             <Calendar size={14} className="text-indigo-400" />
             <span>Date Range</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-2 backdrop-blur-sm w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-1.5 sm:p-2 backdrop-blur-sm w-full sm:w-auto">
             <input
               type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-              className="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/10 outline-none cursor-pointer transition-colors focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 min-w-0 bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-white/10 outline-none cursor-pointer transition-colors focus:ring-1 focus:ring-indigo-500"
               style={{ colorScheme: 'dark' }}
             />
-            <span className="text-slate-600 font-black text-xs">→</span>
+            <span className="text-slate-600 font-black text-xs shrink-0">→</span>
             <input
               type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/10 outline-none cursor-pointer transition-colors focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 min-w-0 bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-white/10 outline-none cursor-pointer transition-colors focus:ring-1 focus:ring-indigo-500"
               style={{ colorScheme: 'dark' }}
             />
           </div>

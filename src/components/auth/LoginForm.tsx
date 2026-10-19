@@ -118,10 +118,12 @@ export default function LoginForm({ role }: LoginFormProps) {
         whileTap={{ scale: 0.98 }}
         disabled={loading}
         type="submit"
-        className="w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-bold shadow-lg shadow-gray-300 hover:shadow-xl hover:from-black hover:to-gray-900 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        className={`w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-bold shadow-lg shadow-gray-300 hover:shadow-xl hover:from-black hover:to-gray-900 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+          loading ? 'opacity-90 ring-2 ring-gray-400/50' : ''
+        }`}
       >
         {loading ? (
-          <DotsLoader size="xs" variant="white" />
+          <DotsLoader size="sm" variant="white" label="Signing in..." />
         ) : (
           <>
             Access Portal <ArrowRight size={18} />

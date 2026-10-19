@@ -37,6 +37,7 @@ export default function WorkRecords() {
   // --- Search State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   
   const searchShortcuts = [
@@ -348,205 +349,367 @@ export default function WorkRecords() {
   ]);
 
   return (
-    <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden'>
+    <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-hidden'>
 
-      {/* --- HEADER — Velvet Sunset & Molten Silk Waves (dark) --- */}
-      <div className='text-white pt-10 pb-16 md:pb-24 px-4 md:px-8 shadow-2xl relative z-40 mb-16 dark:border-b dark:border-rose-500/20 dark:shadow-[0_12px_40px_rgba(225,29,72,0.15)]'>
-        {/* Isolated background layer with overflow-hidden so floating stats cards are not cut off */}
-        <div className='absolute inset-0 overflow-hidden pointer-events-none'>
-          {/* Light mode gradient */}
-          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
-
-          {/* Dark mode multi-color velvet gradient */}
-          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #09030b 0%, #1a0518 18%, #290820 38%, #1f0b29 62%, #0e0416 82%, #050208 100%)' }} />
-
-          {/* Dark mode glowing sunset orbs */}
-          <div className='absolute -top-12 right-12 w-96 h-96 hidden dark:block bg-rose-600/25 rounded-full blur-[100px] pointer-events-none' />
-          <div className='absolute bottom-0 -left-10 w-80 h-80 hidden dark:block bg-amber-500/20 rounded-full blur-[90px] pointer-events-none' />
-          <div className='absolute top-1/4 left-1/3 w-64 h-64 hidden dark:block bg-fuchsia-600/18 rounded-full blur-[80px] pointer-events-none' />
-          <div className='absolute -bottom-10 right-1/4 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[85px] pointer-events-none' />
-
-          {/* Dark mode SVG Velvet Silk Waves */}
-          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="work-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.32" />
-                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.22" />
-                  <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.10" />
-                </linearGradient>
-                <linearGradient id="work-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#C026D3" stopOpacity="0.30" />
-                  <stop offset="40%" stopColor="#E11D48" stopOpacity="0.22" />
-                  <stop offset="75%" stopColor="#8B5CF6" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
-                </linearGradient>
-                <linearGradient id="work-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.95" />
-                  <stop offset="45%" stopColor="#FBBF24" stopOpacity="0.95" />
-                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#FEF08A" stopOpacity="0.4" />
-                </linearGradient>
-                <linearGradient id="work-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#E879F9" stopOpacity="0.85" />
-                  <stop offset="50%" stopColor="#FB7185" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.8" />
-                </linearGradient>
-                <filter id="work-glow-amber" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-                <filter id="work-glow-rose" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4.5" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-              {/* Background Silk Wave */}
-              <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150 L1440,320 L0,320 Z" fill="url(#work-grad-wave1)" />
-              <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150" stroke="url(#work-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#work-glow-amber)" />
-              {/* Foreground Velvet Wave */}
-              <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210 L1440,320 L0,320 Z" fill="url(#work-grad-wave2)" />
-              <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210" stroke="url(#work-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#work-glow-rose)" />
-            </svg>
+      {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0814]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-rose-500/20 shadow-sm transition-colors mb-4">
+        {/* Top Slim Action Bar */}
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+          {/* Left: Compact Title & Badge */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-rose-500/20 text-blue-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <FileCheck size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Work Records
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-rose-300/80">
+                {stats.totalBookings} records
+              </p>
+            </div>
           </div>
 
-          {/* Light mode decorative orbs */}
-          <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
-        </div>
+          {/* Right: Icon Buttons */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Search Toggle */}
+            <button
+              onClick={() => {
+                setShowMobileSearch(prev => !prev);
+                if (showFilters) setShowFilters(false);
+              }}
+              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              }`}
+              title="Search"
+              aria-label="Search"
+            >
+              <Search size={16} />
+            </button>
 
-        <div className='relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
-          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-            <p className='text-blue-300 dark:text-rose-300 font-bold uppercase tracking-widest text-xs mb-1'>Quality Control</p>
-            <h1 className='text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3'>
-              <FileCheck className='text-blue-500 dark:text-rose-400' size={32}/> Work Logs & Audits
-            </h1>
-          </motion.div>
-          
-          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className='flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto relative z-50'>
-            {/* Advanced Search */}
-            <div className='relative w-full md:w-72' ref={searchRef}>
-              <div className='relative flex items-center'>
-                <input
-                  ref={searchInputRef}
-                  type='text'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setShowSearchDropdown(true)}
-                  placeholder='Search ID or keywords...'
-                  className='w-full pl-10 pr-16 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold text-sm text-white placeholder-gray-400 outline-none transition-all backdrop-blur-md'
-                />
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' size={18} />
-                <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5'>
-                  {searchQuery ? (
-                    <button 
-                      onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
-                      className='text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors'
-                    >
-                      <X size={14} />
-                    </button>
-                  ) : (
-                    <Kbd variant="glass" size="xs">/</Kbd>
-                  )}
-                </div>
-              </div>
-              
-              <AnimatePresence>
-                {showSearchDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
-                    className='absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#0c1427] rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden z-[100]'
-                  >
-                    <div className='p-3 text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest border-b border-gray-50 dark:border-slate-800'>Quick Filters</div>
-                    {searchShortcuts.map((shortcut) => (
-                      <button
-                        key={shortcut.value}
-                        onClick={() => {
-                          setSearchQuery(shortcut.value);
-                          setShowSearchDropdown(false);
-                        }}
-                        className='w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
-                      >
-                        {shortcut.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Filter Toggle */}
+            <button
+              onClick={() => {
+                setShowFilters(prev => !prev);
+                if (showMobileSearch) setShowMobileSearch(false);
+              }}
+              className={`relative p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                showFilters || filterCompany || filterStatus || filterHasExtra ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30' : ''
+              }`}
+              title="Filters"
+              aria-label="Filters"
+            >
+              <Filter size={16} />
+              {(filterCompany || filterStatus || filterHasExtra) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0c0814]" />
+              )}
+            </button>
 
+            {/* Export CSV */}
+            <button
+              onClick={handleExportCSV}
+              className="p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+              title="Export CSV"
+              aria-label="Export CSV"
+            >
+              <FileSpreadsheet size={16} />
+            </button>
+
+            {/* Refresh */}
             <button
               onClick={fetchRecords}
               disabled={loading}
-              className='px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 backdrop-blur-md'
-              title='Refresh work records (Alt+R)'
+              className="p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              title="Refresh"
+              aria-label="Refresh"
             >
-              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={18}/>}
-              <Kbd variant="glass" size="xs">Alt+R</Kbd>
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
             </button>
-            
-            <button
-              onClick={handleExportCSV}
-              className='px-5 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-100 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
-              title='Export CSV (Alt+E)'
-            >
-              <FileSpreadsheet size={18}/> Export
-              <Kbd variant="glass" size="xs">Alt+E</Kbd>
-            </button>
-
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className='px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
-              title='Toggle filters (Alt+F)'
-            >
-              <Filter size={18}/> Filters
-              <Kbd variant="glass" size="xs">Alt+F</Kbd>
-              <motion.div animate={{ rotate: showFilters ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown size={18} />
-              </motion.div>
-            </button>
-          </motion.div>
+          </div>
         </div>
 
-        {/* --- STATS DASHBOARD (Pill-shaped, floating half outside) --- */}
-        {!loading && (
-          <div className='absolute bottom-0 left-4 right-4 md:left-8 md:right-8 translate-y-1/2 z-40 pointer-events-none'>
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, staggerChildren: 0.1 }}
-              className='grid grid-cols-1 md:grid-cols-3 gap-4 pointer-events-auto'
+        {/* Collapsible Mobile Search Bar */}
+        <AnimatePresence>
+          {showMobileSearch && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-3 pb-2.5 overflow-hidden border-t border-gray-100 dark:border-slate-800/80 pt-2"
             >
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-rose-500/25 dark:shadow-[0_8px_32px_rgba(244,63,94,0.12)] hover:dark:border-rose-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-300 rounded-full border border-rose-200/40 dark:border-rose-500/30 shadow-sm'><Activity size={20}/></div>
-                <div>
-                  <p className='text-[10px] font-bold text-gray-500 dark:text-rose-200/70 uppercase tracking-widest'>Total Records</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.totalBookings}</p>
-                </div>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-amber-500/25 dark:shadow-[0_8px_32px_rgba(245,158,11,0.12)] hover:dark:border-amber-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-300 rounded-full border border-amber-200/40 dark:border-amber-500/30 shadow-sm'><Wallet size={20}/></div>
-                <div>
-                  <p className='text-[10px] font-bold text-gray-500 dark:text-amber-200/70 uppercase tracking-widest'>Extra Revenue</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>AED {stats.totalExtra.toFixed(2)}</p>
-                </div>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-purple-500/25 dark:shadow-[0_8px_32px_rgba(168,85,247,0.12)] hover:dark:border-purple-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 rounded-full border border-purple-200/40 dark:border-purple-500/30 shadow-sm'><FileCheck size={20}/></div>
-                <div>
-                  <p className='text-[10px] font-bold text-gray-500 dark:text-purple-200/70 uppercase tracking-widest'>Pending Audits</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.pendingAudits}</p>
-                </div>
-              </motion.div>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search ID, company, unit..."
+                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <Search size={14} className="absolute left-2.5 text-gray-400" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-white p-0.5"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {searchShortcuts.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setSearchQuery(searchQuery === s.value ? "" : s.value)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                      searchQuery === s.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile 3-Column Micro Metrics Grid (Clean, Side-by-side, No collision) */}
+        {!loading && (
+          <div className="grid grid-cols-3 gap-2 px-3 pb-2.5 pt-1">
+            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-rose-500/20 rounded-xl p-2 flex items-center gap-1.5">
+              <div className="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+                <Activity size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-gray-400 dark:text-rose-300/70 uppercase truncate">Records</p>
+                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.totalBookings}</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-amber-500/20 rounded-xl p-2 flex items-center gap-1.5">
+              <div className="p-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-gray-400 dark:text-amber-300/70 uppercase truncate">Extra</p>
+                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight truncate">AED {stats.totalExtra.toFixed(0)}</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-purple-500/20 rounded-xl p-2 flex items-center gap-1.5">
+              <div className="p-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
+                <FileCheck size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-gray-400 dark:text-purple-300/70 uppercase truncate">Audits</p>
+                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.pendingAudits}</p>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      <div className='px-4 md:px-8 relative z-20'>
+      {/* ── DESKTOP HEADER (100% UNTOUCHED & PERFECT) ── */}
+      <div className="hidden md:block">
+        <div className='text-white pt-10 pb-16 md:pb-24 px-4 md:px-8 shadow-2xl relative z-40 mb-16 dark:border-b dark:border-rose-500/20 dark:shadow-[0_12px_40px_rgba(225,29,72,0.15)]'>
+          {/* Isolated background layer with overflow-hidden so floating stats cards are not cut off */}
+          <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+            {/* Light mode gradient */}
+            <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+            {/* Dark mode multi-color velvet gradient */}
+            <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #09030b 0%, #1a0518 18%, #290820 38%, #1f0b29 62%, #0e0416 82%, #050208 100%)' }} />
+
+            {/* Dark mode glowing sunset orbs */}
+            <div className='absolute -top-12 right-12 w-96 h-96 hidden dark:block bg-rose-600/25 rounded-full blur-[100px] pointer-events-none' />
+            <div className='absolute bottom-0 -left-10 w-80 h-80 hidden dark:block bg-amber-500/20 rounded-full blur-[90px] pointer-events-none' />
+            <div className='absolute top-1/4 left-1/3 w-64 h-64 hidden dark:block bg-fuchsia-600/18 rounded-full blur-[80px] pointer-events-none' />
+            <div className='absolute -bottom-10 right-1/4 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[85px] pointer-events-none' />
+
+            {/* Dark mode SVG Velvet Silk Waves */}
+            <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="work-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.32" />
+                    <stop offset="35%" stopColor="#FB7185" stopOpacity="0.22" />
+                    <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#D97706" stopOpacity="0.10" />
+                  </linearGradient>
+                  <linearGradient id="work-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#C026D3" stopOpacity="0.30" />
+                    <stop offset="40%" stopColor="#E11D48" stopOpacity="0.22" />
+                    <stop offset="75%" stopColor="#8B5CF6" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+                  </linearGradient>
+                  <linearGradient id="work-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.95" />
+                    <stop offset="45%" stopColor="#FBBF24" stopOpacity="0.95" />
+                    <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.85" />
+                    <stop offset="100%" stopColor="#FEF08A" stopOpacity="0.4" />
+                  </linearGradient>
+                  <linearGradient id="work-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#E879F9" stopOpacity="0.85" />
+                    <stop offset="50%" stopColor="#FB7185" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.8" />
+                  </linearGradient>
+                  <filter id="work-glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="work-glow-rose" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4.5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                {/* Background Silk Wave */}
+                <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150 L1440,320 L0,320 Z" fill="url(#work-grad-wave1)" />
+                <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150" stroke="url(#work-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#work-glow-amber)" />
+                {/* Foreground Velvet Wave */}
+                <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210 L1440,320 L0,320 Z" fill="url(#work-grad-wave2)" />
+                <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210" stroke="url(#work-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#work-glow-rose)" />
+              </svg>
+            </div>
+
+            {/* Light mode decorative orbs */}
+            <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
+          </div>
+
+          <div className='relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              <p className='text-blue-300 dark:text-rose-300 font-bold uppercase tracking-widest text-xs mb-1'>Quality Control</p>
+              <h1 className='text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3'>
+                <FileCheck className='text-blue-500 dark:text-rose-400' size={32}/> Work Logs & Audits
+              </h1>
+            </motion.div>
+            
+            <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className='flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto relative z-50'>
+              {/* Advanced Search */}
+              <div className='relative w-full md:w-72' ref={searchRef}>
+                <div className='relative flex items-center'>
+                  <input
+                    ref={searchInputRef}
+                    type='text'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setShowSearchDropdown(true)}
+                    placeholder='Search ID or keywords...'
+                    className='w-full pl-10 pr-16 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold text-sm text-white placeholder-gray-400 outline-none transition-all backdrop-blur-md'
+                  />
+                  <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' size={18} />
+                  <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5'>
+                    {searchQuery ? (
+                      <button 
+                        onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
+                        className='text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors'
+                      >
+                        <X size={14} />
+                      </button>
+                    ) : (
+                      <Kbd variant="glass" size="xs">/</Kbd>
+                    )}
+                  </div>
+                </div>
+                
+                <AnimatePresence>
+                  {showSearchDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      className='absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#0c1427] rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden z-[100]'
+                    >
+                      <div className='p-3 text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest border-b border-gray-50 dark:border-slate-800'>Quick Filters</div>
+                      {searchShortcuts.map((shortcut) => (
+                        <button
+                          key={shortcut.value}
+                          onClick={() => {
+                            setSearchQuery(shortcut.value);
+                            setShowSearchDropdown(false);
+                          }}
+                          className='w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
+                        >
+                          {shortcut.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                onClick={fetchRecords}
+                disabled={loading}
+                className='px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+                title='Refresh work records (Alt+R)'
+              >
+                {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={18}/>}
+                <Kbd variant="glass" size="xs">Alt+R</Kbd>
+              </button>
+              
+              <button
+                onClick={handleExportCSV}
+                className='px-5 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-100 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+                title='Export CSV (Alt+E)'
+              >
+                <FileSpreadsheet size={18}/> Export
+                <Kbd variant="glass" size="xs">Alt+E</Kbd>
+              </button>
+
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className='px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+                title='Toggle filters (Alt+F)'
+              >
+                <Filter size={18}/> Filters
+                <Kbd variant="glass" size="xs">Alt+F</Kbd>
+                <motion.div animate={{ rotate: showFilters ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronDown size={18} />
+                </motion.div>
+              </button>
+            </motion.div>
+          </div>
+
+          {/* --- STATS DASHBOARD (Pill-shaped, floating half outside) --- */}
+          {!loading && (
+            <div className='absolute bottom-0 left-4 right-4 md:left-8 md:right-8 translate-y-1/2 z-40 pointer-events-none'>
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, staggerChildren: 0.1 }}
+                className='grid grid-cols-1 md:grid-cols-3 gap-4 pointer-events-auto'
+              >
+                <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-rose-500/25 dark:shadow-[0_8px_32px_rgba(244,63,94,0.12)] hover:dark:border-rose-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                  <div className='p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-300 rounded-full border border-rose-200/40 dark:border-rose-500/30 shadow-sm'><Activity size={20}/></div>
+                  <div>
+                    <p className='text-[10px] font-bold text-gray-500 dark:text-rose-200/70 uppercase tracking-widest'>Total Records</p>
+                    <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.totalBookings}</p>
+                  </div>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-amber-500/25 dark:shadow-[0_8px_32px_rgba(245,158,11,0.12)] hover:dark:border-amber-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                  <div className='p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-300 rounded-full border border-amber-200/40 dark:border-amber-500/30 shadow-sm'><Wallet size={20}/></div>
+                  <div>
+                    <p className='text-[10px] font-bold text-gray-500 dark:text-amber-200/70 uppercase tracking-widest'>Extra Revenue</p>
+                    <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>AED {stats.totalExtra.toFixed(2)}</p>
+                  </div>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-purple-500/25 dark:shadow-[0_8px_32px_rgba(168,85,247,0.12)] hover:dark:border-purple-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                  <div className='p-3 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 rounded-full border border-purple-200/40 dark:border-purple-500/30 shadow-sm'><FileCheck size={20}/></div>
+                  <div>
+                    <p className='text-[10px] font-bold text-gray-500 dark:text-purple-200/70 uppercase tracking-widest'>Pending Audits</p>
+                    <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.pendingAudits}</p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className='px-3 md:px-8 relative z-20'>
 
         {/* --- FILTERS PANEL --- */}
         <AnimatePresence>
@@ -555,7 +718,7 @@ export default function WorkRecords() {
               initial={{ opacity: 0, height: 0, y: -20 }} 
               animate={{ opacity: 1, height: 'auto', y: 0 }} 
               exit={{ opacity: 0, height: 0, y: -20 }}
-              className='bg-white dark:bg-[#0c1427] p-6 rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 mb-8 overflow-hidden'
+              className='bg-white dark:bg-[#0c1427] p-4 md:p-6 rounded-2xl md:rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 mb-6 md:mb-8 overflow-hidden'
             >
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
                 <div>
@@ -645,12 +808,12 @@ export default function WorkRecords() {
                         whileHover={{ scale: 1.005 }}
                         transition={{ duration: 0.2 }}
                         key={booking.id}
-                        className='relative pl-8 md:pl-10'
+                        className='relative pl-5 md:pl-10'
                       >
                         {/* Timeline dot */}
                         <div className='absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#F4F7FA] dark:ring-[#070b14] shadow-sm'></div>
 
-                        <div className='bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-700 transition-all'>
+                        <div className='bg-white dark:bg-[#0c1427] rounded-2xl md:rounded-[2rem] p-4 md:p-6 shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-700 transition-all'>
 
                           {/* Top row */}
                           <div className='flex flex-col md:flex-row justify-between items-start mb-4 border-b border-gray-50 dark:border-slate-800/80 pb-4 gap-4 md:gap-0'>

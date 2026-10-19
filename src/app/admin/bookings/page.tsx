@@ -220,6 +220,7 @@ export default function BookingManagement() {
 
   // Filter States
   const [showFilters, setShowFilters] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
@@ -648,149 +649,273 @@ export default function BookingManagement() {
   };
 
   return (
-    <div className="min-h-screen pb-10 p-2 md:p-4">
+    <div className="min-h-screen pb-10 p-2 md:p-4 w-full max-w-full overflow-x-hidden">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
-      {/* Header — Cosmic Cyber-Wave & Neon Nebula (dark) */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden dark:border dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]'>
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
-
-        {/* Dark mode multi-color cosmic gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #050814 0%, #0d0f28 18%, #1a0b3b 38%, #0b224d 62%, #041226 82%, #020612 100%)' }} />
-
-        {/* Dark mode luminous mesh orbs */}
-        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-violet-600/25 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute -top-10 right-1/4 w-80 h-80 hidden dark:block bg-cyan-500/20 rounded-full blur-[90px] pointer-events-none' />
-        <div className='absolute bottom-0 right-0 w-96 h-96 hidden dark:block bg-pink-500/18 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute top-1/2 left-1/3 w-64 h-64 hidden dark:block bg-emerald-500/12 rounded-full blur-[80px] pointer-events-none' />
-
-        {/* Dark mode SVG Organic Multi-Layer Fluid Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="book-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
-                <stop offset="35%" stopColor="#3B82F6" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#10B981" stopOpacity="0.10" />
-              </linearGradient>
-              <linearGradient id="book-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#EC4899" stopOpacity="0.30" />
-                <stop offset="40%" stopColor="#8B5CF6" stopOpacity="0.24" />
-                <stop offset="75%" stopColor="#06B6D4" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.06" />
-              </linearGradient>
-              <linearGradient id="book-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#C084FC" stopOpacity="0.9" />
-                <stop offset="45%" stopColor="#38BDF8" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#34D399" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="book-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#F472B6" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#818CF8" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="book-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-              <filter id="book-glow-pink" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="4.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            {/* Background Upper Aurora Wave - prominently visible behind title and actions */}
-            <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70 L1440,320 L0,320 Z" fill="url(#book-grad-wave1)" />
-            <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70" stroke="url(#book-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#book-glow-cyan)" />
-
-            {/* Foreground Silk Wave - flows across mid-header right above the stats cards */}
-            <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130 L1440,320 L0,320 Z" fill="url(#book-grad-wave2)" />
-            <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130" stroke="url(#book-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#book-glow-pink)" />
-
-            {/* Tertiary Whispering Wave Ribbon */}
-            <path d="M0,220 C360,260 680,170 1020,230 C1240,270 1380,200 1440,210" stroke="url(#book-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Light mode decorative orbs */}
-        <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
-        <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none dark:hidden' />
-
-        <div className='relative z-20'>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
-            <div>
-              <p className='text-blue-300 dark:text-cyan-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
-                <LayoutDashboard size={12}/> Operations Control
-              </p>
-              <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
-                <ClipboardList className='text-blue-500 dark:text-cyan-400' size={28}/> Booking Management
-              </h1>
+      {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-3 -mx-2 px-3 pt-2.5 pb-2">
+        {/* Top Row: Title + Action Icons */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+              <ClipboardList size={18} />
             </div>
-
-            <div className="flex gap-2 w-full md:w-auto flex-wrap">
-              <button 
-                onClick={handleExportExcel} 
-                title="Export Excel (Alt+E)"
-                className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <FileSpreadsheet size={14}/> Export Excel
-                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.2 rounded border border-emerald-300 dark:border-emerald-700">⌥E</span>
-              </button>
-              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                <Download size={14}/> Export PDF
-              </button>
-              <button 
-                onClick={() => setShowFilters(!showFilters)} 
-                title="Toggle Filters (Alt+F)"
-                className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto cursor-pointer ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}
-              >
-                <Filter size={15}/> Filters {showFilters && <X size={13}/>}
-                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-white/20 px-1 py-0.2 rounded">⌥F</span>
-              </button>
-              <button 
-                onClick={() => setIsAddOpen(true)} 
-                title="Create New Booking (Alt+N)"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30 border border-blue-500/50 w-full md:w-auto text-xs cursor-pointer"
-              >
-                <Plus size={15} strokeWidth={3}/> New Booking
-                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-blue-700 px-1 py-0.2 rounded border border-blue-400/30">⌥N</span>
-              </button>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Bookings
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+                {filteredBookings.length} records
+              </p>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Search Toggle */}
+            <button
+              onClick={() => {
+                setShowMobileSearch(prev => !prev);
+                if (showFilters) setShowFilters(false);
+              }}
+              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              }`}
+              title="Search"
+              aria-label="Search"
+            >
+              <Search size={16} />
+            </button>
+
+            {/* Filter Toggle */}
+            <button
+              onClick={() => {
+                setShowFilters(prev => !prev);
+                if (showMobileSearch) setShowMobileSearch(false);
+              }}
+              className={`relative p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
+                showFilters || filterCompany || filterStatus ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30' : ''
+              }`}
+              title="Filters"
+              aria-label="Filters"
+            >
+              <Filter size={16} />
+              {(filterCompany || filterStatus) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0c1427]" />
+              )}
+            </button>
+
+            {/* Export Excel */}
+            <button
+              onClick={handleExportExcel}
+              className="p-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+              title="Export Excel"
+              aria-label="Export Excel"
+            >
+              <FileSpreadsheet size={16} />
+            </button>
+
+            {/* New Booking Button */}
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+            >
+              <Plus size={14} strokeWidth={3} />
+              <span>New</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Micro 4-Metric Bar */}
+        <div className="grid grid-cols-4 gap-1.5 pt-1">
+          <div className="bg-gray-50 dark:bg-[#070b14] border border-gray-100 dark:border-slate-800/80 rounded-lg px-2 py-1 text-center">
+            <p className="text-[8px] font-black uppercase text-gray-400 tracking-wider">Total</p>
+            <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.total}</p>
+          </div>
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 text-center">
+            <p className="text-[8px] font-black uppercase text-amber-500 tracking-wider">Pending</p>
+            <p className="text-xs font-black text-amber-600 dark:text-amber-400 leading-tight">{stats.pending}</p>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-2 py-1 text-center">
+            <p className="text-[8px] font-black uppercase text-blue-500 tracking-wider">Active</p>
+            <p className="text-xs font-black text-blue-600 dark:text-blue-400 leading-tight">{stats.active}</p>
+          </div>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 text-center">
+            <p className="text-[8px] font-black uppercase text-emerald-500 tracking-wider">Done</p>
+            <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 leading-tight">{stats.completed}</p>
+          </div>
+        </div>
+
+        {/* Collapsible Mobile Search */}
+        <AnimatePresence>
+          {showMobileSearch && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="pt-2 overflow-hidden"
+            >
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  placeholder="Search ref, company, unit..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <Search size={14} className="absolute left-2.5 text-gray-400" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="hidden md:block">
+        <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden dark:border dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]'>
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color cosmic gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #050814 0%, #0d0f28 18%, #1a0b3b 38%, #0b224d 62%, #041226 82%, #020612 100%)' }} />
+
+          {/* Dark mode luminous mesh orbs */}
+          <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-violet-600/25 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute -top-10 right-1/4 w-80 h-80 hidden dark:block bg-cyan-500/20 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute bottom-0 right-0 w-96 h-96 hidden dark:block bg-pink-500/18 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute top-1/2 left-1/3 w-64 h-64 hidden dark:block bg-emerald-500/12 rounded-full blur-[80px] pointer-events-none' />
+
+          {/* Dark mode SVG Organic Multi-Layer Fluid Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="book-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                  <stop offset="35%" stopColor="#3B82F6" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#10B981" stopOpacity="0.10" />
+                </linearGradient>
+                <linearGradient id="book-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#EC4899" stopOpacity="0.30" />
+                  <stop offset="40%" stopColor="#8B5CF6" stopOpacity="0.24" />
+                  <stop offset="75%" stopColor="#06B6D4" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.06" />
+                </linearGradient>
+                <linearGradient id="book-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#C084FC" stopOpacity="0.9" />
+                  <stop offset="45%" stopColor="#38BDF8" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#34D399" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="book-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#F472B6" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#818CF8" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="book-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="book-glow-pink" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70 L1440,320 L0,320 Z" fill="url(#book-grad-wave1)" />
+              <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70" stroke="url(#book-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#book-glow-cyan)" />
+              <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130 L1440,320 L0,320 Z" fill="url(#book-grad-wave2)" />
+              <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130" stroke="url(#book-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#book-glow-pink)" />
+              <path d="M0,220 C360,260 680,170 1020,230 C1240,270 1380,200 1440,210" stroke="url(#book-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
+          <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none dark:hidden' />
+
+          <div className='relative z-20'>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
               <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Records</p>
-                <p className="text-base font-black text-white leading-tight">{stats.total}</p>
+                <p className='text-blue-300 dark:text-cyan-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
+                  <LayoutDashboard size={12}/> Operations Control
+                </p>
+                <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
+                  <ClipboardList className='text-blue-500 dark:text-cyan-400' size={28}/> Booking Management
+                </h1>
+              </div>
+
+              <div className="flex gap-2 w-full md:w-auto flex-wrap">
+                <button 
+                  onClick={handleExportExcel} 
+                  title="Export Excel (Alt+E)"
+                  className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <FileSpreadsheet size={14}/> Export Excel
+                  <span className="hidden xl:inline text-[9px] font-mono font-bold bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.2 rounded border border-emerald-300 dark:border-emerald-700">⌥E</span>
+                </button>
+                <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                  <Download size={14}/> Export PDF
+                </button>
+                <button 
+                  onClick={() => setShowFilters(!showFilters)} 
+                  title="Toggle Filters (Alt+F)"
+                  className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto cursor-pointer ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}
+                >
+                  <Filter size={15}/> Filters {showFilters && <X size={13}/>}
+                  <span className="hidden xl:inline text-[9px] font-mono font-bold bg-white/20 px-1 py-0.2 rounded">⌥F</span>
+                </button>
+                <button 
+                  onClick={() => setIsAddOpen(true)} 
+                  title="Create New Booking (Alt+N)"
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30 border border-blue-500/50 w-full md:w-auto text-xs cursor-pointer"
+                >
+                  <Plus size={15} strokeWidth={3}/> New Booking
+                  <span className="hidden xl:inline text-[9px] font-mono font-bold bg-blue-700 px-1 py-0.2 rounded border border-blue-400/30">⌥N</span>
+                </button>
               </div>
             </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
-              <div>
-                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pending</p>
-                <p className="text-base font-black text-amber-50 leading-tight">{stats.pending}</p>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+                <div>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Records</p>
+                  <p className="text-base font-black text-white leading-tight">{stats.total}</p>
+                </div>
               </div>
-            </div>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
-              <div>
-                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Active (Live)</p>
-                <p className="text-base font-black text-blue-50 leading-tight">{stats.active}</p>
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+                <div>
+                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pending</p>
+                  <p className="text-base font-black text-amber-50 leading-tight">{stats.pending}</p>
+                </div>
               </div>
-            </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
-              <div>
-                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Completed</p>
-                <p className="text-base font-black text-emerald-50 leading-tight">{stats.completed}</p>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+                <div>
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Active (Live)</p>
+                  <p className="text-base font-black text-blue-50 leading-tight">{stats.active}</p>
+                </div>
+              </div>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 backdrop-blur-sm flex items-center gap-3">
+                <div>
+                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Completed</p>
+                  <p className="text-base font-black text-emerald-50 leading-tight">{stats.completed}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="relative mb-4">
+      {/* Desktop Search Bar (Hidden on Mobile) */}
+      <div className="relative mb-4 hidden md:block">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
         <input
           ref={searchInputRef}

@@ -321,177 +321,241 @@ export default function QuotationManager() {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <div className="min-h-screen pb-20 bg-[#F4F7FA] dark:bg-[#070b14]">
+    <div className="min-h-screen pb-20 bg-[#F4F7FA] dark:bg-[#070b14] w-full max-w-full overflow-x-hidden">
 
-      {/* ── DARK GRADIENT HEADER — Imperial Amethyst & Celestial Waves (dark) ── */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10 overflow-hidden dark:border-b dark:border-purple-500/20 dark:shadow-[0_12px_40px_rgba(168,85,247,0.15)]">
-        {/* Light mode gradient */}
-        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+      {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
+      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0819]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-purple-500/20 shadow-sm transition-colors mb-3">
+        {/* Top slim bar */}
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <FileText size={18} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                Quotations
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 dark:text-purple-300/80 capitalize">
+                {activeView === 'generator' ? 'Generator' : activeView === 'history' ? `${quotations.length} quotes` : 'Templates'}
+              </p>
+            </div>
+          </div>
 
-        {/* Dark mode multi-color imperial amethyst gradient */}
-        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #070512 0%, #150d2e 20%, #221142 42%, #120926 70%, #05030e 100%)' }} />
-
-        {/* Dark mode glowing amethyst orbs */}
-        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-purple-600/25 rounded-full blur-[100px] pointer-events-none' />
-        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-600/20 rounded-full blur-[90px] pointer-events-none' />
-        <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-cyan-500/12 rounded-full blur-[80px] pointer-events-none' />
-
-        {/* Dark mode SVG Imperial Amethyst Waves */}
-        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="quot-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.32" />
-                <stop offset="35%" stopColor="#A855F7" stopOpacity="0.25" />
-                <stop offset="70%" stopColor="#4F46E5" stopOpacity="0.20" />
-                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.08" />
-              </linearGradient>
-              <linearGradient id="quot-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#C084FC" stopOpacity="0.28" />
-                <stop offset="40%" stopColor="#EC4899" stopOpacity="0.20" />
-                <stop offset="75%" stopColor="#6366F1" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.05" />
-              </linearGradient>
-              <linearGradient id="quot-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#C084FC" stopOpacity="0.95" />
-                <stop offset="45%" stopColor="#E879F9" stopOpacity="0.95" />
-                <stop offset="85%" stopColor="#818CF8" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
-              </linearGradient>
-              <linearGradient id="quot-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#F472B6" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#A78BFA" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.8" />
-              </linearGradient>
-              <filter id="quot-glow-purple" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#quot-grad-wave1)" />
-            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#quot-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#quot-glow-purple)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#quot-grad-wave2)" />
-            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#quot-crest-2)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#quot-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Light mode decorative orbs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
-
-        <div className="w-full relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          {/* Title */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeView}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeView === "generator" && (
-                <>
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-                    <FileText className="text-blue-400" size={36} /> Generate Quotation
-                  </h1>
-                  <p className="text-blue-200 font-medium mt-2">Create and download professional quotations for clients.</p>
-                </>
-              )}
-              {activeView === "history" && (
-                <>
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-                    <History className="text-blue-400" size={36} /> Quotation History
-                  </h1>
-                  <p className="text-blue-200 font-medium mt-2">Browse and download previously generated quotations.</p>
-                </>
-              )}
-              {activeView === "templates" && (
-                <>
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-                    <LayoutTemplate className="text-blue-400" size={36} /> Template Manager
-                  </h1>
-                  <p className="text-blue-200 font-medium mt-2">Create and manage quotation templates with custom tables.</p>
-                </>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Right side action */}
-          <AnimatePresence mode="wait">
+          <div className="flex items-center gap-1 shrink-0">
             {activeView === "generator" && (
-              <motion.div
-                key="gen-btn"
-                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.2 }}
+              <button
+                onClick={handleSaveAndDownload}
+                disabled={isGenerating || loadingTemplates}
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-black text-xs shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:opacity-60"
               >
-                <button
-                  onClick={handleSaveAndDownload}
-                  disabled={isGenerating || loadingTemplates}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-900/40 transition-all disabled:opacity-70"
-                  title="Save & Download (Ctrl+S)"
-                >
-                  {isGenerating ? <DotsLoader size="xs" variant="white" /> : <Download size={20} />}
-                  {isGenerating ? "Processing..." : "Save & Download"}
-                  <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
-                </button>
-              </motion.div>
+                {isGenerating ? <DotsLoader size="xs" variant="white" /> : <Download size={14} />}
+                <span>Save</span>
+              </button>
             )}
             {activeView === "history" && (
-              <motion.div
-                key="hist-badge"
-                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-3"
+              <button
+                onClick={fetchQuotations}
+                disabled={loadingHistory}
+                className="p-1.5 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                title="Refresh history"
+                aria-label="Refresh history"
               >
-                <button
-                  onClick={fetchQuotations}
-                  disabled={loadingHistory}
-                  className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
-                  title="Refresh history (Alt+R)"
-                >
-                  {loadingHistory ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
-                  <Kbd variant="glass" size="xs">Alt+R</Kbd>
-                </button>
-                <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/10 text-blue-100 font-bold rounded-xl text-sm">
-                  Total Records: {quotations.length}
-                </div>
-              </motion.div>
+                {loadingHistory ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
+              </button>
             )}
-          </AnimatePresence>
+          </div>
         </div>
 
-        {/* ── TAB BAR (inside header, bottom) ── */}
-        <div className="flex gap-1 mt-8 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-1 w-fit">
+        {/* Tab Switcher on Mobile */}
+        <div className="flex items-center gap-1.5 px-3 pb-2.5 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
-            <motion.button
+            <button
               key={tab.id}
               onClick={() => setActiveView(tab.id)}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeView === tab.id
-                  ? "text-white"
-                  : "text-white/50 hover:text-white/80"
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
               }`}
             >
-              {activeView === tab.id && (
-                <motion.div
-                  layoutId="active-tab-pill"
-                  className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
-                  transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                {tab.icon} {tab.label}
-                <Kbd variant="glass" size="xs">{tab.hotkey}</Kbd>
-              </span>
-            </motion.button>
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
           ))}
         </div>
       </div>
 
+      {/* ── DESKTOP DARK GRADIENT HEADER (hidden md:block, 100% UNTOUCHED) ── */}
+      <div className="hidden md:block">
+        <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10 overflow-hidden dark:border-b dark:border-purple-500/20 dark:shadow-[0_12px_40px_rgba(168,85,247,0.15)]">
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color imperial amethyst gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #070512 0%, #150d2e 20%, #221142 42%, #120926 70%, #05030e 100%)' }} />
+
+          {/* Dark mode glowing amethyst orbs */}
+          <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-purple-600/25 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-indigo-600/20 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-cyan-500/12 rounded-full blur-[80px] pointer-events-none' />
+
+          {/* Dark mode SVG Imperial Amethyst Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="quot-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#A855F7" stopOpacity="0.25" />
+                  <stop offset="70%" stopColor="#4F46E5" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.08" />
+                </linearGradient>
+                <linearGradient id="quot-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#C084FC" stopOpacity="0.28" />
+                  <stop offset="40%" stopColor="#EC4899" stopOpacity="0.20" />
+                  <stop offset="75%" stopColor="#6366F1" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="quot-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#C084FC" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#E879F9" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#818CF8" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="quot-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#F472B6" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#A78BFA" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="quot-glow-purple" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#quot-grad-wave1)" />
+              <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#quot-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#quot-glow-purple)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#quot-grad-wave2)" />
+              <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#quot-crest-2)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#quot-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
+          <div className="w-full relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            {/* Title */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeView}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeView === "generator" && (
+                  <>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                      <FileText className="text-blue-400" size={36} /> Generate Quotation
+                    </h1>
+                    <p className="text-blue-200 font-medium mt-2">Create and download professional quotations for clients.</p>
+                  </>
+                )}
+                {activeView === "history" && (
+                  <>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                      <History className="text-blue-400" size={36} /> Quotation History
+                    </h1>
+                    <p className="text-blue-200 font-medium mt-2">Browse and download previously generated quotations.</p>
+                  </>
+                )}
+                {activeView === "templates" && (
+                  <>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
+                      <LayoutTemplate className="text-blue-400" size={36} /> Template Manager
+                    </h1>
+                    <p className="text-blue-200 font-medium mt-2">Create and manage quotation templates with custom tables.</p>
+                  </>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Right side action */}
+            <AnimatePresence mode="wait">
+              {activeView === "generator" && (
+                <motion.div
+                  key="gen-btn"
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <button
+                    onClick={handleSaveAndDownload}
+                    disabled={isGenerating || loadingTemplates}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-900/40 transition-all disabled:opacity-70"
+                    title="Save & Download (Ctrl+S)"
+                  >
+                    {isGenerating ? <DotsLoader size="xs" variant="white" /> : <Download size={20} />}
+                    {isGenerating ? "Processing..." : "Save & Download"}
+                    <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
+                  </button>
+                </motion.div>
+              )}
+              {activeView === "history" && (
+                <motion.div
+                  key="hist-badge"
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-3"
+                >
+                  <button
+                    onClick={fetchQuotations}
+                    disabled={loadingHistory}
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
+                    title="Refresh history (Alt+R)"
+                  >
+                    {loadingHistory ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
+                    <Kbd variant="glass" size="xs">Alt+R</Kbd>
+                  </button>
+                  <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/10 text-blue-100 font-bold rounded-xl text-sm">
+                    Total Records: {quotations.length}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── TAB BAR (inside header, bottom) ── */}
+          <div className="flex gap-1 mt-8 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-1 w-fit">
+            {tabs.map((tab) => (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveView(tab.id)}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  activeView === tab.id
+                    ? "text-white"
+                    : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {activeView === tab.id && (
+                  <motion.div
+                    layoutId="active-tab-pill"
+                    className="absolute inset-0 bg-blue-600 rounded-xl shadow-md"
+                    transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  {tab.icon} {tab.label}
+                  <Kbd variant="glass" size="xs">{tab.hotkey}</Kbd>
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── MAIN CONTENT ── */}
-      <div className="w-full mx-auto px-2 md:px-6 -mt-20 relative z-20 pb-4">
+      <div className="w-full mx-auto px-3 md:px-6 mt-3 md:-mt-20 relative z-20 pb-4">
         <AnimatePresence mode="wait">
 
           {/* ======================= GENERATOR VIEW ======================= */}
@@ -566,15 +630,15 @@ export default function QuotationManager() {
 
                 {/* Editable sections */}
                 {editableSections.length > 0 && (
-                  <div className="bg-white dark:bg-[#0c0819]/80 dark:backdrop-blur-xl p-6 rounded-3xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-purple-500/20">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+                  <div className="bg-white dark:bg-[#0c0819]/80 dark:backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-purple-500/20">
+                    <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4 md:mb-6 border-b border-gray-100 dark:border-slate-800 pb-3 md:pb-4">
                       <DollarSign size={20} className="text-blue-600 dark:text-blue-400 shrink-0" /> Services &amp; Pricing
-                      <span className="ml-auto text-xs font-medium text-gray-400 dark:text-slate-500">Changes apply only to this PDF</span>
+                      <span className="ml-auto text-xs font-medium text-gray-400 dark:text-slate-500 hidden sm:inline">Changes apply only to this PDF</span>
                     </h2>
-                    <div className="space-y-8">
+                    <div className="space-y-6 md:space-y-8">
                       {editableSections.map((section, sectionIdx) => (
-                        <div key={section.id} className="bg-gray-50 dark:bg-[#090d1a]/70 p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
-                          <div className="flex items-center justify-between mb-4">
+                        <div key={section.id} className="bg-gray-50 dark:bg-[#090d1a]/70 p-3.5 md:p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
+                          <div className="flex items-center justify-between mb-3 md:mb-4">
                             <h3 className="text-sm font-black text-gray-800 dark:text-slate-200">{section.title}</h3>
                             <button
                               onClick={() => handleResetSection(sectionIdx)}
@@ -583,47 +647,50 @@ export default function QuotationManager() {
                               <RefreshCw size={12} /> Reset
                             </button>
                           </div>
-                          {/* Column headers */}
-                          <div className="flex items-center gap-2 mb-2">
-                            {section.columns.map((col, ci) => (
-                              <div
-                                key={ci}
-                                className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-3 min-w-0 overflow-hidden"
-                                style={{ width: `${col.width}%`, flexShrink: 0, textAlign: col.align }}
-                              >
-                                {col.label}
+                          {/* Column headers & Rows with overflow-x-auto protection */}
+                          <div className="w-full max-w-full overflow-x-auto custom-scrollbar pb-2">
+                            <div className="min-w-[460px] md:min-w-0 space-y-2">
+                              {/* Column headers */}
+                              <div className="flex items-center gap-2 mb-2">
+                                {section.columns.map((col, ci) => (
+                                  <div
+                                    key={ci}
+                                    className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-3 min-w-0 overflow-hidden"
+                                    style={{ width: `${col.width}%`, flexShrink: 0, textAlign: col.align }}
+                                  >
+                                    {col.label}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                          {/* Rows */}
-                          <div className="space-y-2">
-                            {section.rows.map((row, rowIdx) => (
-                              <div key={rowIdx} className="flex items-center gap-2">
-                                {section.columns.map((col, colIdx) => {
-                                  if (colIdx === 0 && section.columns.length > 1) {
+                              {/* Rows */}
+                              {section.rows.map((row, rowIdx) => (
+                                <div key={rowIdx} className="flex items-center gap-2">
+                                  {section.columns.map((col, colIdx) => {
+                                    if (colIdx === 0 && section.columns.length > 1) {
+                                      return (
+                                        <div
+                                          key={colIdx}
+                                          className="text-xs font-bold text-gray-600 dark:text-slate-300 bg-white dark:bg-[#070b14] p-3 rounded-lg border border-gray-100 dark:border-slate-800 shadow-sm min-w-0 overflow-hidden"
+                                          style={{ width: `${col.width}%`, flexShrink: 0, textAlign: col.align }}
+                                        >
+                                          {row[colIdx] ?? ""}
+                                        </div>
+                                      );
+                                    }
                                     return (
-                                      <div
+                                      <input
                                         key={colIdx}
-                                        className="text-xs font-bold text-gray-600 dark:text-slate-300 bg-white dark:bg-[#070b14] p-3 rounded-lg border border-gray-100 dark:border-slate-800 shadow-sm min-w-0 overflow-hidden"
+                                        type="text"
+                                        value={row[colIdx] ?? ""}
+                                        onChange={(e) => handleCellEdit(sectionIdx, rowIdx, colIdx, e.target.value)}
+                                        className="py-3 px-3 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg outline-none font-extrabold text-blue-700 dark:text-blue-400 focus:ring-2 focus:ring-blue-600 shadow-sm text-sm min-w-0"
                                         style={{ width: `${col.width}%`, flexShrink: 0, textAlign: col.align }}
-                                      >
-                                        {row[colIdx] ?? ""}
-                                      </div>
+                                      />
                                     );
-                                  }
-                                  return (
-                                    <input
-                                      key={colIdx}
-                                      type="text"
-                                      value={row[colIdx] ?? ""}
-                                      onChange={(e) => handleCellEdit(sectionIdx, rowIdx, colIdx, e.target.value)}
-                                      className="py-3 px-3 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg outline-none font-extrabold text-blue-700 dark:text-blue-400 focus:ring-2 focus:ring-blue-600 shadow-sm text-sm min-w-0"
-                                      style={{ width: `${col.width}%`, flexShrink: 0, textAlign: col.align }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            ))}
+                                  })}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -673,58 +740,119 @@ export default function QuotationManager() {
                     <p className="text-sm mt-1">Try adjusting your search or date filter.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-[#090d1a] border-b border-gray-100 dark:border-slate-800">
-                          <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Quote No</th>
-                          <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Customer / Company</th>
-                          <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Date Issued</th>
-                          <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <AnimatePresence>
-                          {filteredQuotations.map((quote, idx) => (
-                            <motion.tr key={quote.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="border-b border-gray-50 dark:border-slate-800/60 hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors group">
-                              <td className="p-5">
-                                <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-sm rounded-lg border border-blue-100 dark:border-blue-900/50">
-                                  <FileText size={14} /> {quote.quote_no}
-                                </span>
-                              </td>
-                              <td className="p-5">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-500 dark:text-slate-400 group-hover:bg-white dark:group-hover:bg-[#090d1a] group-hover:shadow-sm transition-all shrink-0">
-                                    <Building2 size={18} />
+                  <>
+                    {/* Mobile Quotation Cards (md:hidden) */}
+                    <div className="md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+                      {filteredQuotations.map((quote) => (
+                        <div key={quote.id} className="p-3.5 space-y-2.5">
+                          {/* Top row: Quote No & Date */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-xs rounded-md border border-blue-100 dark:border-blue-900/50">
+                              <FileText size={12} /> {quote.quote_no}
+                            </span>
+                            <span className="text-[11px] font-bold text-gray-500 dark:text-slate-400">
+                              {format(new Date(quote.quote_date), "dd MMM yyyy")}
+                            </span>
+                          </div>
+
+                          {/* Customer / Company */}
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                              <Building2 size={15} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-black text-gray-900 dark:text-white truncate">
+                                {quote.company_name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                                Generated {format(new Date(quote.created_at), "hh:mm a")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <a
+                              href={`/api/pdf/${encodeURIComponent(quote.quote_no)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 py-2 px-3 bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                            >
+                              <ExternalLink size={13} /> View PDF
+                            </a>
+                            <a
+                              href={`/api/pdf/${encodeURIComponent(quote.quote_no)}?dl=1`}
+                              download
+                              className="py-2 px-3 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                            >
+                              <Download size={13} />
+                            </a>
+                            <button
+                              onClick={() => handleDeleteQuotation(quote)}
+                              disabled={deletingQuoteId === quote.id}
+                              className="py-2 px-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/40 text-red-600 dark:text-rose-400 rounded-xl font-bold text-xs flex items-center justify-center disabled:opacity-60"
+                            >
+                              {deletingQuoteId === quote.id ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={14} />}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop Quotation Table (hidden md:block, 100% UNTOUCHED) */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-[#090d1a] border-b border-gray-100 dark:border-slate-800">
+                            <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Quote No</th>
+                            <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Customer / Company</th>
+                            <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Date Issued</th>
+                            <th className="p-5 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <AnimatePresence>
+                            {filteredQuotations.map((quote, idx) => (
+                              <motion.tr key={quote.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="border-b border-gray-50 dark:border-slate-800/60 hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors group">
+                                <td className="p-5">
+                                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-sm rounded-lg border border-blue-100 dark:border-blue-900/50">
+                                    <FileText size={14} /> {quote.quote_no}
+                                  </span>
+                                </td>
+                                <td className="p-5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-500 dark:text-slate-400 group-hover:bg-white dark:group-hover:bg-[#090d1a] group-hover:shadow-sm transition-all shrink-0">
+                                      <Building2 size={18} />
+                                    </div>
+                                    <div>
+                                      <p className="font-extrabold text-gray-900 dark:text-white">{quote.company_name}</p>
+                                      <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mt-0.5">Generated: {format(new Date(quote.created_at), "hh:mm a")}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-extrabold text-gray-900 dark:text-white">{quote.company_name}</p>
-                                    <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mt-0.5">Generated: {format(new Date(quote.created_at), "hh:mm a")}</p>
+                                </td>
+                                <td className="p-5">
+                                  <p className="font-bold text-gray-700 dark:text-slate-300">{format(new Date(quote.quote_date), "dd MMM yyyy")}</p>
+                                </td>
+                                <td className="p-5 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <a href={`/api/pdf/${encodeURIComponent(quote.quote_no)}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2" title="View PDF">
+                                      <ExternalLink size={18} /> <span className="hidden sm:inline text-sm">View</span>
+                                    </a>
+                                    <a href={`/api/pdf/${encodeURIComponent(quote.quote_no)}?dl=1`} download className="p-2.5 bg-gray-900 dark:bg-blue-600 text-white hover:bg-black dark:hover:bg-blue-500 rounded-xl font-bold transition-all shadow-md flex items-center gap-2" title="Download PDF">
+                                      <Download size={18} />
+                                    </a>
+                                    <button onClick={() => handleDeleteQuotation(quote)} disabled={deletingQuoteId === quote.id} className="p-2.5 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/40 text-red-600 dark:text-rose-400 hover:bg-red-100 dark:hover:bg-rose-900/60 rounded-xl font-bold transition-all shadow-sm disabled:opacity-60" title="Delete">
+                                      {deletingQuoteId === quote.id ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={18} />}
+                                    </button>
                                   </div>
-                                </div>
-                              </td>
-                              <td className="p-5">
-                                <p className="font-bold text-gray-700 dark:text-slate-300">{format(new Date(quote.quote_date), "dd MMM yyyy")}</p>
-                              </td>
-                              <td className="p-5 text-right">
-                                <div className="flex justify-end gap-2">
-                                  <a href={`/api/pdf/${encodeURIComponent(quote.quote_no)}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2" title="View PDF">
-                                    <ExternalLink size={18} /> <span className="hidden sm:inline text-sm">View</span>
-                                  </a>
-                                  <a href={`/api/pdf/${encodeURIComponent(quote.quote_no)}?dl=1`} download className="p-2.5 bg-gray-900 dark:bg-blue-600 text-white hover:bg-black dark:hover:bg-blue-500 rounded-xl font-bold transition-all shadow-md flex items-center gap-2" title="Download PDF">
-                                    <Download size={18} />
-                                  </a>
-                                  <button onClick={() => handleDeleteQuotation(quote)} disabled={deletingQuoteId === quote.id} className="p-2.5 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/40 text-red-600 dark:text-rose-400 hover:bg-red-100 dark:hover:bg-rose-900/60 rounded-xl font-bold transition-all shadow-sm disabled:opacity-60" title="Delete">
-                                    {deletingQuoteId === quote.id ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={18} />}
-                                  </button>
-                                </div>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </AnimatePresence>
-                      </tbody>
-                    </table>
-                  </div>
+                                </td>
+                              </motion.tr>
+                            ))}
+                          </AnimatePresence>
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </motion.div>

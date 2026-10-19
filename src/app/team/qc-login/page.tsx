@@ -107,7 +107,9 @@ export default function QCLoginPage() {
 
             <button 
               type="submit" disabled={loading}
-              className="w-full py-4 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-lg shadow-xl shadow-indigo-900/50 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+              className={`w-full py-4 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-lg shadow-xl shadow-indigo-900/50 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+                loading ? 'opacity-90 ring-2 ring-indigo-400/50' : ''
+              }`}
             >
               {loading ? (
                 <DotsLoader size="sm" variant="white" label="Authenticating..." />
