@@ -5,9 +5,13 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   PlayCircle, CheckCircle2, Clock, MapPin, 
-  Camera, UploadCloud, ArrowLeft, Loader2, Info, Building2, ShieldCheck,
+  Camera, UploadCloud, ArrowLeft, Info, Building2, ShieldCheck,
   Trash2, CheckSquare, AlertTriangle, Search, ChevronDown, ChevronUp
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { getWorkPhotoUploadSignature } from "./actions";
 import EquipmentTracker from "./EquipmentTracker";
 
@@ -452,7 +456,37 @@ const startShift = async () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  useKeyboardShortcuts([
+    {
+      key: "s",
+      ctrl: true,
+      description: "Submit shift log",
+      action: () => {
+        if (isStarted && !submitting) handleCompleteWork();
+      },
+    },
+    {
+      key: "a",
+      alt: true,
+      description: "Check all tasks",
+      action: () => {
+        if (isStarted) handleCheckAll();
+      },
+    },
+    {
+      key: "Escape",
+      description: "Go back",
+      action: () => {
+        if (!submitting) router.back();
+      },
+    },
+  ]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#F4F7FA] p-6 max-w-2xl mx-auto">
+      <PageSkeleton layout="detail" />
+    </div>
+  );
   if (!booking) return <div className="p-8 text-center text-red-500 font-bold">Booking not found!</div>;
 
   return (
@@ -566,7 +600,7 @@ const startShift = async () => {
                     ))}
                     <div className="pt-5 mt-5 border-t border-gray-100 flex justify-end">
                       <button onClick={handleCheckAll} className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-black uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm border border-blue-200">
-                         <CheckSquare size={18}/> Check All Tasks
+                         <CheckSquare size={18}/> Check All Tasks <Kbd className="bg-blue-100 text-blue-800 border-blue-200">⌥A</Kbd>
                       </button>
                     </div>
                   </div>
@@ -699,9 +733,13 @@ const startShift = async () => {
                   className="w-full py-5 bg-gradient-to-r from-gray-900 to-black text-white font-black rounded-2xl text-lg shadow-xl shadow-gray-900/20 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
-                    <> <Loader2 className="animate-spin" size={24}/> {uploadingPhotos ? "Uploading Media..." : "Finalizing Log & Inventory..."} </>
+                    <DotsLoader size="md" variant="white" label={uploadingPhotos ? "Uploading Media..." : "Finalizing Log & Inventory..."} />
                   ) : (
-                    <> <ShieldCheck size={24}/> Complete & Submit Log </>
+                    <>
+                      <ShieldCheck size={24}/>
+                      <span>Complete & Submit Log</span>
+                      <Kbd className="bg-gray-800 text-gray-300 border-gray-700 ml-1">⌘S</Kbd>
+                    </>
                   )}
                 </motion.button>
               </div>

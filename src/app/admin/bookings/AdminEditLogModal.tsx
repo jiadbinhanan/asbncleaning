@@ -29,7 +29,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
 import {
   X, Clock, Camera, FileCheck, CircleDollarSign,
-  Calendar, Layers, AlertTriangle, Edit3, Loader2,
+  Calendar, Layers, AlertTriangle, Edit3,
   Search, Trash2, UploadCloud, Save, Eye, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -37,6 +37,8 @@ import encodeJpeg from '@jsquash/jpeg/encode';
 import resize from '@jsquash/resize';
 import { getWorkPhotoUploadSignature } from "@/app/team/duty/[id]/actions";
 import AdminEditEquipmentTracker, { InventoryItem } from "./AdminEditEquipmentTracker";
+import DotsLoader from "@/components/common/DotsLoader";
+import { FormSkeleton } from "@/components/common/Skeleton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "execution" | "inventory" | "finalize";
@@ -562,17 +564,17 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
               {/* Save buttons in header */}
               <div className="hidden sm:flex items-center gap-2 mr-2 pr-2 border-r border-white/20">
                 <button onClick={() => handleBulkSave("completed")} disabled={saving || loading}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-green-500/80 hover:bg-green-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50">
-                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-green-500/80 hover:bg-green-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50 cursor-pointer">
+                  {saving ? <DotsLoader size="xs" variant="white" /> : <Save size={13} />}
                   Completed
                 </button>
                 <button onClick={() => handleBulkSave("finalized")} disabled={saving || loading}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/80 hover:bg-purple-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50">
-                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/80 hover:bg-purple-500 border border-white/20 rounded-xl text-white font-black text-xs uppercase tracking-wide transition disabled:opacity-50 cursor-pointer">
+                  {saving ? <DotsLoader size="xs" variant="white" /> : <Save size={13} />}
                   Finalized
                 </button>
               </div>
-              <button onClick={onClose} className="p-2 bg-white/10 hover:bg-red-500/80 rounded-full text-white/70 hover:text-white transition-colors">
+              <button onClick={onClose} className="p-2 bg-white/10 hover:bg-red-500/80 rounded-full text-white/70 hover:text-white transition-colors cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -608,9 +610,8 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
-              <Loader2 className="animate-spin" size={34} />
-              <p className="font-black text-sm uppercase tracking-widest">Loading…</p>
+            <div className="p-6">
+              <FormSkeleton fields={6} />
             </div>
           ) : (
             <div className="p-4 md:p-6">
@@ -775,12 +776,20 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
                 <div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button onClick={() => handleBulkSave("completed")} disabled={saving}
-                      className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-green-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70">
-                      {saving ? <><Loader2 className="animate-spin" size={22} /> Saving… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><FileCheck size={22} /> SAVE AS COMPLETED</>}
+                      className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-green-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70 cursor-pointer">
+                      {saving ? (
+                        <DotsLoader size="md" variant="white" label={`Saving... ${uploadProgress !== null ? `${uploadProgress}%` : ""}`} />
+                      ) : (
+                        <><FileCheck size={22} /> SAVE AS COMPLETED</>
+                      )}
                     </button>
                     <button onClick={() => handleBulkSave("finalized")} disabled={saving}
-                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-indigo-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70">
-                      {saving ? <><Loader2 className="animate-spin" size={22} /> Saving… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><Save size={22} /> SAVE AS FINALIZED</>}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-indigo-500/25 transition-all flex justify-center items-center gap-3 disabled:opacity-70 cursor-pointer">
+                      {saving ? (
+                        <DotsLoader size="md" variant="white" label={`Saving... ${uploadProgress !== null ? `${uploadProgress}%` : ""}`} />
+                      ) : (
+                        <><Save size={22} /> SAVE AS FINALIZED</>
+                      )}
                     </button>
                   </div>
                   <p className="text-center text-[10px] font-bold text-gray-400 dark:text-slate-500 mt-3 uppercase tracking-widest">

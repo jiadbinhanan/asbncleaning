@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, User as UserIcon, Loader2, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Lock, User as UserIcon, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
 import { createClient } from "@/utils/supabase/client";
 
 export default function TeamLoginForm() {
@@ -120,7 +122,7 @@ export default function TeamLoginForm() {
         type="submit" 
         className="w-full py-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-2xl font-black text-lg hover:shadow-lg hover:shadow-teal-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="animate-spin" size={24} /> : <>Start Shift <ArrowRight size={20} /></>}
+        {loading ? <DotsLoader size="xs" variant="white" /> : <>Start Shift <ArrowRight size={20} /><Kbd variant="glass" size="xs">↵</Kbd></>}
       </motion.button>
     </form>
   );

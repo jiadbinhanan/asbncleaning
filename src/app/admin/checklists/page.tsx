@@ -4,8 +4,12 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ClipboardList, Plus, Trash2, Save, 
-  GripVertical, Loader2, X, LayoutTemplate 
+  GripVertical, X, LayoutTemplate, RotateCw 
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { CardGridSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // --- Types ---
 type Task = {
@@ -30,6 +34,7 @@ export default function ChecklistManagement() {
   const supabase = createClient();
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modal & Form States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -109,6 +114,7 @@ export default function ChecklistManagement() {
   // 4. Save Template
   const handleSave = async () => {
     if (!title) return alert("Please enter a template title");
+    setIsSaving(true);
 
     const payload = {
       title,
@@ -123,6 +129,7 @@ export default function ChecklistManagement() {
       const { error: err } = await supabase.from("checklist_templates").insert([payload]);
       error = err;
     }
+    setIsSaving(false);
 
     if (!error) {
       fetchTemplates();
@@ -131,6 +138,27 @@ export default function ChecklistManagement() {
       alert("Failed to save: " + error.message);
     }
   };
+
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Create new checklist template',
+      category: 'Actions',
+      handler: () => handleOpenEditor(),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh checklist templates',
+      category: 'Actions',
+      handler: fetchTemplates,
+    },
+    {
+      combo: 'Escape',
+      description: 'Close template editor',
+      category: 'Modals',
+      handler: () => setIsEditorOpen(false),
+    },
+  ]);
 
   // 5. Delete Template
   const handleDelete = async (id: number) => {
@@ -193,9 +221,25 @@ export default function ChecklistManagement() {
             </h1>
             <p className="text-blue-300 dark:text-emerald-200/80 font-bold mt-1 text-sm">Create standard checklists (e.g. 1BR, Villa Deep Clean)</p>
           </div>
-          <button onClick={() => handleOpenEditor()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap">
-            <Plus size={20} /> New Template
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchTemplates}
+              disabled={loading}
+              className="p-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
+              title="Refresh templates (Alt+R)"
+            >
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={18}/>}
+              <Kbd variant="glass" size="xs">Alt+R</Kbd>
+            </button>
+            <button 
+              onClick={() => handleOpenEditor()} 
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap"
+              title="New Template (Alt+N)"
+            >
+              <Plus size={20} /> New Template
+              <Kbd variant="glass" size="xs">Alt+N</Kbd>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -204,7 +248,7 @@ export default function ChecklistManagement() {
 
       {/* Templates List */}
       {loading ? (
-        <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
+        <CardGridSkeleton count={6} />
       ) : templates.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 border-dashed">
           <LayoutTemplate size={48} className="mx-auto text-gray-300 dark:text-slate-600 mb-3" />
@@ -261,7 +305,18 @@ export default function ChecklistManagement() {
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => setIsEditorOpen(false)} className="px-4 py-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium transition-colors">Cancel</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 flex items-center gap-2 shadow-sm"><Save size={18} /> Save Template</button>
+                    <button 
+                      onClick={handleSave} 
+                      disabled={isSaving}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 flex items-center gap-2 shadow-sm disabled:opacity-50"
+                    >
+                      {isSaving ? <DotsLoader size="xs" variant="white" /> : (
+                        <>
+                          <Save size={18} /> Save Template
+                          <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 

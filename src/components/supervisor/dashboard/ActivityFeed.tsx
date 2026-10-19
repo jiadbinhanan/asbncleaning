@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { PlayCircle, CheckCircle2, Clock, MapPin, Loader2 } from "lucide-react";
+import { PlayCircle, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { parseISO, formatDistanceToNow } from "date-fns";
+import { Skeleton } from "@/components/common/Skeleton";
 
 export default function ActivityFeed() {
   const supabase = createClient();
@@ -78,7 +79,20 @@ export default function ActivityFeed() {
   }, [supabase]);
 
   if (loading) {
-    return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-500" size={32}/></div>;
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-3">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-16 rounded" />
+            </div>
+            <Skeleton className="h-4 w-48 rounded" />
+            <Skeleton className="h-3 w-36 rounded" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (activities.length === 0) {

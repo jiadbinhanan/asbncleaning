@@ -1,17 +1,21 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, Filter, FilterX, Clock, Calendar, Building2,
+  Filter, FilterX, Clock, Calendar, Building2,
   CheckCircle, MapPin, FileCheck, ShieldAlert, Users,
-  Search, Receipt, PackagePlus, CalendarCheck, Edit3, Hash
+  Search, Receipt, PackagePlus, CalendarCheck, Edit3, Hash, RefreshCw
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import SupervisorAuditModal from "./SupervisorAuditModal";
+import { CardGridSkeleton, PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function SupervisorReviewPage() {
   const supabase = createClient();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // ── Data States ──────────────────────────────────────────────────────────────
   const [bookings, setBookings] = useState<any[]>([]);
@@ -120,11 +124,47 @@ export default function SupervisorReviewPage() {
   const clearFilters = () => { setFilterDate(""); setFilterCompany(""); setFilterStatus(""); setSearchQuery(""); };
   const hasActiveFilters = filterDate || filterCompany || filterStatus || searchQuery;
 
-  if (loading) return (
-    <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]">
-      <Loader2 className="animate-spin text-blue-600" size={48}/>
-    </div>
-  );
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh reviews',
+      action: () => fetchAll()
+    },
+    {
+      key: 'f',
+      altKey: true,
+      description: 'Toggle filters & search',
+      action: () => setShowFilters(prev => !prev)
+    },
+    {
+      key: '/',
+      description: 'Search reviews',
+      action: () => {
+        setShowFilters(true);
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.select();
+        }, 50);
+      }
+    },
+    {
+      key: 'Escape',
+      description: 'Close audit modal or hide filters',
+      action: () => {
+        if (selectedBooking) setSelectedBooking(null);
+        else if (showFilters) setShowFilters(false);
+      }
+    }
+  ]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans p-4 md:p-8 max-w-7xl mx-auto">
+        <PageSkeleton layout="cards" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
@@ -149,12 +189,25 @@ export default function SupervisorReviewPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border ${showFilters ? "bg-white text-blue-900 border-white" : "bg-white/10 border-white/20 hover:bg-white/20 backdrop-blur-md"}`}
-            >
-              <Filter size={18}/> {showFilters ? "Hide Filters" : "Filters & Search"}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchAll()}
+                className="px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border bg-white/10 border-white/20 hover:bg-white/20 backdrop-blur-md"
+                title="Refresh reviews"
+              >
+                <RefreshCw size={16} />
+                <span>Refresh</span>
+                <Kbd variant="glass" size="xs">⌥R</Kbd>
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border ${showFilters ? "bg-white text-blue-900 border-white" : "bg-white/10 border-white/20 hover:bg-white/20 backdrop-blur-md"}`}
+              >
+                <Filter size={18}/> 
+                <span>{showFilters ? "Hide Filters" : "Filters & Search"}</span>
+                <Kbd variant={showFilters ? "dark" : "glass"} size="xs">⌥F</Kbd>
+              </button>
+            </div>
           </div>
 
           {/* Stat Cards */}
@@ -188,10 +241,14 @@ export default function SupervisorReviewPage() {
                 <div className="relative mb-4">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
                   <input
+                    ref={searchInputRef}
                     type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search by Booking Ref, Unit No, Company, Building, Team..."
-                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm font-bold text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                    className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm font-bold text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <Kbd variant="glass" size="xs">/</Kbd>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>

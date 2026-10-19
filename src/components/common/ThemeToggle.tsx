@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Sparkles } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function ThemeToggle({ className = '' }: { className?: string }) {
@@ -38,7 +38,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
               {/* Star dots */}
               <span className="w-1 h-1 rounded-full bg-blue-200/90 shadow-[0_0_4px_#93c5fd] animate-pulse" />
               <span className="w-0.5 h-0.5 rounded-full bg-indigo-200/70 ml-2 -mt-2" />
-              <Sparkles size={9} className="text-blue-300/80 ml-1.5 opacity-75" />
+              <span className="w-1 h-1 rounded-full bg-blue-300/80 ml-1.5 shadow-[0_0_3px_#93c5fd]" />
             </motion.div>
           ) : (
             <motion.div

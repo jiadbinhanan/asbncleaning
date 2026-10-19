@@ -5,9 +5,12 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useModalStore } from '@/store/modalStore';
 import {
   X, Plus, Calendar, Clock, Home, Users, CheckCircle2, AlertCircle,
-  Loader2, Trash2, Edit2, Filter, FilterX, ClipboardList, Search,
+  Trash2, Edit2, Filter, FilterX, ClipboardList, Search,
   Zap, RotateCcw, ChevronDown, Building2, Tag, Hash,
 } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import { TableSkeleton } from '@/components/common/Skeleton';
+import Kbd from '@/components/common/Kbd';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -636,13 +639,9 @@ export default function BookingsManagerModal() {
               {/* ══ BODY — Booking list ════════════════════════════════════ */}
               <div className="flex-1 overflow-y-auto px-4 py-4">
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-24 gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
-                      <Loader2 size={22} className="animate-spin text-blue-500" />
-                    </div>
-                    <p className="text-gray-400 dark:text-slate-500 text-sm font-semibold">Loading bookings…</p>
+                  <div className="py-2">
+                    <TableSkeleton rows={6} />
                   </div>
-
                 ) : filteredBookings.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white dark:bg-[#0c1427] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 mt-2">
                     <Calendar size={48} className="text-gray-200 dark:text-slate-700" />
@@ -774,7 +773,7 @@ export default function BookingsManagerModal() {
                                         }`}
                                       >
                                         {activatingId === booking.id
-                                          ? <Loader2 size={14} className="animate-spin" />
+                                          ? <DotsLoader size="xs" variant="primary" />
                                           : booking.status === 'active' ? <RotateCcw size={14} /> : <Zap size={14} />}
                                       </button>
                                     )}
@@ -946,7 +945,7 @@ export default function BookingsManagerModal() {
                           </button>
                           <button type="submit" disabled={saving}
                             className="w-2/3 py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white rounded-xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition-all">
-                            {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : <><Plus size={15} /> Confirm Booking</>}
+                            {saving ? <DotsLoader size="xs" variant="white" /> : <><Plus size={15} /> Confirm Booking</>}
                           </button>
                         </div>
                       </form>
@@ -1083,7 +1082,7 @@ export default function BookingsManagerModal() {
                           </button>
                           <button type="submit" disabled={saving}
                             className="w-2/3 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition-all">
-                            {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : <><CheckCircle2 size={15} /> Save Changes</>}
+                            {saving ? <DotsLoader size="xs" variant="white" /> : <><CheckCircle2 size={15} /> Save Changes</>}
                           </button>
                         </div>
                       </form>

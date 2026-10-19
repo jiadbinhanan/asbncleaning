@@ -15,11 +15,15 @@ import {
   Activity, CheckCircle2, Clock, AlertCircle,
   UserCircle, PlayCircle, WashingMachine,
   BarChart2, PieChart as PieIcon, Target,
-  CircleDollarSign, Loader2, RefreshCw, Zap, Star,
+  CircleDollarSign, RefreshCw, Zap, Star,
   Receipt, Package,
 } from 'lucide-react';
 import WelcomeHeader from '@/components/admin/dashboard/WelcomeHeader';
 import { useTheme } from '@/context/ThemeContext';
+import { DashboardSkeleton } from '@/components/common/Skeleton';
+import DotsLoader from '@/components/common/DotsLoader';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useModalStore } from '@/store/modalStore';
 
 /* ═══════════════════════════════════════════════════════════
    DESIGN TOKENS
@@ -342,7 +346,9 @@ function QCAnalyticsCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string 
           subtitle={<span className="text-teal-200">Returnable items only</span>}
         />
         {loading?(
-          <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={24}/></div>
+          <div className="flex-1 flex items-center justify-center py-8">
+            <DotsLoader variant="white" size="md" label="Loading QC analytics..." />
+          </div>
         ):(
           <>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -598,9 +604,10 @@ function LiveFeedCard() {
               <span className="text-[9px] font-black uppercase tracking-widest" style={{color:'#38BDF8'}}>Live</span>
             </div>
             <button onClick={fetchData} disabled={loading}
-              className="p-1.5 rounded-xl transition-all disabled:opacity-40"
+              title="Refresh Live Timeline (Alt+R)"
+              className="p-1.5 rounded-xl transition-all disabled:opacity-40 flex items-center justify-center cursor-pointer"
               style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}>
-              <RefreshCw size={12} className={`text-white ${loading?'animate-spin':''}`}/>
+              {loading ? <DotsLoader size="xs" variant="white" /> : <RefreshCw size={12} className="text-white" />}
             </button>
           </div>
         </div>
@@ -619,7 +626,9 @@ function LiveFeedCard() {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0"
         style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(56,189,248,0.3) transparent' }}>
         {loading&&events.length===0?(
-          <div className="flex items-center justify-center h-32"><Loader2 className="animate-spin" style={{color:'#38BDF8'}} size={24}/></div>
+          <div className="flex items-center justify-center h-32">
+            <DotsLoader size="md" variant="primary" label="Loading live activity..." />
+          </div>
         ):events.length===0?(
           <div className="flex flex-col items-center justify-center h-32" style={{color:'#334155'}}>
             <Activity size={28} className="mb-2 opacity-40"/><span className="text-xs font-medium">No activity yet</span>
@@ -1059,7 +1068,9 @@ function LaundryCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string }) {
       </div>
       <div className="flex-1 px-4 pb-4 min-h-0" style={{minHeight:80}}>
         {loading?(
-          <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-white" size={22}/></div>
+          <div className="flex items-center justify-center h-full py-8">
+            <DotsLoader size="md" variant="white" label="Loading laundry stats..." />
+          </div>
         ):chartData.length===0?(
           <div className="flex flex-col items-center justify-center h-full" style={{color:'rgba(255,255,255,0.4)'}}>
             <WashingMachine size={28} className="mb-2 opacity-40"/><span className="text-sm">No laundry records</span>
@@ -1152,75 +1163,91 @@ export default function AdminDashboard() {
   const [dateTo,setDateTo]     = useState(format(endOfMonth(new Date()),  'yyyy-MM-dd'));
   const todayStr = format(new Date(),'yyyy-MM-dd');
 
-  useEffect(()=>{
-    (async()=>{
-      setLoading(true);
-      const {data:{session}} = await supabase.auth.getSession();
-      if(session?.user){
-        const {data:p} = await supabase.from('profiles').select('*').eq('id',session.user.id).single();
-        setAdmin(p);
-      }
+  const { openBookingsModal } = useModalStore();
 
-      // Ensure date range always includes today
-      const fs = dateFrom <= todayStr ? dateFrom : todayStr;
-      const fe = dateTo   >= todayStr ? dateTo   : todayStr;
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    const {data:{session}} = await supabase.auth.getSession();
+    if(session?.user){
+      const {data:p} = await supabase.from('profiles').select('*').eq('id',session.user.id).single();
+      setAdmin(p);
+    }
 
-      const [bRes,iRes] = await Promise.all([
-        // FIX: join booking_extra_added_charges (not booking_extra_inventory)
-        supabase.from('bookings').select(`
-          id, cleaning_date, cleaning_time, status, price, assigned_team_id,
-          teams(id, team_name, member_ids),
-          units(companies(name)),
-          booking_extra_added_charges(amount, charge_type)
-        `)
-        .gte('cleaning_date', fs)
-        .lte('cleaning_date', fe),
+    // Ensure date range always includes today
+    const fs = dateFrom <= todayStr ? dateFrom : todayStr;
+    const fe = dateTo   >= todayStr ? dateTo   : todayStr;
 
-        supabase.from('invoices')
-          .select('id,company_name,total_amount,invoice_date,created_at,is_paid,start_date,end_date')
-          .lte('start_date', fe)
-          .gte('end_date', fs),
-      ]);
+    const [bRes,iRes] = await Promise.all([
+      supabase.from('bookings').select(`
+        id, cleaning_date, cleaning_time, status, price, assigned_team_id,
+        teams(id, team_name, member_ids),
+        units(companies(name)),
+        booking_extra_added_charges(amount, charge_type)
+      `)
+      .gte('cleaning_date', fs)
+      .lte('cleaning_date', fe),
 
-      const bData = bRes.data || [];
+      supabase.from('invoices')
+        .select('id,company_name,total_amount,invoice_date,created_at,is_paid,start_date,end_date')
+        .lte('start_date', fe)
+        .gte('end_date', fs),
+    ]);
 
-      // Collect member IDs from teams
-      const memberIds = new Set<string>();
-      bData.forEach((b:any)=>{
-        const t = getTeam(b);
-        t?.member_ids?.forEach((id:string) => memberIds.add(id));
-      });
+    const bData = bRes.data || [];
 
-      let pMap: Record<string,any> = {};
-      if(memberIds.size > 0){
-        const {data:pData} = await supabase
-          .from('profiles')
-          .select('id,full_name,avatar_url')
-          .in('id', Array.from(memberIds));
-        if(pData) pData.forEach((p:any)=>{ pMap[p.id]=p; });
-      }
+    // Collect member IDs from teams
+    const memberIds = new Set<string>();
+    bData.forEach((b:any)=>{
+      const t = getTeam(b);
+      t?.member_ids?.forEach((id:string) => memberIds.add(id));
+    });
 
-      setData({
-        bookings: bData,
-        workLogs: [],          // work_logs fetched inside LiveFeedCard only
-        invoices: iRes.data || [],
-        profilesMap: pMap,
-      });
-      setLoading(false);
-    })();
-  },[dateFrom,dateTo]);
+    let pMap: Record<string,any> = {};
+    if(memberIds.size > 0){
+      const {data:pData} = await supabase
+        .from('profiles')
+        .select('id,full_name,avatar_url')
+        .in('id', Array.from(memberIds));
+      if(pData) pData.forEach((p:any)=>{ pMap[p.id]=p; });
+    }
 
-  if(loading){
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-[#070b14] transition-colors duration-300">
-        <div className="relative w-14 h-14 mb-4">
-          <div className="absolute inset-0 rounded-full border-t-4 border-violet-500 animate-spin"/>
-          <div className="absolute inset-2 rounded-full border-r-4 border-blue-400 animate-spin" style={{animationDirection:'reverse',animationDuration:'1.5s'}}/>
-          <div className="absolute inset-4 rounded-full border-b-4 border-emerald-400 animate-spin" style={{animationDuration:'2.5s'}}/>
-        </div>
-        <p className="text-slate-400 font-black text-xs tracking-widest uppercase animate-pulse">Loading…</p>
-      </div>
-    );
+    setData({
+      bookings: bData,
+      workLogs: [],
+      invoices: iRes.data || [],
+      profilesMap: pMap,
+    });
+    setLoading(false);
+  }, [supabase, dateFrom, dateTo, todayStr]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Keyboard Shortcuts for Dashboard
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      altKey: true,
+      onKeyDown: () => {
+        fetchDashboardData();
+      },
+      description: 'Refresh Dashboard analytics & charts',
+      category: 'Actions',
+    },
+    {
+      key: 'n',
+      altKey: true,
+      onKeyDown: () => {
+        openBookingsModal();
+      },
+      description: 'Open Quick Bookings Manager',
+      category: 'Actions',
+    },
+  ]);
+
+  if (loading) {
+    return <DashboardSkeleton />;
   }
 
   const todayBookings = data.bookings.filter(b => b.cleaning_date === todayStr);

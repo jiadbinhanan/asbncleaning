@@ -1,9 +1,12 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Phone, Mail, ShieldAlert, Calendar, Edit2, Save, Trash2, Camera, Loader2 } from 'lucide-react';
+import { X, User, Phone, Mail, ShieldAlert, Calendar, Edit2, Save, Trash2, Camera } from 'lucide-react';
 import { updateEmployeeAction, getCloudinarySignature } from '@/app/admin/employees/actions';
-import Image from 'next/image'; // Import Next Image
+import Image from 'next/image';
+import DotsLoader from '@/components/common/DotsLoader';
+import Kbd from '@/components/common/Kbd';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // Define a specific type for the employee profile
 interface Profile {
@@ -153,6 +156,31 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
     setIsSaving(false);
   };
 
+  useKeyboardShortcuts([
+    {
+      combo: 'Escape',
+      description: 'Close profile slide-over',
+      category: 'Modals',
+      handler: onClose,
+    },
+    {
+      combo: 'Ctrl+S',
+      description: 'Save profile changes',
+      category: 'Actions',
+      handler: () => {
+        if (isEditing) handleSave();
+      },
+    },
+    {
+      combo: 'Alt+E',
+      description: 'Edit profile',
+      category: 'Actions',
+      handler: () => {
+        if (!isEditing) setIsEditing(true);
+      },
+    },
+  ]);
+
   return (
     <>
       <motion.div
@@ -171,8 +199,9 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
       >
         {/* Header Color Block */}
         <div className="relative h-44 bg-gray-900 p-6 flex justify-end items-start">
-          <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-md">
+          <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white backdrop-blur-md flex items-center gap-1.5" title="Close (Esc)">
             <X size={20} />
+            <Kbd variant="glass" size="xs">Esc</Kbd>
           </button>
         </div>
 
@@ -189,8 +218,8 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
 
                 {/* Upload Overlay */}
                 {uploading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-white" />
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <DotsLoader size="sm" variant="white" label="Uploading..." />
                   </div>
                 )}
               </div>
@@ -241,9 +270,16 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex-1 py-2.5 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
               >
-                {isSaving ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> Save Changes</>}
+                {isSaving ? (
+                  <DotsLoader size="sm" variant="white" label="Saving..." />
+                ) : (
+                  <>
+                    <Save size={18} /> Save Changes
+                    <Kbd variant="dark" size="xs" className="bg-green-800 text-green-200 border-green-700">Ctrl+S</Kbd>
+                  </>
+                )}
               </button>
             ) : (
               <button
@@ -251,6 +287,7 @@ export default function ProfileSlideOver({ employee, onClose, onUpdate, onDelete
                 className="flex-1 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-blue-500 transition-colors"
               >
                 <Edit2 size={18} /> Edit Profile
+                <Kbd variant="glass" size="xs">Alt+E</Kbd>
               </button>
             )}
             <button onClick={() => onDelete(employee.id)} className="px-4 py-2.5 bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 border border-transparent dark:border-red-900/40 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors">

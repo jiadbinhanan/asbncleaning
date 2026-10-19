@@ -4,6 +4,7 @@ import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/context/ThemeContext";
+import GlobalShortcutManager from "@/components/common/GlobalShortcutManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,6 +72,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
+          <GlobalShortcutManager />
           {children}
         </ThemeProvider>
         <SpeedInsights />

@@ -1,9 +1,12 @@
 'use client';
 import { motion } from 'framer-motion';
 import {
-  Check, X, Loader2, Building2, Search,
+  Check, X, Building2, Search,
   Hash, Calendar, Tag, Circle, CheckCircle2, Zap, Clock,
 } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import { Skeleton } from '@/components/common/Skeleton';
+import Kbd from '@/components/common/Kbd';
 import { format } from 'date-fns';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -142,7 +145,7 @@ function BookingCard({
           ${isAssignedToThis ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-200 text-slate-300'}`}
         >
           {isSaving
-            ? <Loader2 size={14} className="animate-spin" />
+            ? <DotsLoader size="xs" variant={isAssignedToThis ? "white" : "primary"} />
             : <Check size={15} strokeWidth={isAssignedToThis ? 3 : 2} />
           }
         </div>
@@ -203,8 +206,10 @@ function BookingList({
   compact?: boolean;
 }) {
   if (loadingBookings) return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="animate-spin text-indigo-500" size={32} />
+    <div className="space-y-3 py-4">
+      <Skeleton className="h-20 w-full rounded-2xl" />
+      <Skeleton className="h-20 w-full rounded-2xl" />
+      <Skeleton className="h-20 w-full rounded-2xl" />
     </div>
   );
 
@@ -347,8 +352,9 @@ export default function SupervisorAssignmentPanel({
             </div>
             <h2 className="text-lg font-black text-slate-900">{selectedTeam?.team_name}</h2>
           </div>
-          <button onClick={onCloseAction} className="p-2 bg-slate-50 border border-slate-200 rounded-full text-slate-500 mt-1">
+          <button onClick={onCloseAction} className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full text-slate-500 mt-1 flex items-center gap-1 transition-colors">
             <X size={18} />
+            <Kbd variant="glass" size="xs">Esc</Kbd>
           </button>
         </div>
 

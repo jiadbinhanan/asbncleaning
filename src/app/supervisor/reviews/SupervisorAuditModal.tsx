@@ -6,10 +6,13 @@ import {
   X, Clock, Camera, FileCheck, CircleDollarSign, CheckSquare,
   PackagePlus, CheckCircle2, AlertCircle, Building2, Calendar,
   Users, UserCircle, ShieldCheck, Tag, Layers, Shirt, Droplets,
-  AlertTriangle, Hash, Edit3, Loader2,
+  AlertTriangle, Hash, Edit3,
   ChevronDown, Receipt, Save, BookOpen,
   Coffee, ArrowRight, HelpCircle, ChevronRight, Boxes, Search
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { format, differenceInMinutes, parseISO } from "date-fns";
 
 const safeFormat = (dt: string, fmt: string) => {
@@ -538,12 +541,49 @@ export default function SupervisorAuditModal({
     } finally { setIsSubmitting(false); }
   };
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; activeClass: string }[] = [
-    { key: "details",   label: "Execution",  icon: <FileCheck size={14} />,        activeClass: "border-blue-600 text-blue-700 bg-blue-50/50" },
-    { key: "inventory", label: "Inventory",  icon: <Layers size={14} />,           activeClass: "border-indigo-600 text-indigo-700 bg-indigo-50/50" },
-    { key: "checklist", label: "Checklist",  icon: <CheckSquare size={14} />,      activeClass: "border-emerald-600 text-emerald-700 bg-emerald-50/50" },
-    { key: "finalize",  label: "Finalize",   icon: <CircleDollarSign size={14} />, activeClass: "border-green-600 text-green-700 bg-green-50/50" },
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; shortcut: string; activeClass: string }[] = [
+    { key: "details",   label: "Execution",  icon: <FileCheck size={14} />,        shortcut: "1", activeClass: "border-blue-600 text-blue-700 bg-blue-50/50" },
+    { key: "inventory", label: "Inventory",  icon: <Layers size={14} />,           shortcut: "2", activeClass: "border-indigo-600 text-indigo-700 bg-indigo-50/50" },
+    { key: "checklist", label: "Checklist",  icon: <CheckSquare size={14} />,      shortcut: "3", activeClass: "border-emerald-600 text-emerald-700 bg-emerald-50/50" },
+    { key: "finalize",  label: "Finalize",   icon: <CircleDollarSign size={14} />, shortcut: "4", activeClass: "border-green-600 text-green-700 bg-green-50/50" },
   ];
+
+  useKeyboardShortcuts([
+    {
+      key: '1',
+      description: 'Switch to Execution tab',
+      action: () => setActiveTab("details")
+    },
+    {
+      key: '2',
+      description: 'Switch to Inventory tab',
+      action: () => setActiveTab("inventory")
+    },
+    {
+      key: '3',
+      description: 'Switch to Checklist tab',
+      action: () => setActiveTab("checklist")
+    },
+    {
+      key: '4',
+      description: 'Switch to Finalize tab',
+      action: () => setActiveTab("finalize")
+    },
+    {
+      key: 's',
+      ctrlKey: true,
+      description: 'Submit / Update audit',
+      action: () => {
+        if (!isSubmitting && priceInput) handleFinalize();
+        else setActiveTab("finalize");
+      }
+    },
+    {
+      key: 'Escape',
+      description: 'Close audit modal',
+      action: () => onClose()
+    }
+  ]);
 
   return (
     <>
@@ -576,7 +616,10 @@ export default function SupervisorAuditModal({
                 <button onClick={() => setShowGuide(true)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors flex items-center gap-1.5 text-xs font-black text-white/70 hover:text-white pr-3">
                   <HelpCircle size={16} /> Guide
                 </button>
-                <button onClick={onClose} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors"><X size={18} /></button>
+                <button onClick={onClose} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors flex items-center gap-1">
+                  <X size={18} />
+                  <Kbd variant="glass" size="xs">Esc</Kbd>
+                </button>
               </div>
               <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider border ${booking.status === "finalized" ? "bg-emerald-400/20 text-emerald-300 border-emerald-400/30" : "bg-amber-400/20 text-amber-300 border-amber-400/30 animate-pulse"}`}>
                 {booking.status === "finalized" ? "Finalized" : "Needs Review"}
@@ -613,7 +656,9 @@ export default function SupervisorAuditModal({
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-5 py-3.5 text-sm font-black transition-all border-b-2 whitespace-nowrap ${activeTab === tab.key ? tab.activeClass : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-              {tab.icon} {tab.label}
+              {tab.icon} 
+              <span>{tab.label}</span>
+              <Kbd variant="glass" size="xs">{tab.shortcut}</Kbd>
               {tab.key === "finalize" && booking.status === "completed" && <span className="ml-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse" />}
             </button>
           ))}
@@ -919,7 +964,9 @@ export default function SupervisorAuditModal({
 
                     <div className="p-5 space-y-3">
                       {loadingCharges ? (
-                        <div className="flex justify-center py-4"><Loader2 className="animate-spin text-orange-400" size={24}/></div>
+                        <div className="flex justify-center py-4">
+                          <DotsLoader size="sm" variant="primary" label="Loading charges..." />
+                        </div>
                       ) : (
                         <>
                           {extraCharges.map((charge, idx) => (
@@ -1019,8 +1066,15 @@ export default function SupervisorAuditModal({
                       </div>
                       <button onClick={handleFinalize} disabled={isSubmitting || !priceInput}
                         className="px-10 py-5 bg-emerald-500 hover:bg-emerald-400 text-gray-900 rounded-2xl font-black text-base transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/30 shrink-0">
-                        {isSubmitting ? <Loader2 size={22} className="animate-spin" /> : <Save size={22} />}
-                        {isSubmitting ? "Saving..." : booking.status === "completed" ? "Submit Audit" : "Update Audit"}
+                        {isSubmitting ? (
+                          <DotsLoader size="sm" variant="dark" label="Saving..." />
+                        ) : (
+                          <>
+                            <Save size={22} />
+                            <span>{booking.status === "completed" ? "Submit Audit" : "Update Audit"}</span>
+                            <Kbd variant="dark" size="xs">Ctrl+S</Kbd>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

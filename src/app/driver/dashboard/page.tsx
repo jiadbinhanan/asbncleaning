@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Boxes, Truck, Warehouse, Loader2 } from "lucide-react";
+import { Boxes, Truck, Warehouse, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 import DriverHeader     from "@/components/driver/DriverHeader";
@@ -11,14 +11,17 @@ import MorningLoadSheet from "@/components/driver/MorningLoadSheet";
 import LiveStatusTabs   from "@/components/driver/LiveStatusTabs";
 import UnloadSummary    from "@/components/driver/UnloadSummary";
 import { BookingRow, LoadItem, ReturnItem } from "@/components/driver/types";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 type TabKey = "dispatch" | "status" | "returns";
 
-const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: "dispatch", label: "Load",    icon: <Boxes size={14}/>   },
-  { key: "status",   label: "Live",    icon: <Truck size={14}/>   },
-  { key: "returns",  label: "Returns", icon: <Warehouse size={14}/> },
+const TABS: { key: TabKey; label: string; shortcut: string; icon: React.ReactNode }[] = [
+  { key: "dispatch", label: "Load",    shortcut: "1", icon: <Boxes size={14}/>   },
+  { key: "status",   label: "Live",    shortcut: "2", icon: <Truck size={14}/>   },
+  { key: "returns",  label: "Returns", shortcut: "3", icon: <Warehouse size={14}/> },
 ];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -238,19 +241,39 @@ export default function DriverDashboardPage() {
       i.equipment_id === id ? { ...i, extra_qty: Math.max(0, i.extra_qty + delta) } : i
     ));
 
+  // ── Keyboard Shortcuts ───────────────────────────────────────────────────
+  useKeyboardShortcuts([
+    {
+      key: '1',
+      description: 'Switch to Morning Load sheet',
+      action: () => setActiveTab("dispatch")
+    },
+    {
+      key: '2',
+      description: 'Switch to Live Status tab',
+      action: () => setActiveTab("status")
+    },
+    {
+      key: '3',
+      description: 'Switch to Returns tab',
+      action: () => setActiveTab("returns")
+    },
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh driver logistics data',
+      action: () => fetchAll(true)
+    }
+  ]);
+
   // ── Loading screen ─────────────────────────────────────────────────────────
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
-        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/25"
-      >
-        <Truck size={24} className="text-white"/>
-      </motion.div>
-      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Loading Driver Panel</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 max-w-lg mx-auto py-8">
+        <PageSkeleton layout="cards" />
+      </div>
+    );
+  }
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
@@ -286,7 +309,9 @@ export default function DriverDashboardPage() {
                     : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                {tab.icon} {tab.label}
+                {tab.icon} 
+                <span>{tab.label}</span>
+                <Kbd variant="glass" size="xs">{tab.shortcut}</Kbd>
                 {hasDot && (
                   <span className="absolute top-1.5 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"/>
                 )}

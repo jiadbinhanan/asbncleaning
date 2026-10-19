@@ -5,9 +5,11 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useModalStore } from '@/store/modalStore';
 import {
   X, Users, UserPlus, Archive, Check, User, Briefcase,
-  Loader2, Edit, Clock, CalendarDays, Filter, ArrowLeftRight,
+  Edit, Clock, CalendarDays, Filter, ArrowLeftRight,
   ChevronLeft, ChevronRight, Search, Plus,
 } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import { CardGridSkeleton } from '@/components/common/Skeleton';
 import { format, parseISO, addDays, subDays } from 'date-fns';
 import AssignmentPanel, { type Booking, type Team } from '@/app/admin/teams/AssignmentPanel';
 
@@ -500,13 +502,7 @@ export default function TeamsManagerModal() {
                 <div className="flex-1 overflow-y-auto px-4 py-4">
 
                   {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
-                        <Loader2 size={22} className="animate-spin text-blue-500" />
-                      </div>
-                      <p className="text-gray-400 dark:text-slate-500 text-sm font-semibold">Loading teams…</p>
-                    </div>
-
+                    <CardGridSkeleton count={3} />
                   ) : displayTeams.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white dark:bg-[#0c1427] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 shadow-sm mt-2">
                       <Users size={48} className="text-gray-200 dark:text-slate-700" />
@@ -885,7 +881,7 @@ export default function TeamsManagerModal() {
                         className="w-2/3 py-3.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-blue-500 disabled:opacity-50 transition-all flex justify-center items-center gap-2 shadow-lg"
                       >
                         {submitting
-                          ? <Loader2 size={16} className="animate-spin" />
+                          ? <DotsLoader size="xs" variant="white" />
                           : formMode === 'create'
                             ? <><Check size={18} /> Create Squad</>
                             : <><Edit size={18} /> Update Team</>

@@ -2,8 +2,9 @@
 import { motion } from "framer-motion";
 import {
   Clock, Building2, MapPin, Users, Truck,
-  PackageCheck, Loader2, CircleCheck, Hash,
+  PackageCheck, CircleCheck, Hash,
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
 import { BookingRow, formatTime } from "./types";
 
 interface TaskCardProps {
@@ -86,8 +87,8 @@ export default function TaskCard({ booking, section, onDeliver, onCollect, actio
             disabled={isLoading}
             className="w-full py-2.5 bg-red-500 hover:bg-red-600 active:scale-95 text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm shadow-red-500/20 disabled:opacity-50"
           >
-            {isLoading ? <Loader2 size={13} className="animate-spin"/> : <Truck size={13}/>}
-            {isLoading ? "Updating..." : "Mark as Delivered"}
+            {isLoading ? <DotsLoader size="xs" variant="white" label="Updating..." /> : <Truck size={13}/>}
+            {!isLoading && "Mark as Delivered"}
           </button>
         )}
 
@@ -106,8 +107,8 @@ export default function TaskCard({ booking, section, onDeliver, onCollect, actio
             disabled={isLoading}
             className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-50"
           >
-            {isLoading ? <Loader2 size={13} className="animate-spin"/> : <PackageCheck size={13}/>}
-            {isLoading ? "Updating..." : "Bags Collected"}
+            {isLoading ? <DotsLoader size="xs" variant="white" label="Updating..." /> : <PackageCheck size={13}/>}
+            {!isLoading && "Bags Collected"}
           </button>
         )}
 

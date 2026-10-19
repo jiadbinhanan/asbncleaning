@@ -4,12 +4,17 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, UserPlus, Archive, Check, User,
-  Briefcase, Loader2, X, Edit, Clock, CalendarDays,
+  Briefcase, X, Edit, Clock, CalendarDays,
   Filter, ArrowLeftRight, ChevronLeft, ChevronRight, Calendar
 } from 'lucide-react';
 import { format, parseISO, addDays, subDays } from 'date-fns';
 
 import AssignmentPanel, { type Booking, type Team } from './AssignmentPanel';
+import { CardGridSkeleton } from '@/components/common/Skeleton';
+import DotsLoader from '@/components/common/DotsLoader';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import Kbd from '@/components/common/Kbd';
+import toast from 'react-hot-toast';
 
 // ── Local-only type ───────────────────────────────────────────
 type Agent = {
@@ -53,13 +58,31 @@ export default function AdminTeamManagement() {
   const [editingTeamId, setEditingTeamId]       = useState<number | null>(null);
   const [teamName, setTeamName]                 = useState('');
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-
-  // 🚨 NEW: Shift Date for Team Creation
-  const [shiftDateInput, setShiftDateInput]     = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [shiftDateInput, setShiftDateInput]     = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   // ── Derived ──────────────────────────────────────────────────
   const isPanelOpen  = selectedTeamId !== null;
   const selectedTeam = activeTeams.find(t => t.id === selectedTeamId) ?? null;
+
+  // Keyboard Shortcuts for Teams Page
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      altKey: true,
+      onKeyDown: () => openCreateModal(),
+      description: 'Create New Cleaning Squad',
+      category: 'Actions',
+    },
+    {
+      key: 'Escape',
+      onKeyDown: () => {
+        if (selectedTeamId !== null) setSelectedTeamId(null);
+        if (isModalOpen) setIsModalOpen(false);
+      },
+      description: 'Close Assignment Panel / Modal',
+      category: 'Modals',
+    },
+  ]);
 
   // ── FETCH 1: Agents + Active Teams (Filtered by activeDateFilter) ──
   useEffect(() => {
@@ -470,8 +493,8 @@ export default function AdminTeamManagement() {
             className={`w-full ${isPanelOpen ? 'hidden md:block md:w-[38%] lg:w-[35%] shrink-0' : 'w-full'}`}
           >
             {isLoading ? (
-              <div className="flex justify-center mt-20">
-                <Loader2 className="animate-spin text-blue-500" size={40} />
+              <div className="mt-4">
+                <CardGridSkeleton count={4} />
               </div>
 
             ) : displayTeams.length === 0 ? (

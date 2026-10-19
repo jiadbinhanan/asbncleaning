@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Truck, PackageCheck, CheckCheck, Loader2 } from "lucide-react";
+import { Truck, PackageCheck, CheckCheck, Clock } from "lucide-react";
 import TaskCard from "./TaskCard";
 import { BookingRow } from "./types";
 
@@ -50,7 +50,7 @@ const TABS: { key: TabKey; label: string; shortLabel: string; activeClass: strin
 
 const EMPTY_MESSAGES: Record<TabKey, { icon: React.ReactNode; text: string; sub: string }> = {
   toDrop:      { icon: <Truck size={40} className="text-gray-200"/>,       text: "Nothing to drop",      sub: "All deliveries done" },
-  inProgress:  { icon: <Loader2 size={40} className="text-gray-200"/>,     text: "No jobs in progress",  sub: "Awaiting team start" },
+  inProgress:  { icon: <Clock size={40} className="text-gray-200"/>,     text: "No jobs in progress",  sub: "Awaiting team start" },
   readyPickup: { icon: <PackageCheck size={40} className="text-gray-200"/>,text: "No pickups yet",       sub: "Appears when jobs complete" },
   done:        { icon: <CheckCheck size={40} className="text-gray-200"/>,  text: "Nothing done yet",     sub: "Completed jobs show here" },
 };

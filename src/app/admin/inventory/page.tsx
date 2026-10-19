@@ -1,12 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Package, History, Plus, Minus, Search, 
-  Loader2, CheckCircle2, AlertTriangle, ArrowRightLeft, FileText, Calendar, X 
+  RotateCw, CheckCircle2, AlertTriangle, ArrowRightLeft, FileText, Calendar, X 
 } from "lucide-react";
 import { format } from "date-fns";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function InventoryManagement() {
   const supabase = createClient();
@@ -16,8 +20,8 @@ export default function InventoryManagement() {
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [ledgerLogs, setLedgerLogs] = useState<any[]>([]);
   
-  // 🚨 FIXED: Search State added
   const [searchTerm, setSearchTerm] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,6 +52,45 @@ export default function InventoryManagement() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Adjust stock',
+      category: 'Actions',
+      handler: () => openAdjustModal(),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh stock & ledger',
+      category: 'Actions',
+      handler: fetchData,
+    },
+    {
+      combo: '1',
+      description: 'Switch to Current Stock view',
+      category: 'Navigation',
+      handler: () => setActiveTab('stock'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to Transaction Ledger view',
+      category: 'Navigation',
+      handler: () => setActiveTab('ledger'),
+    },
+    {
+      combo: '/',
+      description: 'Focus equipment search',
+      category: 'Navigation',
+      handler: () => searchRef.current?.focus(),
+    },
+    {
+      combo: 'Escape',
+      description: 'Close adjustment modal',
+      category: 'Modals',
+      handler: () => setIsModalOpen(false),
+    },
+  ]);
 
   // 🚨 FIXED: Search Filter Logic
   const filteredEquipment = equipmentList.filter(item => 
@@ -117,7 +160,13 @@ export default function InventoryManagement() {
     setIsModalOpen(true);
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6 md:p-12">
+        <PageSkeleton layout="table" showStats={true} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative">
@@ -194,18 +243,26 @@ export default function InventoryManagement() {
            </div>
            
            {/* View Switcher with flex-wrap to prevent overflow */}
-           <div className="flex flex-wrap items-center bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full xl:w-auto">
+           <div className="flex flex-wrap items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full xl:w-auto">
               <button 
                 onClick={() => setActiveTab('stock')}
-                className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'stock' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                className={`flex-1 sm:flex-none px-4 md:px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'stock' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
               >
-                <Package size={16}/> Current Stock
+                <Package size={16}/> Current Stock <Kbd variant="glass" size="xs">1</Kbd>
               </button>
               <button 
                 onClick={() => setActiveTab('ledger')}
-                className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'ledger' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                className={`flex-1 sm:flex-none px-4 md:px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'ledger' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
               >
-                <History size={16}/> Transaction Ledger
+                <History size={16}/> Transaction Ledger <Kbd variant="glass" size="xs">2</Kbd>
+              </button>
+              <button
+                onClick={fetchData}
+                title="Refresh Inventory (Alt+R)"
+                aria-label="Refresh Inventory"
+                className="p-2.5 hover:bg-white/20 text-white rounded-xl transition-all flex items-center justify-center ml-1"
+              >
+                <RotateCw size={16} />
               </button>
            </div>
         </div>
@@ -219,17 +276,23 @@ export default function InventoryManagement() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-[#0c1427] p-5 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm gap-4">
               <div className="relative w-full md:max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                {/* 🚨 FIXED: Search Input deep color & state binding */}
                 <input 
+                  ref={searchRef}
                   type="text" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search equipment..." 
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm font-black text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 transition-all" 
+                  placeholder="Search equipment... [/]" 
+                  className="w-full pl-12 pr-10 py-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 text-sm font-black text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 transition-all" 
                 />
+                {!searchTerm && (
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Kbd variant="glass" size="xs">/</Kbd>
+                  </div>
+                )}
               </div>
               <button onClick={() => openAdjustModal()} className="w-full md:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm shrink-0">
                 <ArrowRightLeft size={16}/> Adjust Stock
+                <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
               </button>
             </div>
 
@@ -383,7 +446,7 @@ export default function InventoryManagement() {
                   type="submit" disabled={processing}
                   className="w-full py-4 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white font-black rounded-xl text-sm shadow-xl shadow-gray-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                 >
-                  {processing ? <><Loader2 className="animate-spin" size={18}/> Updating...</> : <><CheckCircle2 size={18}/> Confirm Adjustment</>}
+                  {processing ? <DotsLoader size="sm" variant="white" label="Updating..." /> : <><CheckCircle2 size={18}/> Confirm Adjustment</>}
                 </button>
               </form>
             </motion.div>

@@ -5,12 +5,16 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   UserCircle, Calendar, Clock, CheckCircle2, 
-  MapPin, Loader2, LogOut, Briefcase, Settings, 
+  MapPin, LogOut, Briefcase, Settings, 
   X, Camera, Save, Building2, ChevronRight, LayoutGrid, Key, Users,
-  CalendarDays, History, User, Zap
+  CalendarDays, History, User, Zap, RefreshCw
 } from "lucide-react";
 import { format, parseISO, differenceInMinutes, isToday, startOfMonth, endOfMonth, addDays } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { getAvatarUploadSignature } from "./actions";
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -395,11 +399,43 @@ export default function AgentDashboard() {
     );
   };
 
+  useKeyboardShortcuts([
+    {
+      key: "r",
+      alt: true,
+      description: "Refresh agent dashboard",
+      action: () => {
+        setLoading(true);
+        window.location.reload();
+      },
+    },
+    {
+      key: "h",
+      alt: true,
+      description: "Open work history",
+      action: () => setIsHistoryModalOpen(true),
+    },
+    {
+      key: "s",
+      alt: true,
+      description: "Open profile settings",
+      action: () => setIsEditModalOpen(true),
+    },
+    {
+      key: "Escape",
+      description: "Close modals",
+      action: () => {
+        setIsEditModalOpen(false);
+        setIsHistoryModalOpen(false);
+      },
+    },
+  ]);
+
   // ─── Loading ─────────────────────────────────────────────────────────────
   if (loading)
     return (
-      <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]">
-        <Loader2 className="animate-spin text-indigo-600" size={48} />
+      <div className="min-h-screen bg-[#F4F7FA] p-6 max-w-5xl mx-auto">
+        <PageSkeleton layout="cards" />
       </div>
     );
 
@@ -450,15 +486,16 @@ export default function AgentDashboard() {
             <button
               onClick={() => setIsHistoryModalOpen(true)}
               className="flex-1 md:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-sm"
-              title="Work History"
+              title="Work History (Alt+H)"
             >
-              <History size={16} /> History
+              <History size={16} /> History <Kbd className="bg-white/10 text-white/80 border-white/20 text-[9px]">⌥H</Kbd>
             </button>
             <button
               onClick={() => setIsEditModalOpen(true)}
               className="flex-1 md:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-sm"
+              title="Settings (Alt+S)"
             >
-              <Settings size={16} /> Settings
+              <Settings size={16} /> Settings <Kbd className="bg-white/10 text-white/80 border-white/20 text-[9px]">⌥S</Kbd>
             </button>
             <button
               onClick={handleLogout}
@@ -707,10 +744,15 @@ export default function AgentDashboard() {
                   disabled={savingProfile}
                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
                 >
-                  {savingProfile
-                    ? <><Loader2 className="animate-spin" size={20} /> Saving...</>
-                    : <><Save size={20} /> Save Changes</>
-                  }
+                  {savingProfile ? (
+                    <DotsLoader size="sm" variant="white" label="Saving..." />
+                  ) : (
+                    <>
+                      <Save size={20} />
+                      <span>Save Changes</span>
+                      <Kbd className="bg-indigo-700 text-indigo-100 border-indigo-500/50 ml-1">⌘S</Kbd>
+                    </>
+                  )}
                 </button>
               </form>
             </motion.div>

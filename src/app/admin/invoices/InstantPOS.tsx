@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Store, UserCircle, Plus, Trash2, RefreshCw,
   CheckCircle2, AlertCircle, ShoppingCart,
-  Building2, Receipt, Download, Banknote, Loader2,
+  Building2, Receipt, Download, Banknote,
   ArrowRight, Tag, Eye, Layers, FileText, Search,
   Home, X, AlertTriangle, Calendar, SlidersHorizontal,
   Filter, RotateCcw,
@@ -17,6 +17,8 @@ import { pdf } from "@react-pdf/renderer";
 import { InstantInvoiceDocument } from "./InstantInvoiceDocument";
 import { getInstantInvoiceUploadSignature, deleteInstantInvoice } from "./actions";
 import InvoiceExportModal from "./InvoiceExportModal";
+import DotsLoader from "@/components/common/DotsLoader";
+import { TableSkeleton } from "@/components/common/Skeleton";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -76,9 +78,9 @@ function DeleteConfirmModal({
           <p className="text-xs font-bold text-amber-800 dark:text-amber-300 leading-relaxed">The PDF will be permanently removed from cloud storage. Inventory stock deducted by this invoice will NOT be restored automatically.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 font-black rounded-2xl transition-all disabled:opacity-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
-            {loading ? <><Loader2 size={15} className="animate-spin" /> Deleting...</> : <><Trash2 size={15} /> Yes, Delete</>}
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 font-black rounded-2xl transition-all disabled:opacity-50 cursor-pointer">Cancel</button>
+          <button onClick={onConfirm} disabled={loading} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
+            {loading ? <DotsLoader size="xs" variant="white" label="Deleting..." /> : <><Trash2 size={15} /> Yes, Delete</>}
           </button>
         </div>
       </motion.div>
@@ -1047,9 +1049,9 @@ export default function InstantPOS({
               </label>
 
               <button onClick={handleGenerateInvoice} disabled={saving}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95 text-sm">
+                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95 text-sm cursor-pointer">
                 {saving
-                  ? <><Loader2 size={16} className="animate-spin" /><span>{saveProgress}</span></>
+                  ? <DotsLoader size="xs" variant="white" label={saveProgress} />
                   : <><ArrowRight size={16} /> Generate Bill & PDF</>
                 }
               </button>
@@ -1257,7 +1259,7 @@ export default function InstantPOS({
           </AnimatePresence>
 
           {loading ? (
-            <div className="py-20 flex justify-center"><Loader2 size={36} className="animate-spin text-indigo-600" /></div>
+            <TableSkeleton rows={6} columns={5} />
           ) : filteredHistory.length === 0 ? (
             <div className="text-center py-20 border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-3xl">
               <Receipt size={48} className="mx-auto text-gray-300 dark:text-slate-600 mb-3" />
@@ -1396,7 +1398,7 @@ export default function InstantPOS({
           <div ref={observerTarget} className="pt-8 pb-4 text-center">
             {loadingMore ? (
               <div className="flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 py-3 px-5 rounded-2xl mx-auto w-fit border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
-                <Loader2 size={16} className="animate-spin text-indigo-600 dark:text-indigo-400" />
+                <DotsLoader size="xs" variant="indigo" />
                 <span>Loading previous 2 months of instant bills...</span>
               </div>
             ) : hasMoreHistory && dateFilterPreset === 'loaded' ? (

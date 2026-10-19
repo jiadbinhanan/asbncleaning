@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Plus, Trash2, Edit2, Download, Search, Loader2, X, FileText, Image as ImageIcon, 
+  Plus, Trash2, Edit2, Download, Search, X, FileText, Image as ImageIcon, 
   CheckCircle2, Lock, Filter, TrendingUp, TrendingDown, CalendarDays, History, Settings, 
   Tag, CreditCard, Layers, ChevronDown, ChevronUp, RotateCcw, DollarSign, PieChart,
-  Receipt, ArrowUpRight, ArrowDownRight, SlidersHorizontal, Eye
+  Receipt, ArrowUpRight, ArrowDownRight, SlidersHorizontal, Eye, RotateCw
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -18,6 +18,10 @@ import {
   formatDistanceToNow, differenceInCalendarDays, subDays
 } from "date-fns";
 import FixedExpensesTab from "./FixedExpensesTab";
+import { TableSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function ExpensesPage() {
   const supabase = createClient();
@@ -655,6 +659,71 @@ export default function ExpensesPage() {
     doc.save(`Expenses_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Add new expense',
+      category: 'Actions',
+      handler: () => setIsAddModalOpen(true),
+    },
+    {
+      combo: 'Alt+E',
+      description: 'Export Excel report',
+      category: 'Actions',
+      handler: exportExcel,
+    },
+    {
+      combo: 'Alt+P',
+      description: 'Export PDF report',
+      category: 'Actions',
+      handler: exportPDF,
+    },
+    {
+      combo: 'Alt+S',
+      description: 'Expense settings',
+      category: 'Actions',
+      handler: () => setIsSettingsModalOpen(true),
+    },
+    {
+      combo: 'Alt+F',
+      description: 'Toggle advanced filters',
+      category: 'Filters',
+      handler: () => setShowAdvancedFilters((prev) => !prev),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh expenses list',
+      category: 'Actions',
+      handler: fetchExpensesAndStats,
+    },
+    {
+      combo: '1',
+      description: 'Switch to Flexible Expenses tab',
+      category: 'Navigation',
+      handler: () => setActiveTab('transactions'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to Fixed Expenses tab',
+      category: 'Navigation',
+      handler: () => setActiveTab('planner'),
+    },
+    {
+      combo: '/',
+      description: 'Focus expense search',
+      category: 'Navigation',
+      handler: () => searchRef.current?.focus(),
+    },
+    {
+      combo: 'Escape',
+      description: 'Close modals',
+      category: 'Modals',
+      handler: closeModals,
+    },
+  ]);
+
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200">
       
@@ -773,15 +842,15 @@ export default function ExpensesPage() {
         <div className="flex bg-white/80 dark:bg-[#0c1427]/90 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 mx-auto -mt-6 relative z-30 transition-colors">
           <button 
             onClick={() => setActiveTab('transactions')} 
-            className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
+            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
           >
-            Flexible Expenses
+            Flexible Expenses <Kbd variant="glass" size="xs">1</Kbd>
           </button>
           <button 
             onClick={() => setActiveTab('planner')} 
-            className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'planner' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
+            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${activeTab === 'planner' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
           >
-            Fixed Expenses
+            Fixed Expenses <Kbd variant="glass" size="xs">2</Kbd>
           </button>
         </div>
 
@@ -807,13 +876,18 @@ export default function ExpensesPage() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                 <input 
+                  ref={searchRef}
                   type="text" 
-                  placeholder="Search by description, category, amount..." 
+                  placeholder="Search by description, category, amount... [/]" 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-inner"
+                  className="w-full pl-10 pr-9 py-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-inner"
                 />
-                {searchTerm && (
+                {!searchTerm ? (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Kbd variant="glass" size="xs">/</Kbd>
+                  </div>
+                ) : (
                   <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
                     <X size={16}/>
                   </button>
@@ -831,6 +905,7 @@ export default function ExpensesPage() {
               >
                 <SlidersHorizontal size={16} />
                 <span className="hidden sm:inline">Advanced Filters</span>
+                <Kbd variant="glass" size="xs">Alt+F</Kbd>
                 {activeAdvancedFilterCount > 0 && (
                   <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-xs font-black flex items-center justify-center">
                     {activeAdvancedFilterCount}
@@ -840,18 +915,26 @@ export default function ExpensesPage() {
             </div>
             
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto justify-end">
-              <button onClick={exportExcel} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-sm shadow-sm">
-                <FileText size={16} /> Excel
+            <div className="flex items-center gap-2.5 w-full md:w-auto overflow-x-auto justify-end">
+              <button
+                onClick={fetchExpensesAndStats}
+                title="Refresh Expenses (Alt+R)"
+                aria-label="Refresh Expenses"
+                className="p-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center shadow-sm"
+              >
+                <RotateCw size={16} />
               </button>
-              <button onClick={exportPDF} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors font-bold text-sm shadow-sm">
-                <FileText size={16} /> PDF Report
+              <button onClick={exportExcel} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-sm shadow-sm">
+                <FileText size={16} /> Excel <Kbd variant="glass" size="xs">Alt+E</Kbd>
               </button>
-              <button onClick={() => setIsSettingsModalOpen(true)} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-bold text-sm shadow-sm">
-                <Settings size={16} /> Settings
+              <button onClick={exportPDF} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors font-bold text-sm shadow-sm">
+                <FileText size={16} /> PDF <Kbd variant="glass" size="xs">Alt+P</Kbd>
               </button>
-              <button onClick={() => setIsAddModalOpen(true)} className="flex shrink-0 items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all">
-                <Plus size={18} /> Add Expense
+              <button onClick={() => setIsSettingsModalOpen(true)} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-bold text-sm shadow-sm">
+                <Settings size={16} /> <span className="hidden sm:inline">Settings</span> <Kbd variant="glass" size="xs">Alt+S</Kbd>
+              </button>
+              <button onClick={() => setIsAddModalOpen(true)} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all text-sm whitespace-nowrap">
+                <Plus size={18} /> Add Expense <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
               </button>
             </div>
           </div>
@@ -1077,10 +1160,7 @@ export default function ExpensesPage() {
 
         {/* ── 4. EXPENSES LIST GROUPED BY WEEK (Expandable Rows with Ellipsis) ── */}
         {loading ? (
-          <div className="py-20 text-center flex flex-col items-center">
-            <Loader2 className="animate-spin text-blue-500 mb-4" size={40} />
-            <p className="text-gray-500 font-bold">Loading expenses...</p>
-          </div>
+          <TableSkeleton rows={6} cols={5} />
         ) : groupedArray.length === 0 ? (
           <div className="bg-white dark:bg-[#0c1427] rounded-3xl p-12 text-center shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
             <div className="w-20 h-20 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-slate-500"><Search size={32}/></div>
@@ -1377,7 +1457,7 @@ export default function ExpensesPage() {
               
               <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0c1427] shrink-0">
                 <button onClick={handleSaveSettings} disabled={submitting} className="w-full py-4 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-black flex justify-center items-center gap-2 hover:bg-black dark:hover:bg-blue-700 transition-all shadow-lg disabled:opacity-70">
-                  {submitting ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Save Settings
+                  {submitting ? <DotsLoader size="sm" variant="white" label="Saving Settings..." /> : <><CheckCircle2 size={20} /> Save Settings</>}
                 </button>
               </div>
             </motion.div>
@@ -1509,7 +1589,7 @@ export default function ExpensesPage() {
                 
                 <div className="pt-2">
                   <button type="submit" disabled={submitting} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 mt-2">
-                    {submitting ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Save Expense
+                    {submitting ? <DotsLoader size="sm" variant="white" label="Saving Expense..." /> : <><CheckCircle2 size={20} /> Save Expense</>}
                   </button>
                 </div>
               </form>
@@ -1667,7 +1747,7 @@ export default function ExpensesPage() {
                 </div>
                 
                 <button type="submit" disabled={submitting || verifying} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 mt-4">
-                  {(submitting || verifying) ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Save Changes
+                  {(submitting || verifying) ? <DotsLoader size="sm" variant="white" label="Saving Changes..." /> : <><CheckCircle2 size={20} /> Save Changes</>}
                 </button>
               </form>
             </motion.div>
@@ -1695,7 +1775,7 @@ export default function ExpensesPage() {
                   />
                   <div className="flex gap-3 pt-2">
                     <button type="button" onClick={closeModals} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                    <button type="submit" disabled={submitting || verifying} className="flex-1 py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 flex items-center justify-center gap-2">{(submitting || verifying) ? <Loader2 className="animate-spin" size={18} /> : 'Delete'}</button>
+                    <button type="submit" disabled={submitting || verifying} className="flex-1 py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 flex items-center justify-center gap-2">{(submitting || verifying) ? <DotsLoader size="xs" variant="white" label="Deleting..." /> : 'Delete'}</button>
                   </div>
                 </form>
               </div>

@@ -6,9 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Copy, Star, StarOff, Edit3, Check,
   X, ChevronDown, ChevronUp, GripVertical, AlertCircle,
-  Loader2, LayoutTemplate, TableProperties, RowsIcon,
+  LayoutTemplate, TableProperties, RowsIcon,
   Columns3, ArrowUpDown, Layers, RefreshCw, Info,
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { CardGridSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -289,6 +293,33 @@ export default function TemplateBuilder() {
     setSaveError("");
   };
 
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Create new quotation template',
+      category: 'Actions',
+      handler: () => {
+        if (!editing) handleNew();
+      },
+    },
+    {
+      combo: 'Ctrl+S',
+      description: 'Save quotation template',
+      category: 'Actions',
+      handler: () => {
+        if (editing && !saving) handleSave();
+      },
+    },
+    {
+      combo: 'Escape',
+      description: 'Cancel template editing',
+      category: 'Modals',
+      handler: () => {
+        if (editing) setEditing(null);
+      },
+    },
+  ]);
+
   // ── Edit existing ──────────────────────────────────────────────────────────
   const handleEdit = (tpl: Template) => {
     setEditing({
@@ -449,8 +480,10 @@ export default function TemplateBuilder() {
             whileTap={{ scale: 0.97 }}
             onClick={handleNew}
             className="flex items-center gap-2 px-5 py-3 bg-[#0A192F] text-white rounded-xl font-black shadow-lg hover:bg-[#0d2244] transition-all"
+            title="New Template (Alt+N)"
           >
             <Plus size={18} /> New Template
+            <Kbd variant="glass" size="xs">Alt+N</Kbd>
           </motion.button>
         </div>
 
@@ -464,10 +497,7 @@ export default function TemplateBuilder() {
 
         {/* Loading */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-500">
-            <Loader2 size={40} className="animate-spin text-blue-600 dark:text-blue-400 mb-4" />
-            <p className="font-medium animate-pulse">Loading templates…</p>
-          </div>
+          <CardGridSkeleton count={4} />
         ) : templates.length === 0 ? (
           <EmptyState onNew={handleNew} />
         ) : (
@@ -545,7 +575,7 @@ export default function TemplateBuilder() {
                           title="Set as default"
                         >
                           {settingDefaultId === tpl.id
-                            ? <Loader2 size={13} className="animate-spin" />
+                            ? <DotsLoader size="xs" variant="primary" />
                             : <Star size={13} />}
                         </motion.button>
                       )}
@@ -559,7 +589,7 @@ export default function TemplateBuilder() {
                         title="Delete"
                       >
                         {deletingId === tpl.id
-                          ? <Loader2 size={13} className="animate-spin" />
+                          ? <DotsLoader size="xs" variant="primary" />
                           : <Trash2 size={13} />}
                       </motion.button>
                     </div>
@@ -637,9 +667,11 @@ export default function TemplateBuilder() {
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-md shadow-blue-200 dark:shadow-blue-900/40 transition-all disabled:opacity-70"
+              title="Save Template (Ctrl+S)"
             >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              {saving ? <DotsLoader size="xs" variant="white" /> : <Save size={16} />}
               {saving ? "Saving…" : isNew ? "Create Template" : "Save Changes"}
+              <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
             </motion.button>
           </div>
         </div>
@@ -1011,7 +1043,7 @@ export default function TemplateBuilder() {
                 disabled={saving}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all disabled:opacity-70"
               >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {saving ? <DotsLoader size="xs" variant="white" /> : <Save size={14} />}
                 {saving ? "Saving…" : "Save"}
               </motion.button>
             </div>

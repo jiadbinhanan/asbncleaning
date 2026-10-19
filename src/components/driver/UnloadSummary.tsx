@@ -1,5 +1,6 @@
 "use client";
-import { Warehouse, ArrowDownToLine, Loader2, CircleCheck } from "lucide-react";
+import { Warehouse, ArrowDownToLine, CircleCheck } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
 import { format, parseISO } from "date-fns";
 import { ReturnItem, TYPE_COLORS } from "./types";
 
@@ -122,8 +123,14 @@ export default function UnloadSummary({
                 disabled={unloadConfirming}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-black rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm shadow-amber-500/20 disabled:opacity-50"
               >
-                {unloadConfirming ? <Loader2 size={16} className="animate-spin"/> : <ArrowDownToLine size={16}/>}
-                {unloadConfirming ? "Confirming..." : "Confirm Unload at Warehouse"}
+                {unloadConfirming ? (
+                  <DotsLoader size="xs" variant="white" label="Confirming..." />
+                ) : (
+                  <>
+                    <ArrowDownToLine size={16}/>
+                    <span>Confirm Unload at Warehouse</span>
+                  </>
+                )}
               </button>
             </div>
           )}

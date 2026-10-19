@@ -3,15 +3,20 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, Filter, Clock, Calendar, 
+  RotateCw, Filter, Clock, Calendar, 
   MapPin, AlertCircle, Camera, 
   ChevronDown, FileCheck, CheckSquare, Users, PackagePlus, AlertTriangle, Search, Activity, FileSpreadsheet, Wallet, X
 } from "lucide-react";
 import { format, differenceInMinutes, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import WorkAuditModal from "./WorkAuditModal";
+import { CardGridSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function WorkRecords() {
   const supabase = createClient();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // --- States ---
   const [loading, setLoading] = useState(true);
@@ -305,6 +310,43 @@ export default function WorkRecords() {
     document.body.removeChild(link);
   };
 
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+E',
+      description: 'Export work records CSV',
+      category: 'Actions',
+      handler: handleExportCSV,
+    },
+    {
+      combo: 'Alt+F',
+      description: 'Toggle work filters',
+      category: 'Filters',
+      handler: () => setShowFilters(prev => !prev),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh work records',
+      category: 'Actions',
+      handler: fetchRecords,
+    },
+    {
+      combo: '/',
+      description: 'Focus work records search',
+      category: 'Navigation',
+      handler: () => searchInputRef.current?.focus(),
+    },
+    {
+      combo: 'Escape',
+      description: 'Close report modal / filters',
+      category: 'Modals',
+      handler: () => {
+        setSelectedBooking(null);
+        setShowFilters(false);
+        setShowSearchDropdown(false);
+      },
+    },
+  ]);
+
   return (
     <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden'>
 
@@ -386,22 +428,27 @@ export default function WorkRecords() {
             <div className='relative w-full md:w-72' ref={searchRef}>
               <div className='relative flex items-center'>
                 <input
+                  ref={searchInputRef}
                   type='text'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchDropdown(true)}
                   placeholder='Search ID or keywords...'
-                  className='w-full pl-10 pr-10 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold text-sm text-white placeholder-gray-400 outline-none transition-all backdrop-blur-md'
+                  className='w-full pl-10 pr-16 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold text-sm text-white placeholder-gray-400 outline-none transition-all backdrop-blur-md'
                 />
                 <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' size={18} />
-                {searchQuery && (
-                  <button 
-                    onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors'
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+                <div className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5'>
+                  {searchQuery ? (
+                    <button 
+                      onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
+                      className='text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors'
+                    >
+                      <X size={14} />
+                    </button>
+                  ) : (
+                    <Kbd variant="glass" size="xs">/</Kbd>
+                  )}
+                </div>
               </div>
               
               <AnimatePresence>
@@ -430,19 +477,33 @@ export default function WorkRecords() {
                 )}
               </AnimatePresence>
             </div>
+
+            <button
+              onClick={fetchRecords}
+              disabled={loading}
+              className='px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+              title='Refresh work records (Alt+R)'
+            >
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={18}/>}
+              <Kbd variant="glass" size="xs">Alt+R</Kbd>
+            </button>
             
             <button
               onClick={handleExportCSV}
-              className='px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-100 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+              className='px-5 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-100 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+              title='Export CSV (Alt+E)'
             >
               <FileSpreadsheet size={18}/> Export
+              <Kbd variant="glass" size="xs">Alt+E</Kbd>
             </button>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className='px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+              className='px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-black transition-all flex items-center justify-center gap-2 backdrop-blur-md'
+              title='Toggle filters (Alt+F)'
             >
-              <Filter size={18}/> Filters{ ' ' }
+              <Filter size={18}/> Filters
+              <Kbd variant="glass" size="xs">Alt+F</Kbd>
               <motion.div animate={{ rotate: showFilters ? 180 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronDown size={18} />
               </motion.div>
@@ -533,21 +594,8 @@ export default function WorkRecords() {
 
         {/* --- CONTENT --- */}
         {loading ? (
-          <div className='space-y-6 mt-4'>
-            {[1, 2, 3].map(i => (
-              <div key={i} className='bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-slate-800 animate-pulse ml-8'>
-                <div className='flex justify-between mb-6'>
-                   <div className='space-y-3 w-1/2'>
-                     <div className='h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/3'></div>
-                     <div className='h-6 bg-gray-200 dark:bg-slate-700 rounded w-3/4'></div>
-                     <div className='h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/2'></div>
-                   </div>
-                   <div className='h-8 bg-gray-200 dark:bg-slate-700 rounded w-20'></div>
-                </div>
-                <div className='h-12 bg-gray-100 dark:bg-slate-800 rounded-xl mb-4'></div>
-                <div className='h-12 bg-gray-200 dark:bg-slate-700 rounded-xl'></div>
-              </div>
-            ))}
+          <div className='mt-4'>
+            <CardGridSkeleton count={4} />
           </div>
         ) : groupedBookings.sortedDates.length === 0 ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white dark:bg-[#0c1427] p-12 rounded-[2rem] border border-gray-100 dark:border-slate-800 text-center text-gray-400 dark:text-slate-500 shadow-sm'>
@@ -754,8 +802,8 @@ export default function WorkRecords() {
 
         {/* Infinite Scroll trigger */}
         {visibleCount < filteredBookings.length && (
-          <div ref={loadMoreRef} className='flex justify-center mt-10 pt-6 border-t border-gray-200 pb-10'>
-            <Loader2 className='animate-spin text-blue-500' size={32} />
+          <div ref={loadMoreRef} className='flex justify-center mt-10 pt-6 border-t border-gray-200 dark:border-slate-800 pb-10'>
+            <DotsLoader size="md" variant="primary" label="Loading more records..." />
           </div>
         )}
 

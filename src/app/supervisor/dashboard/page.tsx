@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { DashboardSkeleton } from "@/components/common/Skeleton";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // Components
 import DashboardHeader from "@/components/supervisor/dashboard/DashboardHeader";
@@ -29,49 +30,76 @@ export default function SupervisorDashboard() {
   const [monthlyBookings, setMonthlyBookings] = useState<any[]>([]);
   const [todayTeams, setTodayTeams] = useState<any[]>([]);
 
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // 1. Calculate Date Range based on Filter Type
+    let queryStart, queryEnd;
+    
+    if (filter.type === 'month') {
+      const year = parseInt(filter.month.split('-')[0]);
+      const monthIndex = parseInt(filter.month.split('-')[1]) - 1;
+      queryStart = format(startOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
+      queryEnd = format(endOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
+    } else if (filter.type === 'date') {
+      queryStart = filter.singleDate;
+      queryEnd = filter.singleDate;
+    } else {
+      queryStart = filter.startDate;
+      queryEnd = filter.endDate;
+    }
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    // 2. 🚨 Single Parallel Fetch
+    const [profileRes, bookingsRes, teamsRes] = await Promise.all([
+      supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
+      supabase.from('bookings').select(`id, status, price, cleaning_date, cleaning_time, service_type, units(unit_number, companies(name)), teams(team_name)`).gte('cleaning_date', queryStart).lte('cleaning_date', queryEnd),
+      supabase.from('teams').select(`id, team_name, member_ids, status, bookings!bookings_assigned_team_id_fkey(id, status)`).eq('shift_date', todayStr)
+    ]);
+
+    if (profileRes.data) setProfile(profileRes.data);
+    if (bookingsRes.data) setMonthlyBookings(bookingsRes.data);
+    if (teamsRes.data) setTodayTeams(teamsRes.data);
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Calculate Date Range based on Filter Type
-      let queryStart, queryEnd;
-      
-      if (filter.type === 'month') {
-        const year = parseInt(filter.month.split('-')[0]);
-        const monthIndex = parseInt(filter.month.split('-')[1]) - 1;
-        queryStart = format(startOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
-        queryEnd = format(endOfMonth(new Date(year, monthIndex)), 'yyyy-MM-dd');
-      } else if (filter.type === 'date') {
-        queryStart = filter.singleDate;
-        queryEnd = filter.singleDate;
-      } else {
-        queryStart = filter.startDate;
-        queryEnd = filter.endDate;
-      }
-
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-      // 2. 🚨 Single Parallel Fetch
-      const [profileRes, bookingsRes, teamsRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single(),
-        supabase.from('bookings').select(`id, status, price, cleaning_date, cleaning_time, service_type, units(unit_number, companies(name)), teams(team_name)`).gte('cleaning_date', queryStart).lte('cleaning_date', queryEnd),
-        supabase.from('teams').select(`id, team_name, member_ids, status, bookings!bookings_assigned_team_id_fkey(id, status)`).eq('shift_date', todayStr)
-      ]);
-
-      if (profileRes.data) setProfile(profileRes.data);
-      if (bookingsRes.data) setMonthlyBookings(bookingsRes.data);
-      if (teamsRes.data) setTodayTeams(teamsRes.data);
-
-      setLoading(false);
-    };
-
     fetchDashboardData();
   }, [supabase, filter]); 
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+R',
+      description: 'Refresh supervisor dashboard',
+      category: 'Actions',
+      handler: fetchDashboardData,
+    },
+    {
+      combo: '1',
+      description: 'Filter by month',
+      category: 'Filters',
+      handler: () => setFilter(f => ({ ...f, type: 'month' })),
+    },
+    {
+      combo: '2',
+      description: 'Filter by single date',
+      category: 'Filters',
+      handler: () => setFilter(f => ({ ...f, type: 'date' })),
+    },
+    {
+      combo: '3',
+      description: 'Filter by date range',
+      category: 'Filters',
+      handler: () => setFilter(f => ({ ...f, type: 'range' })),
+    },
+  ]);
+
+  if (loading) return <div className="p-4 md:p-8 min-h-screen bg-[#F4F7FA] dark:bg-[#070b14]"><DashboardSkeleton /></div>;
 
   // --- 📊 CALCULATIONS ---
   const todayStr = format(new Date(), 'yyyy-MM-dd');

@@ -1,10 +1,12 @@
 'use client';
 import { motion } from 'framer-motion';
 import {
-  Check, X, Loader2, Building2, Search,
+  Check, X, Building2, Search,
   Hash, Calendar, Tag, Circle, CheckCircle2, Zap, Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import DotsLoader from '@/components/common/DotsLoader';
+import { CardGridSkeleton } from '@/components/common/Skeleton';
 
 // ── Types ─────────────────────────────────────────────────────
 export type Booking = {
@@ -141,7 +143,7 @@ function BookingCard({
           ${isAssignedToThis ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-200 dark:border-slate-700 text-gray-300 dark:text-slate-600'}`}
         >
           {isSaving
-            ? <Loader2 size={14} className="animate-spin" />
+            ? <DotsLoader size="xs" variant="primary" />
             : <Check size={15} strokeWidth={isAssignedToThis ? 3 : 2} />
           }
         </div>
@@ -202,8 +204,8 @@ function BookingList({
   compact?: boolean;
 }) {
   if (loadingBookings) return (
-    <div className="flex justify-center py-16">
-      <Loader2 className="animate-spin text-blue-500" size={32} />
+    <div className="py-6 px-4">
+      <CardGridSkeleton count={3} />
     </div>
   );
 

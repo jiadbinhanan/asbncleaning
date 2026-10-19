@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Home, Users, CheckCircle2, AlertCircle, 
-  Loader2, X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList,
+  X, MoreVertical, Trash2, Edit2, Filter, FilterX, ClipboardList,
   Search, Zap, RotateCcw, Download, FileSpreadsheet, LayoutDashboard,
   ShieldCheck, ChevronDown
 } from "lucide-react";
@@ -13,6 +13,10 @@ import toast, { Toaster } from 'react-hot-toast';
 
 import AdminDutyModal from './AdminDutyModal'; 
 import AdminEditLogModal from './AdminEditLogModal'; 
+import { TableSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import Kbd from "@/components/common/Kbd";
 
 // --- Types ---
 type Booking = {
@@ -224,6 +228,50 @@ export default function BookingManagement() {
 
   // Form States (Add Booking)
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard Shortcuts for Bookings Page
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      altKey: true,
+      onKeyDown: () => setIsAddOpen(true),
+      description: 'Create New Booking',
+      category: 'Actions',
+    },
+    {
+      key: 'r',
+      altKey: true,
+      onKeyDown: () => {
+        fetchBookings();
+        toast.success("Bookings refreshed");
+      },
+      description: 'Refresh Bookings list',
+      category: 'Actions',
+    },
+    {
+      key: 'e',
+      altKey: true,
+      onKeyDown: () => handleExportExcel(),
+      description: 'Export Bookings to Excel',
+      category: 'Actions',
+    },
+    {
+      key: 'f',
+      altKey: true,
+      onKeyDown: () => setShowFilters((prev) => !prev),
+      description: 'Toggle Filter bar',
+      category: 'Actions',
+    },
+    {
+      key: '/',
+      onKeyDown: () => {
+        searchInputRef.current?.focus();
+      },
+      description: 'Focus Booking Search',
+      category: 'Actions',
+    },
+  ]);
   const [isCustomService, setIsCustomService] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -682,17 +730,32 @@ export default function BookingManagement() {
             </div>
 
             <div className="flex gap-2 w-full md:w-auto flex-wrap">
-              <button onClick={handleExportExcel} className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+              <button 
+                onClick={handleExportExcel} 
+                title="Export Excel (Alt+E)"
+                className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
                 <FileSpreadsheet size={14}/> Export Excel
+                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.2 rounded border border-emerald-300 dark:border-emerald-700">⌥E</span>
               </button>
-              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                 <Download size={14}/> Export PDF
               </button>
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
+              <button 
+                onClick={() => setShowFilters(!showFilters)} 
+                title="Toggle Filters (Alt+F)"
+                className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto cursor-pointer ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}
+              >
                 <Filter size={15}/> Filters {showFilters && <X size={13}/>}
+                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-white/20 px-1 py-0.2 rounded">⌥F</span>
               </button>
-              <button onClick={() => setIsAddOpen(true)} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30 border border-blue-500/50 w-full md:w-auto text-xs">
+              <button 
+                onClick={() => setIsAddOpen(true)} 
+                title="Create New Booking (Alt+N)"
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30 border border-blue-500/50 w-full md:w-auto text-xs cursor-pointer"
+              >
                 <Plus size={15} strokeWidth={3}/> New Booking
+                <span className="hidden xl:inline text-[9px] font-mono font-bold bg-blue-700 px-1 py-0.2 rounded border border-blue-400/30">⌥N</span>
               </button>
             </div>
           </div>
@@ -730,12 +793,16 @@ export default function BookingManagement() {
       <div className="relative mb-4">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
         <input
+          ref={searchInputRef}
           type="text"
-          placeholder="Search by Ref, Company, Unit or Building..."
+          placeholder="Search by Ref, Company, Unit or Building... (Press / to focus)"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-md outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
+          className="w-full pl-11 pr-14 py-3 bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-md outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
         />
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <Kbd size="xs" variant="default" keys={['/']} />
+        </div>
       </div>
 
       <AnimatePresence>
@@ -787,7 +854,7 @@ export default function BookingManagement() {
       </AnimatePresence>
 
       {loading ? (
-        <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
+        <TableSkeleton rows={7} columns={5} />
       ) : filteredBookings.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 border-dashed">
           <Calendar size={48} className="mx-auto text-gray-300 dark:text-slate-600 mb-3" />
@@ -885,9 +952,9 @@ export default function BookingManagement() {
                         <button
                           onClick={() => handleToggleActivation(booking.id, 'pending')}
                           disabled={activatingId === booking.id}
-                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-70 active:scale-95"
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-70 active:scale-95 cursor-pointer"
                         >
-                          {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <Zap size={14} className="fill-white"/>}
+                          {activatingId === booking.id ? <DotsLoader size="xs" variant="white" /> : <Zap size={14} className="fill-white"/>}
                           Activate
                         </button>
                       )}
@@ -896,9 +963,9 @@ export default function BookingManagement() {
                         <button
                           onClick={() => handleToggleActivation(booking.id, 'active')}
                           disabled={activatingId === booking.id}
-                          className="px-3 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95 shadow-sm"
+                          className="px-3 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95 shadow-sm cursor-pointer"
                         >
-                          {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>}
+                          {activatingId === booking.id ? <DotsLoader size="xs" variant="primary" /> : <CheckCircle2 size={14}/>}
                           Active <RotateCcw size={11} className="ml-0.5 text-blue-400"/>
                         </button>
                       )}
@@ -1142,8 +1209,15 @@ export default function BookingManagement() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70">
-                  {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Confirm Booking"}
+                <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer">
+                  {saving ? (
+                    <DotsLoader size="sm" variant="white" label="Saving Booking..." />
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Confirm Booking
+                      <Kbd size="xs" variant="dark" keys={['Ctrl', '↵']} />
+                    </span>
+                  )}
                 </button>
               </form>
             </motion.div>
@@ -1289,8 +1363,15 @@ export default function BookingManagement() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70">
-                  {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Save Changes"}
+                <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer">
+                  {saving ? (
+                    <DotsLoader size="sm" variant="white" label="Saving Changes..." />
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Save Changes
+                      <Kbd size="xs" variant="dark" keys={['Ctrl', '↵']} />
+                    </span>
+                  )}
                 </button>
               </form>
             </motion.div>

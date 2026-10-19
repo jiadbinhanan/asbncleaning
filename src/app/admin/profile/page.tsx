@@ -4,11 +4,14 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Mail, Phone, Lock, Camera, Save, 
-  ShieldCheck, Loader2, Trash2, KeyRound, Edit2, X, Check, Eye, EyeOff
+  ShieldCheck, Trash2, KeyRound, Edit2, X, Check, Eye, EyeOff, RotateCw
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { getCloudinarySignature, updateEmployeeCredentialsAction } from "@/app/admin/employees/actions";
 import { updateActionPassword } from "./actions";
-
 
 export default function AdminProfile() {
   const supabase = createClient();
@@ -271,7 +274,57 @@ export default function AdminProfile() {
     setActionPasswordUpdating(false);
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
+  useKeyboardShortcuts([
+    {
+      combo: '1',
+      description: 'Switch to Personal Details tab',
+      category: 'Navigation',
+      handler: () => setActiveTab('personal'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to Security Settings tab',
+      category: 'Navigation',
+      handler: () => setActiveTab('security'),
+    },
+    {
+      combo: 'Alt+E',
+      description: 'Edit personal details',
+      category: 'Actions',
+      handler: () => {
+        if (activeTab === 'personal') setIsEditing(true);
+      },
+    },
+    {
+      combo: 'Ctrl+S',
+      description: 'Save profile changes',
+      category: 'Actions',
+      handler: () => {
+        if (isEditing && !saving) handleSaveProfile();
+      },
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh profile details',
+      category: 'Actions',
+      handler: fetchUserData,
+    },
+    {
+      combo: 'Escape',
+      description: 'Cancel edit or close crop modal',
+      category: 'Modals',
+      handler: () => {
+        if (isCropModalOpen) {
+          setIsCropModalOpen(false);
+          setPreviewUrl(null);
+        } else if (isEditing) {
+          handleCancelEdit();
+        }
+      },
+    },
+  ]);
+
+  if (loading) return <PageSkeleton layout="form" />;
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-20 p-2 md:p-6 font-sans">
@@ -298,7 +351,7 @@ export default function AdminProfile() {
                 )}
                 {uploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-white" />
+                    <DotsLoader size="xs" variant="white" />
                   </div>
                 )}
               </div>
@@ -340,15 +393,17 @@ export default function AdminProfile() {
         <div className="lg:col-span-1 space-y-2">
           <button 
             onClick={() => setActiveTab('personal')}
-            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'personal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all ${activeTab === 'personal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
           >
-            <User size={20} /> Personal Details
+            <span className="flex items-center gap-3"><User size={20} /> Personal Details</span>
+            <Kbd variant="glass" size="xs">1</Kbd>
           </button>
           <button 
             onClick={() => setActiveTab('security')}
-            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'security' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
+            className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all ${activeTab === 'security' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
           >
-            <KeyRound size={20} /> Security & Password
+            <span className="flex items-center gap-3"><KeyRound size={20} /> Security & Password</span>
+            <Kbd variant="glass" size="xs">2</Kbd>
           </button>
         </div>
 
@@ -369,8 +424,10 @@ export default function AdminProfile() {
                     <button 
                       onClick={() => setIsEditing(true)}
                       className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 rounded-xl font-bold flex items-center gap-2 transition-all"
+                      title="Edit Details (Alt+E)"
                     >
                       <Edit2 size={16} /> Edit Details
+                      <Kbd variant="glass" size="xs">Alt+E</Kbd>
                     </button>
                   )}
                 </div>
@@ -440,9 +497,11 @@ export default function AdminProfile() {
                       <button 
                         onClick={handleSaveProfile} disabled={saving}
                         className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all disabled:opacity-70"
+                        title="Save Changes (Ctrl+S)"
                       >
-                        {saving ? <Loader2 className="animate-spin" size={20}/> : <Save size={20} />} 
+                        {saving ? <DotsLoader size="xs" variant="white" /> : <Save size={20} />} 
                         Save Changes
+                        <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
                       </button>
                     </motion.div>
                   )}
@@ -519,7 +578,7 @@ export default function AdminProfile() {
                       type="submit" disabled={passwordUpdating}
                       className="w-full py-4 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black dark:hover:bg-blue-700 shadow-lg transition-all disabled:opacity-70"
                     >
-                      {passwordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
+                      {passwordUpdating ? <DotsLoader size="xs" variant="white" /> : <ShieldCheck size={20} />} 
                       Update Security
                     </button>
                   </div>
@@ -598,7 +657,7 @@ export default function AdminProfile() {
                         type="submit" disabled={actionPasswordUpdating}
                         className="w-full py-4 bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all disabled:opacity-70"
                       >
-                        {actionPasswordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
+                        {actionPasswordUpdating ? <DotsLoader size="xs" variant="white" /> : <ShieldCheck size={20} />} 
                         Update Action Password
                       </button>
                     </div>
@@ -639,7 +698,7 @@ export default function AdminProfile() {
                   <img src={previewUrl} alt="Crop Preview" className="w-full h-full object-cover" />
                   {uploading && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <Loader2 className="animate-spin text-white" size={32} />
+                      <DotsLoader size="md" variant="white" label="Processing photo..." />
                     </div>
                   )}
                 </div>
@@ -658,7 +717,7 @@ export default function AdminProfile() {
                   disabled={uploading}
                   className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl flex justify-center items-center gap-2 hover:bg-blue-700 shadow-md transition-colors disabled:opacity-70"
                 >
-                  {uploading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} 
+                  {uploading ? <DotsLoader size="xs" variant="white" /> : <Check size={18} />} 
                   Upload
                 </button>
               </div>

@@ -5,12 +5,15 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Calendar, CheckCircle2, Loader2, AlertCircle, X, 
+  Calendar, CheckCircle2, AlertCircle, X, 
   MapPin, Activity, Building2, ImageIcon, FileCheck, Info, 
   ShieldCheck, Camera, Layers, Clock, Filter, Receipt,
   AlertTriangle, LayoutList, CalendarDays, CircleDashed
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { PageSkeleton, CardGridSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Booking = {
@@ -76,6 +79,24 @@ export default function ClientPortal() {
   // View States
   const [viewMode, setViewMode] = useState<"date" | "unit">("date");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+  useKeyboardShortcuts([
+    {
+      key: "1",
+      description: "Date view",
+      action: () => setViewMode("date"),
+    },
+    {
+      key: "2",
+      description: "Unit view",
+      action: () => setViewMode("unit"),
+    },
+    {
+      key: "Escape",
+      description: "Close details modal",
+      action: () => setSelectedBooking(null),
+    },
+  ]);
 
   // ─── API 1: Validate Token & Fetch Company ───
   useEffect(() => {
@@ -251,7 +272,7 @@ export default function ClientPortal() {
               </span>
             ) : (
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 flex items-center gap-1">
-                <Loader2 size={12}/> Scheduled
+                <CircleDashed size={12} className="animate-pulse"/> Scheduled
               </span>
             )}
             <span className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md flex items-center gap-1">
@@ -317,11 +338,8 @@ export default function ClientPortal() {
   // ─── Render: Loading State ───
   if (loading && !company) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center gap-4">
-           <Loader2 className="animate-spin text-blue-600" size={48} />
-           <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Verifying Portal Access...</p>
-        </div>
+      <div className="min-h-screen bg-[#F4F7FA] p-6 max-w-7xl mx-auto">
+        <PageSkeleton layout="dashboard" />
       </div>
     );
   }
@@ -439,24 +457,30 @@ export default function ClientPortal() {
             <p className="text-sm font-medium text-slate-500 mt-1">Select any card to view detailed before/after photos and reports.</p>
           </div>
 
-          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 gap-1">
             <button 
               onClick={() => setViewMode("date")} 
               className={`px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${viewMode === "date" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900"}`}
             >
-              <CalendarDays size={14}/> Date View
+              <CalendarDays size={14}/>
+              <span>Date View</span>
+              <Kbd className={viewMode === "date" ? "bg-slate-800 text-slate-300 border-slate-700 text-[9px]" : "bg-slate-100 text-slate-500 border-slate-200 text-[9px]"}>1</Kbd>
             </button>
             <button 
               onClick={() => setViewMode("unit")} 
               className={`px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${viewMode === "unit" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900"}`}
             >
-              <LayoutList size={14}/> Unit View
+              <LayoutList size={14}/>
+              <span>Unit View</span>
+              <Kbd className={viewMode === "unit" ? "bg-slate-800 text-slate-300 border-slate-700 text-[9px]" : "bg-slate-100 text-slate-500 border-slate-200 text-[9px]"}>2</Kbd>
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-blue-600" size={48}/></div>
+          <div className="py-8">
+            <CardGridSkeleton count={6} />
+          </div>
         ) : filteredBookings.length === 0 ? (
           <div className="bg-white border border-dashed border-slate-300 rounded-[2rem] p-16 text-center shadow-sm">
              <Calendar size={56} className="mx-auto text-slate-300 mb-4"/>
@@ -537,8 +561,13 @@ export default function ClientPortal() {
                     {selectedBooking.units?.building_name} <span className="text-slate-300">•</span> {format(parseISO(selectedBooking.cleaning_date), 'EEEE, dd MMM yyyy')} <span className="text-slate-300">•</span> {selectedBooking.cleaning_time}
                   </p>
                 </div>
-                <button onClick={() => setSelectedBooking(null)} className="p-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-full transition-colors shadow-sm">
-                  <X size={20}/>
+                <button 
+                  onClick={() => setSelectedBooking(null)} 
+                  className="p-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-full transition-colors shadow-sm flex items-center gap-1.5"
+                  title="Close (Esc)"
+                >
+                  <Kbd className="bg-slate-100 text-slate-500 border-slate-200 text-[9px]">Esc</Kbd>
+                  <X size={18}/>
                 </button>
               </div>
 

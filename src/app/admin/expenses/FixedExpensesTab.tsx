@@ -5,13 +5,16 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Edit2, CheckCircle2, Lock, FileText, Image as ImageIcon, 
-  CalendarDays, Settings, Tag, CreditCard, Layers, X, Loader2, PlayCircle, Clock, Info, 
+  CalendarDays, Settings, Tag, CreditCard, Layers, X, RotateCw, PlayCircle, Clock, Info, 
   ChevronDown, ChevronUp, History, TrendingUp, Search, SlidersHorizontal, RotateCcw, 
   Receipt, Eye, DollarSign, PieChart
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { CardGridSkeleton, TableSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
 import { 
   getFixedSchedulesAction, 
   addFixedScheduleAction, 
@@ -762,7 +765,7 @@ export default function FixedExpensesTab({
                 </div>
                 <div className="mt-4 flex justify-end">
                   <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-black dark:hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2">
-                    {submitting ? <Loader2 className="animate-spin" size={16}/> : <CheckCircle2 size={16}/>} Save Schedule
+                    {submitting ? <DotsLoader size="xs" variant="white" label="Saving..." /> : <><CheckCircle2 size={16}/> Save Schedule</>}
                   </button>
                 </div>
               </form>
@@ -814,7 +817,7 @@ export default function FixedExpensesTab({
         <h3 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Clock size={16} className="text-blue-600 dark:text-blue-400"/> Upcoming & Due</h3>
         
         {loading ? (
-          <div className="p-12 flex justify-center text-blue-500"><Loader2 className="animate-spin" size={32} /></div>
+          <CardGridSkeleton count={4} />
         ) : checklist.length === 0 ? (
           <div className="p-12 text-center text-gray-500 dark:text-slate-400 font-bold bg-white dark:bg-[#0c1427] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">No fixed schedules found. Setup schedules to see them here.</div>
         ) : (
@@ -1036,10 +1039,7 @@ export default function FixedExpensesTab({
           </div>
 
           {loading ? (
-            <div className="py-20 text-center flex flex-col items-center">
-              <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
-              <p className="text-gray-500 dark:text-slate-400 font-bold">Loading fixed ledger...</p>
-            </div>
+            <TableSkeleton rows={5} cols={5} />
           ) : groupedArray.length === 0 ? (
             <div className="bg-white dark:bg-[#0c1427] rounded-3xl p-12 text-center shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
               <div className="w-20 h-20 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-slate-500"><Search size={32}/></div>
@@ -1281,7 +1281,7 @@ export default function FixedExpensesTab({
                   
                   <div className="pt-2">
                     <button type="submit" disabled={submitting} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 mt-2">
-                      {submitting ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Complete Entry
+                      {submitting ? <DotsLoader size="sm" variant="white" label="Completing Entry..." /> : <><CheckCircle2 size={20} /> Complete Entry</>}
                     </button>
                   </div>
                 </form>
@@ -1433,7 +1433,7 @@ export default function FixedExpensesTab({
                   </div>
                   
                   <button type="submit" disabled={submitting || verifying} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-70 mt-4">
-                    {(submitting || verifying) ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Save Changes
+                    {(submitting || verifying) ? <DotsLoader size="sm" variant="white" label="Saving Changes..." /> : <><CheckCircle2 size={20} /> Save Changes</>}
                   </button>
                 </form>
               </motion.div>
@@ -1462,7 +1462,7 @@ export default function FixedExpensesTab({
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={closeModals} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
                       <button type="submit" disabled={submitting || verifying} className="flex-1 py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 flex items-center justify-center gap-2">
-                        {(submitting || verifying) ? <Loader2 className="animate-spin" size={18} /> : 'Delete'}
+                        {(submitting || verifying) ? <DotsLoader size="xs" variant="white" label="Deleting..." /> : 'Delete'}
                       </button>
                     </div>
                   </form>

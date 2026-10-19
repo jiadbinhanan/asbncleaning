@@ -4,10 +4,14 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { 
-  Plus, Trash2, Package, Settings, Building2, Loader2, X, Info, 
+  Plus, Trash2, Package, Settings, Building2, RotateCw, X, Info, 
   Search, Hash, CircleDollarSign, CheckCircle2, Edit2, Copy, Save, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { TableSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 function LayoutGrid({ size }: { size: number }) {
   return (
@@ -80,6 +84,42 @@ export default function EquipmentSetup() {
   };
 
   useEffect(() => { fetchInitialData(); }, []);
+
+  useKeyboardShortcuts([
+    {
+      combo: '1',
+      description: 'Switch to Master List view',
+      category: 'Navigation',
+      handler: () => setActiveView('master'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to Templates view',
+      category: 'Navigation',
+      handler: () => setActiveView('templates'),
+    },
+    {
+      combo: '3',
+      description: 'Switch to Unit Setups view',
+      category: 'Navigation',
+      handler: () => setActiveView('config'),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh equipment data',
+      category: 'Actions',
+      handler: fetchInitialData,
+    },
+    {
+      combo: 'Escape',
+      description: 'Deselect / Cancel editing',
+      category: 'Actions',
+      handler: () => {
+        setEditingConfigId(null);
+        setShowBulkSelect(false);
+      },
+    },
+  ]);
 
   // Fetch Template Configs (Parsing JSON from Single Table)
   useEffect(() => {
@@ -334,15 +374,23 @@ export default function EquipmentSetup() {
            </div>
            
            {/* Navigation Tabs */}
-           <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full md:w-auto">
-              <button onClick={() => setActiveView('master')} className={`flex-1 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'master' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                <LayoutGrid size={16}/> Master List
+           <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full md:w-auto">
+              <button onClick={() => setActiveView('master')} className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'master' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                <LayoutGrid size={16}/> Master List <Kbd variant="glass" size="xs">1</Kbd>
               </button>
-              <button onClick={() => setActiveView('templates')} className={`flex-1 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'templates' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                <FileText size={16}/> Templates
+              <button onClick={() => setActiveView('templates')} className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'templates' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                <FileText size={16}/> Templates <Kbd variant="glass" size="xs">2</Kbd>
               </button>
-              <button onClick={() => setActiveView('config')} className={`flex-1 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'config' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                <Settings size={16}/> Unit Setups
+              <button onClick={() => setActiveView('config')} className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'config' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                <Settings size={16}/> Unit Setups <Kbd variant="glass" size="xs">3</Kbd>
+              </button>
+              <button
+                onClick={fetchInitialData}
+                title="Refresh (Alt+R)"
+                aria-label="Refresh Equipment"
+                className="p-2.5 hover:bg-white/20 text-white rounded-xl transition-all flex items-center justify-center"
+              >
+                <RotateCw size={16} />
               </button>
            </div>
         </div>
@@ -350,7 +398,7 @@ export default function EquipmentSetup() {
 
       <div className="px-4 md:px-8 -mt-10 relative z-20">
         {loading ? (
-          <div className="bg-white dark:bg-[#0c1427] p-20 rounded-[3rem] shadow-xl border border-transparent dark:border-slate-800 flex justify-center items-center gap-4"><Loader2 className="animate-spin text-blue-600" size={32}/><span className="font-bold text-gray-400 dark:text-slate-400">Loading data...</span></div>
+          <TableSkeleton rows={6} cols={4} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
              
@@ -378,7 +426,7 @@ export default function EquipmentSetup() {
                         <input type="number" value={newBasePrice} onChange={e => setNewBasePrice(e.target.value)} placeholder="0.00" className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500"/>
                       </div>
                       <button onClick={addMasterItem} disabled={isSaving} className="w-full py-4 bg-gray-900 dark:bg-blue-600 text-white font-black rounded-xl hover:bg-black dark:hover:bg-blue-500 transition-all shadow-md active:scale-95 disabled:opacity-50">
-                        {isSaving ? <Loader2 className="animate-spin mx-auto"/> : "Add to Master List"}
+                        {isSaving ? <DotsLoader size="sm" variant="white" label="Adding Item..." /> : "Add to Master List"}
                       </button>
                     </div>
                   </motion.div>
@@ -493,7 +541,7 @@ export default function EquipmentSetup() {
                               </div>
                             ))}
                             <button onClick={addBulkTemplateItems} disabled={isSaving || bulkSelectedIds.length === 0} className="w-full py-3 mt-2 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 sticky bottom-0">
-                               {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} Save Selected Items
+                               {isSaving ? <DotsLoader size="sm" variant="white" label="Saving Items..." /> : <><CheckCircle2 size={18}/> Save Selected Items</>}
                             </button>
                           </div>
                         )}
@@ -656,7 +704,7 @@ export default function EquipmentSetup() {
     disabled={isSaving || !templateToApply} 
     className="w-full py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
   >
-    {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} Apply to Unit
+    {isSaving ? <DotsLoader size="sm" variant="white" label="Applying..." /> : <><CheckCircle2 size={18}/> Apply to Unit</>}
   </button>
 </motion.div>
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
@@ -682,7 +730,7 @@ export default function EquipmentSetup() {
                               </div>
                             ))}
                             <button onClick={addBulkUnitConfigs} disabled={isSaving || bulkSelectedIds.length === 0} className="w-full py-3 mt-2 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 sticky bottom-0">
-                               {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Plus size={18}/>} Add to Unit Setup
+                               {isSaving ? <DotsLoader size="sm" variant="white" label="Adding..." /> : <><Plus size={18}/> Add to Unit Setup</>}
                             </button>
                           </div>
                         )}

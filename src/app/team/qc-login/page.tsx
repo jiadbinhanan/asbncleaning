@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2, ClipboardCheck, ArrowLeft, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { ClipboardCheck, ArrowLeft, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -107,8 +109,15 @@ export default function QCLoginPage() {
               type="submit" disabled={loading}
               className="w-full py-4 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-lg shadow-xl shadow-indigo-900/50 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {loading ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20}/>}
-              {loading ? "Authenticating..." : "Secure Login"}
+              {loading ? (
+                <DotsLoader size="sm" variant="white" label="Authenticating..." />
+              ) : (
+                <>
+                  <ShieldCheck size={20}/>
+                  <span>Secure Login</span>
+                  <Kbd className="bg-indigo-700 text-indigo-200 border-indigo-500/50 ml-1">↵</Kbd>
+                </>
+              )}
             </button>
           </form>
         </div>

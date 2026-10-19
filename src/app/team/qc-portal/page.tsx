@@ -4,11 +4,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, ClipboardCheck, Building2, Calendar, 
+  ClipboardCheck, Building2, Calendar, 
   Package, AlertTriangle, CheckCircle2, ShieldCheck, 
-  ArrowRight, Search, ArrowLeft, User, History, Flame 
+  ArrowRight, Search, ArrowLeft, User, History, Flame, RefreshCw 
 } from "lucide-react";
 import { format } from "date-fns";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 function QCPortalContent() {
   const router = useRouter();
@@ -249,7 +253,56 @@ function QCPortalContent() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>;
+  useKeyboardShortcuts([
+    {
+      key: "r",
+      alt: true,
+      description: "Refresh QC data",
+      action: () => fetchData(),
+    },
+    {
+      key: "1",
+      description: "Pending QC tab",
+      action: () => setActiveTab("pending"),
+    },
+    {
+      key: "2",
+      description: "Completed QC tab",
+      action: () => setActiveTab("completed"),
+    },
+    {
+      key: "/",
+      description: "Search bookings",
+      action: () => {
+        const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+        input?.focus();
+      },
+    },
+    {
+      key: "s",
+      ctrl: true,
+      description: "Submit & lock QC",
+      action: () => {
+        if (selectedBooking && activeTab === 'pending' && !submitting) {
+          handleSubmit();
+        }
+      },
+    },
+    {
+      key: "Escape",
+      description: "Close workspace / modal",
+      action: () => {
+        if (isMobileModalOpen) setIsMobileModalOpen(false);
+        else if (selectedBooking) closeWorkspace();
+      },
+    },
+  ]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6">
+      <PageSkeleton layout="dashboard" />
+    </div>
+  );
 
   // ======================= WORKSPACE VIEW =======================
   const WorkspaceView = () => (
@@ -373,7 +426,15 @@ function QCPortalContent() {
               onClick={handleSubmit} disabled={submitting}
               className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {submitting ? <><Loader2 className="animate-spin" size={20}/> Processing...</> : <>Submit & Lock QC <ArrowRight size={18}/></>}
+              {submitting ? (
+                <DotsLoader size="sm" variant="white" label="Processing..." />
+              ) : (
+                <>
+                  <span>Submit & Lock QC</span>
+                  <Kbd className="bg-indigo-700 text-indigo-100 border-indigo-500/50 ml-1">⌘S</Kbd>
+                  <ArrowRight size={18}/>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -397,9 +458,15 @@ function QCPortalContent() {
           </div>
 
           {/* Tabs */}
-          <div className="flex bg-black/40 p-1 rounded-xl mb-4">
-            <button onClick={() => setActiveTab('pending')} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'pending' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>Pending QC</button>
-            <button onClick={() => setActiveTab('completed')} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'completed' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>Completed</button>
+          <div className="flex bg-black/40 p-1 rounded-xl mb-4 gap-1">
+            <button onClick={() => setActiveTab('pending')} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${activeTab === 'pending' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+              <span>Pending QC</span>
+              <Kbd className="bg-black/30 text-white/70 border-white/10 text-[9px]">1</Kbd>
+            </button>
+            <button onClick={() => setActiveTab('completed')} className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${activeTab === 'completed' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+              <span>Completed</span>
+              <Kbd className="bg-black/30 text-white/70 border-white/10 text-[9px]">2</Kbd>
+            </button>
           </div>
 
           {/* Search */}
@@ -407,10 +474,13 @@ function QCPortalContent() {
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16}/>
              <input 
                type="text" 
-               placeholder="Search by ID, Unit, Company..." 
+               placeholder="Search by ID, Unit, Company... (/)" 
                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-               className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-500 text-sm font-bold pl-9 pr-3 py-2.5 rounded-xl outline-none focus:border-indigo-500"
+               className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-500 text-sm font-bold pl-9 pr-8 py-2.5 rounded-xl outline-none focus:border-indigo-500"
              />
+             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+               <Kbd className="bg-white/10 text-gray-400 border-white/10 text-[9px]">/</Kbd>
+             </div>
           </div>
         </div>
 
@@ -561,7 +631,11 @@ function QCPortalContent() {
 
 export default function GlobalQCPortal() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6">
+        <PageSkeleton layout="dashboard" />
+      </div>
+    }>
       <QCPortalContent />
     </Suspense>
   );

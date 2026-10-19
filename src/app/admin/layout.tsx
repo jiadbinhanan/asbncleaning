@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/admin/dashboard/Sidebar';
 import TopNav from '@/components/admin/TopNav';
 import { createClient } from '@/utils/supabase/client';
+import DotsLoader from '@/components/common/DotsLoader';
 
 // Import the global modals
 import TeamsManagerModal from '@/components/admin/TeamsManagerModal';
@@ -70,10 +71,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#070b14] flex items-center justify-center transition-colors duration-300">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-slate-400 font-medium text-sm">Verifying access...</p>
+      <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#070b14] flex flex-col items-center justify-center transition-colors duration-300 p-6">
+        <div className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-3xl p-8 shadow-xl max-w-sm w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center font-black text-lg">
+            BTM
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">Verifying Access</h4>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Authenticating session credentials</p>
+          </div>
+          <div className="pt-2 flex justify-center">
+            <DotsLoader size="md" variant="primary" label="Please wait..." />
+          </div>
         </div>
       </div>
     );

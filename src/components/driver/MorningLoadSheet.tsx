@@ -2,8 +2,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ClipboardList, Package, Plus, Minus, CheckCircle2,
-  Loader2, CheckCheck, ArrowDownToLine, CircleCheck,
+  CheckCheck, ArrowDownToLine, CircleCheck,
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
 import { format, parseISO } from "date-fns";
 import { LoadItem, TYPE_COLORS } from "./types";
 
@@ -122,8 +123,14 @@ export default function MorningLoadSheet({
               disabled={unloadConfirming}
               className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-black rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm shadow-amber-500/20 disabled:opacity-50"
             >
-              {unloadConfirming ? <Loader2 size={16} className="animate-spin"/> : <ArrowDownToLine size={16}/>}
-              {unloadConfirming ? "Confirming..." : "Confirm Unload at Warehouse"}
+              {unloadConfirming ? (
+                <DotsLoader size="xs" variant="white" label="Confirming..." />
+              ) : (
+                <>
+                  <ArrowDownToLine size={16}/>
+                  <span>Confirm Unload at Warehouse</span>
+                </>
+              )}
             </button>
           </div>
         )}
@@ -210,8 +217,14 @@ export default function MorningLoadSheet({
             disabled={loadConfirming}
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-black rounded-2xl flex items-center justify-center gap-2.5 active:scale-95 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50"
           >
-            {loadConfirming ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle2 size={18}/>}
-            {loadConfirming ? "Confirming..." : "Confirm Load & Start Day"}
+            {loadConfirming ? (
+              <DotsLoader size="sm" variant="white" label="Confirming..." />
+            ) : (
+              <>
+                <CheckCircle2 size={18}/>
+                <span>Confirm Load & Start Day</span>
+              </>
+            )}
           </button>
         </>
       )}

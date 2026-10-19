@@ -23,7 +23,7 @@ const menuCategories = [
   {
     label: 'Main',
     items: [
-      { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard' },
+      { name: 'Overview', icon: LayoutDashboard, path: '/admin/dashboard', shortcut: '⌥1' },
     ],
   },
   {
@@ -31,25 +31,25 @@ const menuCategories = [
     items: [
       { name: 'Work Records', icon: FileCheck, path: '/admin/work-records' },
       { name: 'QC Report', icon: ClipboardCheck, path: '/team/qc-portal?source=admin' },
-      { name: 'Laundry Records', icon: WashingMachine, path: '/admin/laundry' },
-      { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings' },
+      { name: 'Laundry Records', icon: WashingMachine, path: '/admin/laundry', shortcut: '⌥9' },
+      { name: 'Bookings', icon: CalendarCheck, path: '/admin/bookings', shortcut: '⌥2' },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { name: 'Invoices', icon: FileDigit, path: '/admin/invoices' },
-      { name: 'Revenue', icon: DollarSign, path: '/admin/revenue' },
-      { name: 'Expenses', icon: Receipt, path: '/admin/expenses' },
+      { name: 'Invoices', icon: FileDigit, path: '/admin/invoices', shortcut: '⌥3' },
+      { name: 'Revenue', icon: DollarSign, path: '/admin/revenue', shortcut: '⌥8' },
+      { name: 'Expenses', icon: Receipt, path: '/admin/expenses', shortcut: '⌥7' },
       { name: 'Quotations', icon: FileText, path: '/admin/quotations' },
     ],
   },
   {
     label: 'Management',
     items: [
-      { name: 'Cleaning Teams', icon: Users, path: '/admin/teams' },
+      { name: 'Cleaning Teams', icon: Users, path: '/admin/teams', shortcut: '⌥4' },
       { name: 'Companies', icon: Building2, path: '/admin/companies' },
-      { name: 'Employees', icon: Contact, path: '/admin/employees' },
+      { name: 'Employees', icon: Contact, path: '/admin/employees', shortcut: '⌥5' },
     ],
   },
   {
@@ -57,7 +57,7 @@ const menuCategories = [
     items: [
       { name: 'Checklists', icon: ClipboardList, path: '/admin/checklists' },
       { name: 'Stock Management', icon: Package, path: '/admin/inventory' },
-      { name: 'Equipment Setup', icon: Package, path: '/admin/equipment' },
+      { name: 'Equipment Setup', icon: Package, path: '/admin/equipment', shortcut: '⌥6' },
     ],
   },
   {
@@ -68,7 +68,7 @@ const menuCategories = [
   },
 ];
 
-type MenuItem = { name: string; icon: React.ElementType; path: string };
+type MenuItem = { name: string; icon: React.ElementType; path: string; shortcut?: string };
 
 /* ─── Collapsed Item ─── */
 function CollapsedItem({
@@ -90,7 +90,7 @@ function CollapsedItem({
         const rect = e.currentTarget.getBoundingClientRect();
         setTooltip({
           show: true,
-          text: item.name,
+          text: item.shortcut ? `${item.name} (${item.shortcut})` : item.name,
           top: rect.top + rect.height / 2,
           left: rect.right + 12 
         });
@@ -207,6 +207,13 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
           {item.name}
         </span>
 
+        {/* Hotkey shortcut hint */}
+        {item.shortcut && !isActive && (
+          <span className="relative z-10 ml-auto mr-1.5 text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50">
+            {item.shortcut}
+          </span>
+        )}
+
         {/* Active dot */}
         {isActive && (
           <motion.div
@@ -216,8 +223,8 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
           />
         )}
 
-        {/* Hover arrow */}
-        {!isActive && (
+        {/* Hover arrow (if no shortcut) */}
+        {!isActive && !item.shortcut && (
           <ChevronRight
             size={14}
             className="relative z-10 ml-auto text-slate-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"

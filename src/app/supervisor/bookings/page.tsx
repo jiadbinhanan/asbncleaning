@@ -1,14 +1,18 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Building2, CheckCircle2, 
-  Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Layers, Users, Zap, RotateCcw,
-  Search, Hash, Filter
+  X, Trash2, Edit2, ClipboardList, MapPin, Layers, Users, Zap, RotateCcw,
+  Search, Hash, Filter, RefreshCw
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import toast, { Toaster } from 'react-hot-toast';
+import DotsLoader from "@/components/common/DotsLoader";
+import { CardGridSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // --- Types ---
 type Booking = {
@@ -40,6 +44,7 @@ type Team = {
 
 export default function SupervisorBookings() {
   const supabase = createClient();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // States for Static Data
   const [companies, setCompanies] = useState<any[]>([]);
@@ -284,7 +289,44 @@ export default function SupervisorBookings() {
     return teams.filter(t => t.shift_date === formData.cleaning_date);
   }, [teams, formData.cleaning_date]);
 
-  if (loading && companies.length === 0) return <div className="flex justify-center items-center min-h-screen bg-[#F4F7FA]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  // Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      altKey: true,
+      description: 'Record New Booking',
+      action: () => openNewModal()
+    },
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh bookings',
+      action: () => fetchBookings()
+    },
+    {
+      key: '/',
+      description: 'Search bookings',
+      action: () => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    },
+    {
+      key: 'Escape',
+      description: 'Close modal',
+      action: () => {
+        if (isModalOpen) setIsModalOpen(false);
+      }
+    }
+  ]);
+
+  if (loading && companies.length === 0) {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen bg-[#F4F7FA] font-sans pb-24">
+        <CardGridSkeleton count={6} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen bg-[#F4F7FA] font-sans pb-24">
@@ -302,9 +344,22 @@ export default function SupervisorBookings() {
           <p className="text-blue-100 font-medium mt-2">Manage requests, assign squads, and activate shift operations.</p>
         </div>
 
-        <button onClick={openNewModal} className="relative z-10 px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 hover:shadow-lg rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95 shadow-sm">
-          <Plus size={20} strokeWidth={3}/> Record New Booking
-        </button>
+        <div className="relative z-10 flex items-center gap-3">
+          <button 
+            onClick={() => fetchBookings()} 
+            className="px-5 py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 text-white backdrop-blur-md"
+            title="Refresh bookings"
+          >
+            <RefreshCw size={18}/>
+            <span>Refresh</span>
+            <Kbd variant="glass" size="xs">⌥R</Kbd>
+          </button>
+          <button onClick={openNewModal} className="px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 hover:shadow-lg rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95 shadow-sm">
+            <Plus size={20} strokeWidth={3}/> 
+            <span>Record New Booking</span>
+            <Kbd variant="dark" size="xs">⌥N</Kbd>
+          </button>
+        </div>
       </div>
 
       {/* 🚨 ENHANCED FILTER BAR WITH DATE RANGE 🚨 */}
@@ -314,12 +369,16 @@ export default function SupervisorBookings() {
         <div className="flex-1 relative">
            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
            <input 
+             ref={searchInputRef}
              type="text" 
              placeholder="Search by Ref, Company, Unit or Building..." 
              value={searchQuery} 
              onChange={(e) => setSearchQuery(e.target.value)} 
-             className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 transition-all" 
+             className="w-full pl-11 pr-14 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 transition-all" 
            />
+           <div className="absolute right-3 top-1/2 -translate-y-1/2">
+             <Kbd variant="glass" size="xs">/</Kbd>
+           </div>
         </div>
 
         {/* Date Range Selector */}
@@ -362,7 +421,9 @@ export default function SupervisorBookings() {
       {/* BOOKINGS LIST */}
       <div className="space-y-10">
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40}/></div>
+          <div className="py-6">
+            <CardGridSkeleton count={6} />
+          </div>
         ) : sortedDates.length === 0 ? (
           <div className="bg-white p-12 rounded-[2rem] border border-gray-100 text-center text-gray-400 shadow-sm">
             <ClipboardList size={56} className="mx-auto mb-4 opacity-30 text-blue-500"/>
@@ -435,8 +496,14 @@ export default function SupervisorBookings() {
                           disabled={activatingId === booking.id}
                           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70 shadow-md shadow-blue-500/20 mb-1"
                         >
-                          {activatingId === booking.id ? <Loader2 size={16} className="animate-spin"/> : <Zap size={16} className="fill-white"/>}
-                          Activate Booking
+                          {activatingId === booking.id ? (
+                            <DotsLoader size="xs" variant="white" label="Activating..." />
+                          ) : (
+                            <>
+                              <Zap size={16} className="fill-white"/>
+                              <span>Activate Booking</span>
+                            </>
+                          )}
                         </button>
                       )}
 
@@ -447,8 +514,15 @@ export default function SupervisorBookings() {
                           disabled={activatingId === booking.id}
                           className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70 mb-1"
                         >
-                          {activatingId === booking.id ? <Loader2 size={16} className="animate-spin"/> : <CheckCircle2 size={16}/>}
-                          Activated <span className="text-blue-500 font-medium ml-1 flex items-center gap-1 text-[10px] uppercase tracking-widest"><RotateCcw size={12}/> Undo</span>
+                          {activatingId === booking.id ? (
+                            <DotsLoader size="xs" variant="primary" label="Undoing..." />
+                          ) : (
+                            <>
+                              <CheckCircle2 size={16}/>
+                              <span>Activated</span>
+                              <span className="text-blue-500 font-medium ml-1 flex items-center gap-1 text-[10px] uppercase tracking-widest"><RotateCcw size={12}/> Undo</span>
+                            </>
+                          )}
                         </button>
                       )}
 
@@ -576,7 +650,14 @@ export default function SupervisorBookings() {
 
                 <div className="pt-6">
                   <button type="submit" disabled={saving} className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-blue-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70">
-                    {saving ? <><Loader2 className="animate-spin" size={20}/> Saving Record...</> : <><CheckCircle2 size={20}/> {editMode ? "Update Booking Record" : "Save Booking Record"}</>}
+                    {saving ? (
+                      <DotsLoader size="sm" variant="white" label="Saving Record..." />
+                    ) : (
+                      <>
+                        <CheckCircle2 size={20}/>
+                        <span>{editMode ? "Update Booking Record" : "Save Booking Record"}</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

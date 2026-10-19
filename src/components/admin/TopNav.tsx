@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Menu, Users, ClipboardList } from 'lucide-react';
+import { Menu, Users, ClipboardList, Keyboard, Search } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { motion } from 'framer-motion';
 import { useModalStore } from '@/store/modalStore';
@@ -15,7 +15,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
   const supabase = createClient();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
 
-  const { openTeamsModal, openBookingsModal } = useModalStore();
+  const { openTeamsModal, openBookingsModal, openShortcutHelp, openCommandPalette } = useModalStore();
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
@@ -50,13 +50,14 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
           <Menu size={22} />
         </button>
 
-        {/* Teams button */}
+        {/* Teams button with hotkey indicator */}
         <motion.button
           onClick={openTeamsModal}
+          title="Quick Teams Manager (Alt+Shift+T)"
           whileHover={{ scale: 1.05, boxShadow: '0 6px 20px rgba(10,25,47,0.40)' }}
           whileTap={{ scale: 0.86, boxShadow: '0 0 0 5px rgba(59,130,246,0.28)' }}
           transition={{ type: 'spring', stiffness: 520, damping: 20 }}
-          className="group relative flex items-center gap-2 rounded-xl overflow-hidden"
+          className="group relative flex items-center gap-2 rounded-xl overflow-hidden cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #0A192F 0%, #1e3a5c 100%)',
             padding: '8px 14px',
@@ -72,16 +73,20 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             <Users size={11} className="text-blue-300" />
           </span>
           <span className="relative hidden md:block text-[11px] font-black text-white tracking-wide">Teams</span>
+          <span className="relative hidden lg:inline-flex items-center text-[9px] font-bold text-blue-200/80 bg-blue-900/60 px-1 py-0.2 rounded border border-blue-400/20">
+            ⌥⇧T
+          </span>
           <span className="relative w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
         </motion.button>
 
-        {/* Bookings button */}
+        {/* Bookings button with hotkey indicator */}
         <motion.button
           onClick={openBookingsModal}
+          title="Quick Bookings Manager (Alt+Shift+B)"
           whileHover={{ scale: 1.05, boxShadow: '0 6px 20px rgba(6,78,59,0.45)' }}
           whileTap={{ scale: 0.86, boxShadow: '0 0 0 5px rgba(16,185,129,0.28)' }}
           transition={{ type: 'spring', stiffness: 520, damping: 20 }}
-          className="group relative flex items-center gap-2 rounded-xl overflow-hidden"
+          className="group relative flex items-center gap-2 rounded-xl overflow-hidden cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #064e3b 0%, #065f46 100%)',
             padding: '8px 14px',
@@ -97,13 +102,43 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             <ClipboardList size={11} className="text-emerald-300" />
           </span>
           <span className="relative hidden md:block text-[11px] font-black text-white tracking-wide">Bookings</span>
+          <span className="relative hidden lg:inline-flex items-center text-[9px] font-bold text-emerald-200/80 bg-emerald-900/60 px-1 py-0.2 rounded border border-emerald-400/20">
+            ⌥⇧B
+          </span>
           <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
         </motion.button>
+
+        {/* Universal Command Palette Trigger */}
+        <button
+          onClick={openCommandPalette}
+          title="Universal Search & Command Palette (Ctrl+K)"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100/90 dark:bg-slate-800/80 hover:bg-gray-200/70 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200/60 dark:border-slate-700/60 text-xs font-semibold transition-all cursor-pointer ml-1"
+        >
+          <Search size={13} className="text-gray-400 dark:text-slate-400" />
+          <span className="hidden md:inline">Quick Jump</span>
+          <span className="inline-flex items-center font-mono text-[10px] bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 shadow-2xs">
+            Ctrl+K
+          </span>
+        </button>
       </div>
 
-      {/* ── RIGHT: Theme Toggle + Profile ─────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
+      {/* ── RIGHT: Shortcuts Help + Theme Toggle + Profile ─────────────────────────── */}
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Keyboard Shortcuts Help Button */}
+        <button
+          onClick={openShortcutHelp}
+          title="Keyboard Shortcuts Cheat Sheet (?)"
+          className="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800/80 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-700/60 flex items-center gap-1.5 text-xs font-bold"
+        >
+          <Keyboard size={18} />
+          <span className="hidden xl:inline text-[11px] font-mono bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700">
+            ?
+          </span>
+        </button>
+
+        <div title="Toggle Theme (Alt+T)">
+          <ThemeToggle />
+        </div>
 
         <motion.div
           className="flex items-center gap-2.5 cursor-pointer select-none pl-2 pr-1 py-1 rounded-2xl hover:bg-blue-50 dark:hover:bg-slate-800/60 transition-colors"

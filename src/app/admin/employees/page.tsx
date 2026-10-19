@@ -1,11 +1,15 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { createEmployeeAction, deleteEmployeeAction, updateEmployeeCredentialsAction } from './actions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Plus, Search, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Plus, Search, RotateCw, KeyRound, Eye, EyeOff } from 'lucide-react';
 import ProfileSlideOver from '@/components/admin/employees/ProfileSlideOver';
 import Image from 'next/image';
+import { CardGridSkeleton } from '@/components/common/Skeleton';
+import DotsLoader from '@/components/common/DotsLoader';
+import Kbd from '@/components/common/Kbd';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // Define the Profile type (can be moved to a types file later)
 interface Profile {
@@ -27,10 +31,10 @@ export default function EmployeeManagement() {
   // UI States
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<Profile | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Form State (New Employee)
-  // Form State (New Employee)
-  const [newEmp, setNewEmp] = useState({ fullName: '', username: '', password: '', phone: '', role: 'agent' as 'agent' | 'supervisor' | 'driver' }); // 🚨 এখানে 'driver' যুক্ত করা হয়েছে
+  const [newEmp, setNewEmp] = useState({ fullName: '', username: '', password: '', phone: '', role: 'agent' as 'agent' | 'supervisor' | 'driver' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- New States for Credentials Update ---
@@ -55,6 +59,41 @@ export default function EmployeeManagement() {
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
+
+  // Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Add new staff',
+      category: 'Actions',
+      handler: () => setIsAddOpen(true),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh employee directory',
+      category: 'Actions',
+      handler: () => {
+        setLoading(true);
+        fetchEmployees();
+      },
+    },
+    {
+      combo: '/',
+      description: 'Focus staff search',
+      category: 'Navigation',
+      handler: () => searchInputRef.current?.focus(),
+    },
+    {
+      combo: 'Escape',
+      description: 'Close modals / slide-over',
+      category: 'Modals',
+      handler: () => {
+        setIsAddOpen(false);
+        setIsCredsOpen(false);
+        setSelectedEmp(null);
+      },
+    },
+  ]);
 
   // Create Handler
   const handleCreate = async (e: React.FormEvent) => { // 🚨 <HTMLFormElement> যুক্ত করা হয়েছে
@@ -176,21 +215,37 @@ export default function EmployeeManagement() {
             </h1>
             <p className="text-blue-300 dark:text-cyan-200/80 font-bold mt-1 text-sm">Manage Supervisors & Cleaning Agents</p>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Search staff..."
-                className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-gray-400 font-medium"
+                placeholder="Search staff... [/]"
+                className="w-full pl-10 pr-9 py-2.5 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-gray-400 font-medium text-sm"
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Kbd variant="glass" size="xs">/</Kbd>
+              </div>
             </div>
             <button
+              onClick={() => {
+                setLoading(true);
+                fetchEmployees();
+              }}
+              title="Refresh Directory (Alt+R)"
+              aria-label="Refresh Directory"
+              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/15 transition-all flex items-center justify-center"
+            >
+              <RotateCw size={18} />
+            </button>
+            <button
               onClick={() => setIsAddOpen(true)}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap"
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap text-sm"
             >
               <Plus size={18} /> Add Staff
+              <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
             </button>
           </div>
         </div>
@@ -201,9 +256,7 @@ export default function EmployeeManagement() {
 
       {/* Employee Grid */}
       {loading ? (
-        <div className="flex justify-center p-20">
-          <Loader2 className="animate-spin text-gray-400" />
-        </div>
+        <CardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((emp) => (
@@ -340,7 +393,7 @@ export default function EmployeeManagement() {
                   type="submit"
                   className="w-full py-4 mt-4 bg-gray-900 dark:bg-blue-600 text-white font-bold rounded-xl hover:bg-black dark:hover:bg-blue-500 transition-all flex justify-center shadow-lg"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : 'Create Account'}
+                  {isSubmitting ? <DotsLoader size="sm" variant="white" label="Creating Account..." /> : 'Create Account'}
                 </button>
               </form>
             </motion.div>
@@ -424,8 +477,7 @@ export default function EmployeeManagement() {
                     className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                     disabled={isUpdatingCreds}
                   >
-                    {isUpdatingCreds && <Loader2 size={16} className="animate-spin" />}
-                    Update
+                    {isUpdatingCreds ? <DotsLoader size="xs" variant="white" label="Updating..." /> : 'Update'}
                   </button>
                 </div>
               </form>

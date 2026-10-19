@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, FileText, Search, History, PlusCircle,
+  FileText, Search, History, PlusCircle,
   Building2, Calendar, Download, Eye, FileDigit,
   Tag, PackagePlus, RefreshCw, AlertCircle, CheckCircle2,
   Trash2, AlertTriangle, X, CreditCard, Filter,
@@ -17,6 +17,10 @@ import { getInvoiceUploadSignature, deleteMonthlyInvoice } from "./actions";
 import InstantPOS from "./InstantPOS";
 import InvoiceExportModal from "./InvoiceExportModal";
 import toast, { Toaster } from "react-hot-toast";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import Kbd from "@/components/common/Kbd";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Delete Confirmation Modal (full-screen centered — used for History tab delete)
@@ -56,9 +60,9 @@ function DeleteConfirmModal({
           <p className="text-xs font-bold text-amber-800 dark:text-amber-300 leading-relaxed">All bookings will become available for re-invoicing. The PDF will be permanently removed from cloud storage.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-black rounded-2xl transition-all disabled:opacity-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
-            {loading ? <><Loader2 size={16} className="animate-spin" /> Deleting...</> : <><Trash2 size={16} /> Yes, Delete</>}
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-black rounded-2xl transition-all disabled:opacity-50 cursor-pointer">Cancel</button>
+          <button onClick={onConfirm} disabled={loading} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
+            {loading ? <DotsLoader size="xs" variant="white" label="Deleting..." /> : <><Trash2 size={16} /> Yes, Delete</>}
           </button>
         </div>
       </motion.div>
@@ -163,10 +167,10 @@ function InvoicedPopover({
               <button
                 onClick={() => onDelete(inv)}
                 disabled={deleting}
-                className="p-2.5 bg-red-50 dark:bg-rose-950/40 hover:bg-red-600 text-red-600 dark:text-rose-400 hover:text-white rounded-xl transition-colors border border-red-100 dark:border-rose-900/50"
+                className="p-2.5 bg-red-50 dark:bg-rose-950/40 hover:bg-red-600 text-red-600 dark:text-rose-400 hover:text-white rounded-xl transition-colors border border-red-100 dark:border-rose-900/50 cursor-pointer"
                 title="Delete Invoice"
               >
-                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                {deleting ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={16} />}
               </button>
             )}
             {inv.pdf_url && (
@@ -214,6 +218,7 @@ export default function InvoiceManagement() {
   // ── Invoice Date & Export Modal ────────────────────────────────────────────
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // ── 2-Month Pagination & Infinite Scroll ───────────────────────────────────
   const [cursorEndDate, setCursorEndDate] = useState<Date>(startOfMonth(subMonths(new Date(), 1)));
@@ -294,48 +299,88 @@ export default function InvoiceManagement() {
   }, [supabase]);
 
   // ── 1. Initial data fetch (Default: Last 2 Months) ─────────────────────────
-  useEffect(() => {
-    const initData = async () => {
-      setLoadingInitial(true);
-      const now = new Date();
-      const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // Covers previous month + current month = 2 months
-      const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
+  const initData = useCallback(async () => {
+    setLoadingInitial(true);
+    const now = new Date();
+    const twoMonthsAgo = startOfMonth(subMonths(now, 1)); // Covers previous month + current month = 2 months
+    const twoMonthsAgoStr = format(twoMonthsAgo, 'yyyy-MM-dd');
 
-      const [compRes, invRes, ucRes, instRes, earliestRes] = await Promise.all([
-        supabase.from('companies').select('id, name').order('name'),
-        supabase.from('invoices')
-          .select('*')
-          .gte('invoice_date', twoMonthsAgoStr)
-          .order('invoice_date', { ascending: false })
-          .order('created_at', { ascending: false }),
-        supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
-        supabase.from('instant_invoices')
-          .select('id, invoice_no, is_paid, merged_into_monthly, total_amount, invoice_date')
-          .order('invoice_date', { ascending: false }),
-        supabase.from('invoices')
-          .select('invoice_date')
-          .order('invoice_date', { ascending: true })
-          .limit(1),
-      ]);
+    const [compRes, invRes, ucRes, instRes, earliestRes] = await Promise.all([
+      supabase.from('companies').select('id, name').order('name'),
+      supabase.from('invoices')
+        .select('*')
+        .gte('invoice_date', twoMonthsAgoStr)
+        .order('invoice_date', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase.from('unit_equipment_config').select('unit_id, equipment_id, extra_unit_price'),
+      supabase.from('instant_invoices')
+        .select('id, invoice_no, is_paid, merged_into_monthly, total_amount, invoice_date')
+        .order('invoice_date', { ascending: false }),
+      supabase.from('invoices')
+        .select('invoice_date')
+        .order('invoice_date', { ascending: true })
+        .limit(1),
+    ]);
 
-      if (compRes.data) setCompanies(compRes.data);
-      if (invRes.data) {
-        setInvoices(invRes.data);
-        loadProfilesForIds(invRes.data.map((i: any) => i.created_by));
-      }
-      if (ucRes.data) setUnitConfigs(ucRes.data);
-      if (instRes.data) setAllInstantInvoices(instRes.data);
+    if (compRes.data) setCompanies(compRes.data);
+    if (invRes.data) {
+      setInvoices(invRes.data);
+      loadProfilesForIds(invRes.data.map((i: any) => i.created_by));
+    }
+    if (ucRes.data) setUnitConfigs(ucRes.data);
+    if (instRes.data) setAllInstantInvoices(instRes.data);
 
-      const earliest = earliestRes.data?.[0]?.invoice_date || null;
-      setEarliestInvoiceDate(earliest);
-      if (earliest && twoMonthsAgoStr <= earliest) {
-        setHasMoreInvoices(false);
-      }
+    const earliest = earliestRes.data?.[0]?.invoice_date || null;
+    setEarliestInvoiceDate(earliest);
+    if (earliest && twoMonthsAgoStr <= earliest) {
+      setHasMoreInvoices(false);
+    }
 
-      setLoadingInitial(false);
-    };
-    initData();
+    setLoadingInitial(false);
   }, [supabase, loadProfilesForIds]);
+
+  useEffect(() => {
+    initData();
+  }, [initData]);
+
+  // Keyboard Shortcuts for Invoices Page
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      altKey: true,
+      onKeyDown: () => {
+        setActiveMainTab('instant');
+        setActiveTab('generate');
+      },
+      description: 'Open Instant POS / New Bill',
+      category: 'Actions',
+    },
+    {
+      key: 'e',
+      altKey: true,
+      onKeyDown: () => setIsExportModalOpen(true),
+      description: 'Export Invoices & Data',
+      category: 'Actions',
+    },
+    {
+      key: 'r',
+      altKey: true,
+      onKeyDown: () => {
+        initData();
+        toast.success("Invoices refreshed");
+      },
+      description: 'Refresh Invoices list',
+      category: 'Actions',
+    },
+    {
+      key: '/',
+      onKeyDown: () => {
+        searchInputRef.current?.focus();
+      },
+      description: 'Focus Invoices search',
+      category: 'Actions',
+    },
+  ]);
 
   // ── 1b. Load Older 2-Month Chunks (Infinite Scroll) ───────────────────────
   const loadMoreInvoices = useCallback(async () => {
@@ -770,7 +815,9 @@ export default function InvoiceManagement() {
   }, [filteredHistory]);
 
 
-  if (loadingInitial) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12" /></div>;
+  if (loadingInitial) {
+    return <PageSkeleton layout="table" showStats={true} titleWidth="w-56" />;
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -953,8 +1000,8 @@ export default function InvoiceManagement() {
                           <option value="inventory_only">C: Extra Inventory Only</option>
                         </select>
                       </div>
-                      <button onClick={fetchBookingsForInvoice} disabled={loadingFetch} className="w-full py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-sm active:scale-95 flex justify-center items-center gap-2 disabled:opacity-60 text-sm">
-                        {loadingFetch ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />} Fetch Work Data
+                      <button onClick={fetchBookingsForInvoice} disabled={loadingFetch} className="w-full py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-sm active:scale-95 flex justify-center items-center gap-2 disabled:opacity-60 text-sm cursor-pointer">
+                        {loadingFetch ? <DotsLoader size="xs" variant="white" label="Fetching Work Data..." /> : <><Search size={16} /> Fetch Work Data</>}
                       </button>
                     </div>
                   </div>
@@ -1123,8 +1170,8 @@ export default function InvoiceManagement() {
                             <p className="text-gray-600 dark:text-slate-300 font-black">Final Invoice Total</p>
                             <p className="text-3xl font-black text-green-600 dark:text-emerald-400">AED {finalTotal.toFixed(2)}</p>
                           </div>
-                          <button onClick={handleGenerateAndSave} disabled={generating} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50">
-                            {generating ? <><Loader2 className="animate-spin" /> Processing & Uploading...</> : <><FileText size={18} /> Generate Official PDF Invoice</>}
+                          <button onClick={handleGenerateAndSave} disabled={generating} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer">
+                            {generating ? <DotsLoader size="sm" variant="white" label="Processing & Uploading..." /> : <><FileText size={18} /> Generate Official PDF Invoice</>}
                           </button>
                         </div>
                       </>
@@ -1149,18 +1196,22 @@ export default function InvoiceManagement() {
                   <div className="relative flex-1 max-w-xl">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                     <input 
+                      ref={searchInputRef}
                       type="text" 
-                      placeholder="Search by Company or Invoice ID..." 
+                      placeholder="Search by Company or Invoice ID... (Press / to focus)" 
                       value={searchQuery} 
                       onChange={e => setSearchQuery(e.target.value)} 
-                      className="w-full p-3.5 pl-12 bg-white dark:bg-[#0c1427] rounded-2xl border-2 border-gray-100 dark:border-slate-800 outline-none focus:border-blue-500 font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm text-sm" 
+                      className="w-full p-3.5 pl-12 pr-12 bg-white dark:bg-[#0c1427] rounded-2xl border-2 border-gray-100 dark:border-slate-800 outline-none focus:border-blue-500 font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm text-sm" 
                     />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Kbd size="xs" variant="default" keys={['/']} />
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowAdvancedFilters(prev => !prev)}
-                      className={`px-4 py-3.5 rounded-2xl font-black text-xs transition-all border flex items-center gap-2 shadow-sm ${
+                      className={`px-4 py-3.5 rounded-2xl font-black text-xs transition-all border flex items-center gap-2 shadow-sm cursor-pointer ${
                         showAdvancedFilters || activeFilterCount > 0
                           ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300'
                           : 'bg-white dark:bg-[#0c1427] border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60'
@@ -1177,10 +1228,12 @@ export default function InvoiceManagement() {
 
                     <button
                       onClick={() => setIsExportModalOpen(true)}
-                      className="px-4 py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white rounded-2xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
+                      title="Export Invoices & Data (Alt+E)"
+                      className="px-4 py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white rounded-2xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
                     >
                       <Download size={15} />
                       <span>Export Data</span>
+                      <span className="hidden xl:inline text-[9px] font-mono font-bold bg-white/20 dark:bg-blue-900/60 px-1 py-0.2 rounded border border-white/20">⌥E</span>
                     </button>
                   </div>
                 </div>
@@ -1407,7 +1460,7 @@ export default function InvoiceManagement() {
                 <div ref={observerTarget} className="pt-8 pb-4 text-center">
                   {loadingMore ? (
                     <div className="flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40 py-3 px-5 rounded-2xl mx-auto w-fit border border-blue-100 dark:border-blue-800/50 shadow-sm">
-                      <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400" />
+                      <DotsLoader size="xs" variant="primary" />
                       <span>Loading previous 2 months of invoices...</span>
                     </div>
                   ) : hasMoreInvoices && dateFilterPreset === 'loaded' ? (

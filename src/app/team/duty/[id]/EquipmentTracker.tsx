@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  Loader2, RefreshCcw, Droplets, Coffee,
+  RefreshCcw, Droplets, Coffee,
   PackagePlus, CheckCircle2, AlertTriangle, Info, ChevronDown,
 } from "lucide-react";
+import Skeleton from "@/components/common/Skeleton";
 
 interface EquipmentTrackerProps {
   bookingId: string;
@@ -416,8 +417,19 @@ export default function EquipmentTracker({ bookingId, unitId, onDataChange }: Eq
     setItems(prev => prev.map(i => i.equipment_id === id ? { ...i, [field]: value } : i));
 
   if (loading) return (
-    <div className="p-10 flex items-center justify-center">
-      <Loader2 className="animate-spin text-blue-500" size={32} />
+    <div className="space-y-4 py-2">
+      <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+        <Skeleton className="w-10 h-10 rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-40 rounded-lg" />
+          <Skeleton className="h-3 w-28 rounded-md" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-12 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+      </div>
     </div>
   );
 

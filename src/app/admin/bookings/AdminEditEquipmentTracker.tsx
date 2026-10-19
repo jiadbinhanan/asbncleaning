@@ -19,9 +19,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  Loader2, RefreshCcw, Droplets, Coffee,
+  RefreshCcw, Droplets, Coffee,
   PackagePlus, AlertTriangle, ChevronDown, CheckSquare, Info,
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
 
 export interface InventoryItem {
   equipment_id:       number;
@@ -226,7 +227,7 @@ export default function AdminEditEquipmentTracker({ bookingId, unitId, onDataCha
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 text-indigo-500 gap-3">
-      <Loader2 className="animate-spin" size={28} /><p className="font-black text-xs uppercase tracking-widest">Loading inventory...</p>
+      <DotsLoader size="md" variant="indigo" label="Loading inventory..." />
     </div>
   );
   if (error) return (

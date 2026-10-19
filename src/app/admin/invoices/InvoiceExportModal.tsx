@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Download, FileSpreadsheet, FileText, Calendar,
-  CheckCircle2, AlertCircle, Loader2, Filter, Building2
+  CheckCircle2, AlertCircle, Filter, Building2
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
 import * as XLSX from 'xlsx';
@@ -12,6 +12,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { createClient } from '@/utils/supabase/client';
 import toast from 'react-hot-toast';
+import DotsLoader from '@/components/common/DotsLoader';
 
 interface InvoiceExportModalProps {
   isOpen: boolean;
@@ -597,10 +598,7 @@ export default function InvoiceExportModal({
               } disabled:opacity-50`}
             >
               {exporting ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Fetching & Generating {exportFormat.toUpperCase()}...</span>
-                </>
+                <DotsLoader size="sm" variant="white" label={`Fetching & Generating ${exportFormat.toUpperCase()}...`} />
               ) : (
                 <>
                   <Download size={18} />

@@ -3,10 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileText, Download, History, Loader2, User, DollarSign,
+  FileText, Download, History, User, DollarSign,
   ArrowLeft, Search, Calendar, ExternalLink, Building2, RefreshCw,
-  ChevronDown, AlertCircle, LayoutTemplate, Trash2,
+  ChevronDown, AlertCircle, LayoutTemplate, Trash2, RotateCw,
 } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { TableSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { format } from "date-fns";
 import { QuotationDocument } from "@/components/admin/quotations/QuotationDocument";
 import type { TemplateSection } from "@/components/admin/quotations/QuotationDocument";
@@ -263,13 +267,54 @@ export default function QuotationManager() {
     }
   };
 
+  useKeyboardShortcuts([
+    {
+      combo: '1',
+      description: 'Switch to Quotation Generator',
+      category: 'Navigation',
+      handler: () => setActiveView('generator'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to Quotation History',
+      category: 'Navigation',
+      handler: () => setActiveView('history'),
+    },
+    {
+      combo: '3',
+      description: 'Switch to Template Manager',
+      category: 'Navigation',
+      handler: () => setActiveView('templates'),
+    },
+    {
+      combo: 'Ctrl+S',
+      description: 'Save & Download Quotation',
+      category: 'Actions',
+      handler: () => {
+        if (activeView === 'generator' && !isGenerating && !loadingTemplates) {
+          handleSaveAndDownload();
+        }
+      },
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh Quotation History',
+      category: 'Actions',
+      handler: () => {
+        if (activeView === 'history') {
+          fetchQuotations();
+        }
+      },
+    },
+  ]);
+
   if (!isMounted) return null;
 
   // ── Tab config ──────────────────────────────────────────────────────────
-  const tabs: { id: ActiveView; label: string; icon: React.ReactNode }[] = [
-    { id: "generator",  label: "Generate",  icon: <FileText size={16} />       },
-    { id: "history",    label: "History",   icon: <History size={16} />         },
-    { id: "templates",  label: "Templates", icon: <LayoutTemplate size={16} /> },
+  const tabs: { id: ActiveView; label: string; icon: React.ReactNode; hotkey: string }[] = [
+    { id: "generator",  label: "Generate",  icon: <FileText size={16} />, hotkey: "1" },
+    { id: "history",    label: "History",   icon: <History size={16} />, hotkey: "2" },
+    { id: "templates",  label: "Templates", icon: <LayoutTemplate size={16} />, hotkey: "3" },
   ];
 
   // ---------------------------------------------------------------------------
@@ -383,9 +428,11 @@ export default function QuotationManager() {
                   onClick={handleSaveAndDownload}
                   disabled={isGenerating || loadingTemplates}
                   className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-lg shadow-blue-900/40 transition-all disabled:opacity-70"
+                  title="Save & Download (Ctrl+S)"
                 >
-                  {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
+                  {isGenerating ? <DotsLoader size="xs" variant="white" /> : <Download size={20} />}
                   {isGenerating ? "Processing..." : "Save & Download"}
+                  <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
                 </button>
               </motion.div>
             )}
@@ -394,7 +441,17 @@ export default function QuotationManager() {
                 key="hist-badge"
                 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.2 }}
+                className="flex items-center gap-3"
               >
+                <button
+                  onClick={fetchQuotations}
+                  disabled={loadingHistory}
+                  className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
+                  title="Refresh history (Alt+R)"
+                >
+                  {loadingHistory ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
+                  <Kbd variant="glass" size="xs">Alt+R</Kbd>
+                </button>
                 <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/10 text-blue-100 font-bold rounded-xl text-sm">
                   Total Records: {quotations.length}
                 </div>
@@ -426,6 +483,7 @@ export default function QuotationManager() {
               )}
               <span className="relative z-10 flex items-center gap-2">
                 {tab.icon} {tab.label}
+                <Kbd variant="glass" size="xs">{tab.hotkey}</Kbd>
               </span>
             </motion.button>
           ))}
@@ -479,7 +537,7 @@ export default function QuotationManager() {
                         <label className="block text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">Template</label>
                         {loadingTemplates ? (
                           <div className="flex items-center gap-2 p-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl text-gray-400 dark:text-slate-500">
-                            <Loader2 size={16} className="animate-spin" /> Loading…
+                            <DotsLoader size="xs" variant="primary" label="Loading templates..." />
                           </div>
                         ) : templateError ? (
                           <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-rose-950/30 border border-red-200 dark:border-rose-900/40 rounded-xl text-red-600 dark:text-rose-400 text-sm font-bold">
@@ -605,9 +663,8 @@ export default function QuotationManager() {
 
               <div className="bg-white dark:bg-[#0c0819]/80 dark:backdrop-blur-xl rounded-3xl shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-purple-500/20 overflow-hidden min-h-[400px]">
                 {loadingHistory ? (
-                  <div className="flex flex-col items-center justify-center h-[400px] text-gray-400 dark:text-slate-500">
-                    <Loader2 className="animate-spin mb-4 text-blue-600 dark:text-blue-400" size={40} />
-                    <p className="font-medium animate-pulse">Loading records...</p>
+                  <div className="p-6">
+                    <TableSkeleton rows={5} />
                   </div>
                 ) : filteredQuotations.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[400px] text-gray-400 dark:text-slate-500">
@@ -658,7 +715,7 @@ export default function QuotationManager() {
                                     <Download size={18} />
                                   </a>
                                   <button onClick={() => handleDeleteQuotation(quote)} disabled={deletingQuoteId === quote.id} className="p-2.5 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/40 text-red-600 dark:text-rose-400 hover:bg-red-100 dark:hover:bg-rose-900/60 rounded-xl font-bold transition-all shadow-sm disabled:opacity-60" title="Delete">
-                                    {deletingQuoteId === quote.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                    {deletingQuoteId === quote.id ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={18} />}
                                   </button>
                                 </div>
                               </td>

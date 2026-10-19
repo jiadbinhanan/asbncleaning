@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, User as UserIcon, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, User as UserIcon, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import Kbd from '@/components/common/Kbd';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AgentLoginForm() {
@@ -141,11 +143,13 @@ export default function AgentLoginForm() {
         className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-green-200 hover:shadow-xl hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? (
-          <Loader2 className="animate-spin" size={20} />
+          <DotsLoader size="xs" variant="white" />
         ) : (
           <>
             Access Agent Panel <ArrowRight size={18} />
-          </>        )}
+            <Kbd variant="glass" size="xs">↵</Kbd>
+          </>
+        )}
       </motion.button>
     </motion.form>
   );

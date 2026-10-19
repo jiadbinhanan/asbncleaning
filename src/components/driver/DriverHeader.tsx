@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Truck, Bell, BellOff, RefreshCcw, LogOut, Loader2 } from "lucide-react";
+import { Truck, Bell, BellOff, RefreshCcw, LogOut } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
@@ -139,7 +141,7 @@ export default function DriverHeader({
       title: "Notifications blocked — click for instructions",
     },
     subscribing: {
-      icon: <Loader2 size={16} className="animate-spin"/>,
+      icon: <DotsLoader size="xs" variant="primary" />,
       cls: "bg-blue-50 text-blue-400 border-blue-200",
       title: "Setting up notifications...",
     },
@@ -185,9 +187,11 @@ export default function DriverHeader({
           <button
             onClick={onRefresh}
             disabled={refreshing}
-            className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-200 transition-all"
+            title="Refresh logistics (⌥R)"
+            className="h-9 px-2.5 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center gap-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-200 transition-all"
           >
-            <RefreshCcw size={15} className={refreshing ? "animate-spin text-blue-500" : ""}/>
+            {refreshing ? <DotsLoader size="xs" variant="primary" /> : <RefreshCcw size={15}/>}
+            <Kbd variant="glass" size="xs">⌥R</Kbd>
           </button>
           <button
             onClick={async () => { await supabase.auth.signOut(); router.push("/agent/login"); }}

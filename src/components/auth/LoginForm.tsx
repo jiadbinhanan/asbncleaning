@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Lock, User as UserIcon, Loader2, ArrowRight } from 'lucide-react';
+import { Lock, User as UserIcon, ArrowRight } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import Kbd from '@/components/common/Kbd';
 // আমরা এখন আমাদের তৈরি করা ইউটিলিটি থেকে ইমপোর্ট করব
 import { createClient } from '@/utils/supabase/client';
 
@@ -119,10 +121,11 @@ export default function LoginForm({ role }: LoginFormProps) {
         className="w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-bold shadow-lg shadow-gray-300 hover:shadow-xl hover:from-black hover:to-gray-900 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? (
-          <Loader2 className="animate-spin" size={20} />
+          <DotsLoader size="xs" variant="white" />
         ) : (
           <>
             Access Portal <ArrowRight size={18} />
+            <Kbd variant="glass" size="xs">↵</Kbd>
           </>
         )}
       </motion.button>

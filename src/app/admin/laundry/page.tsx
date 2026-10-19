@@ -1,12 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, WashingMachine, CheckCircle2, AlertTriangle, ArrowRight, PackageCheck, 
+  RotateCw, WashingMachine, CheckCircle2, AlertTriangle, ArrowRight, PackageCheck, 
   History, Send, Search, Calendar, Building2, Trash2, ShieldAlert, Layers, Info
 } from "lucide-react";
 import { format } from "date-fns";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import DotsLoader from "@/components/common/DotsLoader";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function AdminLaundryManagement() {
   const supabase = createClient();
@@ -14,6 +18,7 @@ export default function AdminLaundryManagement() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [laundryItems, setLaundryItems] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'send' | 'receive'>('send');
@@ -38,6 +43,45 @@ export default function AdminLaundryManagement() {
   };
 
   useEffect(() => { fetchLaundry(); }, []);
+
+  useKeyboardShortcuts([
+    {
+      combo: '1',
+      description: 'Switch to Send to Laundry',
+      category: 'Navigation',
+      handler: () => {
+        setActiveTab('send');
+        setViewMode('pending');
+      },
+    },
+    {
+      combo: '2',
+      description: 'Switch to Receive Clean Stock',
+      category: 'Navigation',
+      handler: () => {
+        setActiveTab('receive');
+        setViewMode('pending');
+      },
+    },
+    {
+      combo: '3',
+      description: 'Switch to Laundry History',
+      category: 'Navigation',
+      handler: () => setViewMode('history'),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh laundry records',
+      category: 'Actions',
+      handler: fetchLaundry,
+    },
+    {
+      combo: '/',
+      description: 'Focus laundry search',
+      category: 'Navigation',
+      handler: () => searchRef.current?.focus(),
+    },
+  ]);
 
   // Filter Logic
   const filteredItems = laundryItems.filter(item => {
@@ -176,7 +220,13 @@ export default function AdminLaundryManagement() {
     finally { setProcessingId(null); }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6 md:p-12">
+        <PageSkeleton layout="table" showStats={true} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden">
@@ -256,22 +306,35 @@ export default function AdminLaundryManagement() {
              
              {/* Search Bar */}
              <div className="relative w-full md:w-64">
-                {/* 🚨 FIXED: Added z-10, pointer-events-none and adjusted color so the icon is clearly visible */}
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-200 z-10 pointer-events-none" size={18} />
                 <input 
+                  ref={searchRef}
                   type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
-                  placeholder="Search Ref, Unit..." 
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl outline-none focus:bg-white/20 text-sm font-bold text-white placeholder:text-blue-200/60 backdrop-blur-md transition-all" 
+                  placeholder="Search Ref, Unit... [/]" 
+                  className="w-full pl-10 pr-9 py-2.5 bg-white/10 border border-white/20 rounded-xl outline-none focus:bg-white/20 text-sm font-bold text-white placeholder:text-blue-200/60 backdrop-blur-md transition-all" 
                 />
+                {!searchQuery && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Kbd variant="glass" size="xs">/</Kbd>
+                  </div>
+                )}
              </div>
 
              {/* Main Navigation Tabs */}
-             <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full md:w-auto">
-                <button onClick={() => {setActiveTab('send'); setViewMode('pending')}} className={`flex-1 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'send' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  <Send size={16}/> Dispatch List
+             <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full md:w-auto">
+                <button onClick={() => {setActiveTab('send'); setViewMode('pending')}} className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'send' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  <Send size={16}/> Dispatch List <Kbd variant="glass" size="xs">1</Kbd>
                 </button>
-                <button onClick={() => {setActiveTab('receive'); setViewMode('pending')}} className={`flex-1 px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'receive' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  <PackageCheck size={16}/> Receive Stock
+                <button onClick={() => {setActiveTab('receive'); setViewMode('pending')}} className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'receive' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  <PackageCheck size={16}/> Receive Stock <Kbd variant="glass" size="xs">2</Kbd>
+                </button>
+                <button
+                  onClick={fetchLaundry}
+                  title="Refresh Laundry (Alt+R)"
+                  aria-label="Refresh Laundry"
+                  className="p-2.5 hover:bg-white/20 text-white rounded-xl transition-all flex items-center justify-center"
+                >
+                  <RotateCw size={16} />
                 </button>
              </div>
              
@@ -328,8 +391,7 @@ export default function AdminLaundryManagement() {
                           onClick={() => handleBulkDispatch(dateStr)} disabled={processingId === dateStr}
                           className="w-full md:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-70"
                         >
-                          {processingId === dateStr ? <Loader2 className="animate-spin" size={20}/> : <Send size={20}/>} 
-                          Dispatch Batch to Laundry
+                          {processingId === dateStr ? <DotsLoader size="sm" variant="white" label="Dispatching..." /> : <><Send size={20}/> Dispatch Batch to Laundry</>}
                         </button>
                     </div>
                   </div>
@@ -379,7 +441,7 @@ export default function AdminLaundryManagement() {
                                       <Send size={14}/> Send
                                     </button>
                                     <button onClick={() => handleDiscard(item)} disabled={processingId === item.id + '_discard'} className="p-2.5 bg-white dark:bg-[#0c1427] hover:bg-red-50 dark:hover:bg-red-950/40 text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/40 rounded-lg shadow-sm transition-all disabled:opacity-50" title="Throw to Dustbin">
-                                      {processingId === item.id + '_discard' ? <Loader2 className="animate-spin" size={16}/> : <Trash2 size={16}/>}
+                                      {processingId === item.id + '_discard' ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={16}/>}
                                     </button>
                                   </div>
                                 </div>
@@ -394,7 +456,7 @@ export default function AdminLaundryManagement() {
                                     />
                                   </div>
                                   <button onClick={() => handleReceive(item)} disabled={processingId === item.id} className="w-full md:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                    {processingId === item.id ? <Loader2 className="animate-spin" size={14}/> : <PackageCheck size={14}/>} Receive Clean Stock
+                                    {processingId === item.id ? <DotsLoader size="xs" variant="white" label="Receiving..." /> : <><PackageCheck size={14}/> Receive Clean Stock</>}
                                   </button>
                                 </div>
                               ) : (

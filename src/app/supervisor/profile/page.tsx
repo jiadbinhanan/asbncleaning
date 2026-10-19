@@ -4,10 +4,14 @@ import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
 import { 
   UserCircle, Mail, Phone, Camera, Save, 
-  Loader2, ShieldCheck, Calendar, AtSign, User
+  ShieldCheck, Calendar, AtSign, User, RefreshCw
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { getAvatarUploadSignature } from "./actions";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function SupervisorProfile() {
   const supabase = createClient();
@@ -131,7 +135,25 @@ export default function SupervisorProfile() {
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F8FAFC]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  useKeyboardShortcuts([
+    {
+      key: 's',
+      ctrlKey: true,
+      description: 'Save profile changes',
+      action: () => {
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSave(fakeEvent);
+      }
+    }
+  ]);
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen font-sans pb-24">
+        <PageSkeleton layout="form" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-[#F8FAFC] font-sans pb-24">
@@ -276,7 +298,15 @@ export default function SupervisorProfile() {
                   disabled={saving || (formData.full_name === profileData?.full_name && formData.username === profileData?.username && formData.phone === profileData?.phone && !avatarFile)} 
                   className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? <><Loader2 className="animate-spin" size={20}/> Updating Profile...</> : <><Save size={20}/> Save Changes</>}
+                  {saving ? (
+                    <DotsLoader size="sm" variant="white" label="Updating Profile..." />
+                  ) : (
+                    <>
+                      <Save size={20}/>
+                      <span>Save Changes</span>
+                      <Kbd variant="glass" size="xs">Ctrl+S</Kbd>
+                    </>
+                  )}
                 </button>
               </div>
 

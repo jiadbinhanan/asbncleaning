@@ -1,15 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, WashingMachine, CheckCircle2, AlertTriangle, ArrowRight, PackageCheck, 
-  History, Send, Search, Calendar, Building2, Trash2, ShieldAlert
+  WashingMachine, CheckCircle2, AlertTriangle, ArrowRight, PackageCheck, 
+  History, Send, Search, Calendar, Building2, Trash2, ShieldAlert, RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function LaundryTracking() {
   const supabase = createClient();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [laundryItems, setLaundryItems] = useState<any[]>([]);
@@ -38,6 +43,44 @@ export default function LaundryTracking() {
   };
 
   useEffect(() => { fetchLaundry(); }, []);
+
+  useKeyboardShortcuts([
+    {
+      key: '1',
+      description: 'Switch to Send tab',
+      action: () => {
+        setActiveTab('send');
+        setViewMode('pending');
+      }
+    },
+    {
+      key: '2',
+      description: 'Switch to Receive tab',
+      action: () => {
+        setActiveTab('receive');
+        setViewMode('pending');
+      }
+    },
+    {
+      key: '3',
+      description: 'Toggle Pending / History view',
+      action: () => setViewMode(prev => prev === 'pending' ? 'history' : 'pending')
+    },
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh laundry',
+      action: () => fetchLaundry()
+    },
+    {
+      key: '/',
+      description: 'Search laundry items',
+      action: () => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    }
+  ]);
 
   // Filter Logic
   const filteredItems = laundryItems.filter(item => {
@@ -157,7 +200,13 @@ export default function LaundryTracking() {
     finally { setProcessingId(null); }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans p-4 md:p-8 max-w-6xl mx-auto">
+        <PageSkeleton layout="cards" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
@@ -170,12 +219,27 @@ export default function LaundryTracking() {
             <h1 className="text-3xl font-black tracking-tight flex items-center gap-3"><WashingMachine size={32}/> Laundry Manager</h1>
             <p className="text-blue-200 font-bold text-sm mt-1 opacity-90">Dispatch to Laundry & Receive Stocks</p>
           </div>
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" size={18} />
-            <input 
-              type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Ref, Unit..." 
-              className="w-full pl-11 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl outline-none focus:bg-white/20 text-sm font-bold text-white placeholder:text-white/50 backdrop-blur-sm" 
-            />
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={() => fetchLaundry()}
+              className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 text-white backdrop-blur-sm text-sm"
+              title="Refresh laundry"
+            >
+              <RefreshCw size={16} />
+              <span>Refresh</span>
+              <Kbd variant="glass" size="xs">⌥R</Kbd>
+            </button>
+            <div className="relative flex-1 md:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" size={18} />
+              <input 
+                ref={searchInputRef}
+                type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Ref, Unit..." 
+                className="w-full pl-11 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl outline-none focus:bg-white/20 text-sm font-bold text-white placeholder:text-white/50 backdrop-blur-sm" 
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Kbd variant="glass" size="xs">/</Kbd>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -185,12 +249,24 @@ export default function LaundryTracking() {
         {/* TABS CONTAINER */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-8 flex flex-col md:flex-row justify-between gap-4">
           <div className="flex bg-gray-50 p-1.5 rounded-xl border border-gray-100 w-full md:w-auto">
-            <button onClick={() => {setActiveTab('send'); setViewMode('pending')}} className={`flex-1 md:px-8 py-2.5 rounded-lg text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'send' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}><Send size={16}/> Send to Laundry</button>
-            <button onClick={() => {setActiveTab('receive'); setViewMode('pending')}} className={`flex-1 md:px-8 py-2.5 rounded-lg text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'receive' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}><PackageCheck size={16}/> Receive Stock</button>
+            <button onClick={() => {setActiveTab('send'); setViewMode('pending')}} className={`flex-1 md:px-8 py-2.5 rounded-lg text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'send' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}>
+              <Send size={16}/> 
+              <span>Send to Laundry</span>
+              <Kbd variant="glass" size="xs">1</Kbd>
+            </button>
+            <button onClick={() => {setActiveTab('receive'); setViewMode('pending')}} className={`flex-1 md:px-8 py-2.5 rounded-lg text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'receive' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}>
+              <PackageCheck size={16}/> 
+              <span>Receive Stock</span>
+              <Kbd variant="glass" size="xs">2</Kbd>
+            </button>
           </div>
           <div className="flex bg-gray-50 p-1.5 rounded-xl border border-gray-100 shrink-0">
              <button onClick={() => setViewMode('pending')} className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${viewMode === 'pending' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>Pending</button>
-             <button onClick={() => setViewMode('history')} className={`px-6 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${viewMode === 'history' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}><History size={14}/> History</button>
+             <button onClick={() => setViewMode('history')} className={`px-6 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${viewMode === 'history' ? 'bg-gray-800 text-white' : 'text-gray-500'}`}>
+               <History size={14}/> 
+               <span>History</span>
+               <Kbd variant="glass" size="xs">3</Kbd>
+             </button>
           </div>
         </div>
 
@@ -242,10 +318,10 @@ export default function LaundryTracking() {
                                 </div>
                                 <div className="flex gap-2">
                                   <button onClick={() => handleDispatch(item.id)} disabled={processingId === item.id} className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 text-xs font-black">
-                                    <Send size={14}/> Send
+                                    {processingId === item.id ? <DotsLoader size="xs" variant="white" /> : <Send size={14}/>} Send
                                   </button>
                                   <button onClick={() => handleDiscard(item)} disabled={processingId === item.id + '_discard'} className="p-2 bg-white hover:bg-red-50 text-red-500 border border-red-100 rounded-lg shadow-sm transition-all" title="Throw to Dustbin">
-                                    {processingId === item.id + '_discard' ? <Loader2 className="animate-spin" size={16}/> : <Trash2 size={16}/>}
+                                    {processingId === item.id + '_discard' ? <DotsLoader size="xs" variant="primary" /> : <Trash2 size={16}/>}
                                   </button>
                                 </div>
                               </div>
@@ -257,7 +333,7 @@ export default function LaundryTracking() {
                                   <input type="number" min="0" max={item.sent_qty} value={item.inputReceived} onChange={(e) => handleInputChange(item.id, e.target.value)} className="w-16 text-center p-1.5 rounded-lg border-2 border-indigo-200 outline-none font-black text-indigo-700 focus:border-indigo-500 shadow-sm"/>
                                 </div>
                                 <button onClick={() => handleReceive(item)} disabled={processingId === item.id} className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5">
-                                  <PackageCheck size={14}/> Receive Clean Stock
+                                  {processingId === item.id ? <DotsLoader size="xs" variant="white" /> : <PackageCheck size={14}/>} Receive Clean Stock
                                 </button>
                               </div>
                             ) : (

@@ -3,10 +3,14 @@ import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  CheckCircle, Zap, Building2, Calendar, Loader2, 
-  Clock, CheckCircle2, ShieldAlert, Lock, RotateCcw
+  CheckCircle, Zap, Building2, Calendar, 
+  Clock, CheckCircle2, ShieldAlert, Lock, RotateCcw, RefreshCw
 } from "lucide-react";
 import { format, parseISO, isToday } from "date-fns";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // --- Types ---
 type Booking = {
@@ -116,7 +120,31 @@ export default function ActivationsPage() {
     return { todayBookings: todayList, groupedOtherBookings: othersMap };
   }, [bookings]);
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#F8FAFC]"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh activations',
+      action: () => fetchActivations()
+    },
+    {
+      key: 'a',
+      altKey: true,
+      description: 'Activate first pending task',
+      action: () => {
+        const firstPending = todayBookings.find(b => b.status === 'pending');
+        if (firstPending) handleActivate(firstPending.id);
+      }
+    }
+  ]);
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen font-sans pb-24">
+        <PageSkeleton layout="cards" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen bg-[#F8FAFC] font-sans pb-24">
@@ -130,8 +158,18 @@ export default function ActivationsPage() {
           </h1>
           <p className="text-gray-500 font-medium mt-2">Manage and activate daily schedules for the cleaning teams.</p>
         </div>
-        <div className="px-6 py-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 shadow-sm flex items-center gap-2">
-          Total Tasks: {bookings.length}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => fetchActivations()}
+            className="px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-xl border border-gray-200 text-sm font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
+          >
+            <RefreshCw size={16} />
+            <span>Refresh</span>
+            <Kbd variant="glass" size="xs">⌥R</Kbd>
+          </button>
+          <div className="px-6 py-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 shadow-sm flex items-center gap-2">
+            Total Tasks: {bookings.length}
+          </div>
         </div>
       </div>
 
@@ -194,8 +232,14 @@ export default function ActivationsPage() {
                           disabled={activatingId === booking.id}
                           className="w-full md:w-auto px-10 py-5 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-lg shadow-xl shadow-gray-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
                         >
-                          {activatingId === booking.id ? <Loader2 className="animate-spin" size={24}/> : <CheckCircle size={24}/>}
-                          Activate Now
+                          {activatingId === booking.id ? (
+                            <DotsLoader size="sm" variant="white" label="Activating..." />
+                          ) : (
+                            <>
+                              <CheckCircle size={24}/>
+                              <span>Activate Now</span>
+                            </>
+                          )}
                         </button>
                       ) : (
                         <div className="flex flex-col items-end gap-2 w-full md:w-auto mt-2 md:mt-0">

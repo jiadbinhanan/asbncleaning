@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, UploadCloud, CheckCircle2, ShieldCheck,
-  AlertTriangle, Loader2, Camera, Trash2, ChevronDown, ChevronUp, Package,
+  AlertTriangle, Camera, Trash2, ChevronDown, ChevronUp, Package,
   Eye, Clock, Calendar, Users, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -15,6 +15,8 @@ import resize from '@jsquash/resize';
 
 import { getWorkPhotoUploadSignature } from "@/app/team/duty/[id]/actions"; 
 import EquipmentTracker from "@/app/team/duty/[id]/EquipmentTracker";
+import DotsLoader from "@/components/common/DotsLoader";
+import { FormSkeleton } from "@/components/common/Skeleton";
 
 interface AdminDutyModalProps {
   isOpen: boolean;
@@ -417,9 +419,8 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         {/* Scrollable Body (Responsive Grid: 2 cols on lg, 1 col on mobile) */}
         <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#0c1427]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-32 text-gray-400 dark:text-slate-500">
-              <Loader2 className="animate-spin mb-4" size={40} />
-              <p className="font-bold text-lg uppercase tracking-widest">Loading details...</p>
+            <div className="py-8">
+              <FormSkeleton fields={6} />
             </div>
           ) : (
             <div className="flex flex-col lg:flex-row gap-8">
@@ -557,8 +558,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
               {submitting && submitType === "completed" ? (
                 <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
                   <div className="flex items-center gap-3">
-                    <Loader2 className="animate-spin text-white" size={24} />
-                    <span className="text-lg tracking-wide">Processing... {uploadProgress}%</span>
+                    <DotsLoader size="md" variant="white" label={`Processing... ${uploadProgress}%`} />
                   </div>
                   <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden mt-1 shadow-inner">
                     <div className="h-full bg-white transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
@@ -573,13 +573,12 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
 
             <button 
               onClick={() => handleSubmit("finalized")} disabled={loading || submitting}
-              className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative"
+              className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-80 flex flex-col items-center justify-center overflow-hidden relative cursor-pointer"
             >
               {submitting && submitType === "finalized" ? (
                 <div className="w-full px-8 relative z-10 flex flex-col items-center gap-2">
                   <div className="flex items-center gap-3">
-                    <Loader2 className="animate-spin text-white" size={24} />
-                    <span className="text-lg tracking-wide">Processing... {uploadProgress}%</span>
+                    <DotsLoader size="md" variant="white" label={`Processing... ${uploadProgress}%`} />
                   </div>
                   <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden mt-1 shadow-inner">
                     <div className="h-full bg-white transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>

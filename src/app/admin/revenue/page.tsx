@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   TrendingUp, TrendingDown, Wallet, Receipt, AlertCircle, 
   Calendar, CheckCircle2, ChevronDown, ChevronUp, 
-  PackagePlus, Loader2, Building2, 
+  PackagePlus, Building2, RotateCw,
   Briefcase, FileDigit, Store, ArrowDownToLine, ArrowUpRight, Eye,
   PieChart as PieChartIcon, Search, BarChart3, Filter, LineChart, Info
 } from "lucide-react";
@@ -15,6 +15,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
+import { PageSkeleton } from '@/components/common/Skeleton';
+import DotsLoader from '@/components/common/DotsLoader';
+import Kbd from '@/components/common/Kbd';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function RevenueDashboard() {
   const supabase = createClient();
@@ -55,6 +59,42 @@ export default function RevenueDashboard() {
     if (dateFilter !== 'custom') fetchRevenueData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFilter]);
+
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+R',
+      description: 'Refresh revenue analytics',
+      category: 'Actions',
+      handler: () => {
+        setIsRefreshing(true);
+        fetchRevenueData();
+      },
+    },
+    {
+      combo: 'Alt+1',
+      description: 'Filter: This Month',
+      category: 'Filters',
+      handler: () => setDateFilter('this_month'),
+    },
+    {
+      combo: 'Alt+2',
+      description: 'Filter: Last Month',
+      category: 'Filters',
+      handler: () => setDateFilter('last_month'),
+    },
+    {
+      combo: 'Alt+3',
+      description: 'Filter: All Time',
+      category: 'Filters',
+      handler: () => setDateFilter('all_time'),
+    },
+    {
+      combo: 'Alt+4',
+      description: 'Filter: Custom Date',
+      category: 'Filters',
+      handler: () => setDateFilter('custom'),
+    },
+  ]);
 
   const applyCustomDate = () => {
     if (customStart && customEnd) fetchRevenueData();
@@ -458,7 +498,13 @@ export default function RevenueDashboard() {
     return null;
   };
 
-  if (initialLoading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6 md:p-12">
+        <PageSkeleton layout="dashboard" showStats={true} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative">
@@ -544,12 +590,31 @@ export default function RevenueDashboard() {
               </select>
             </div>
 
-            {/* Date Filters */}
-            <div className="flex flex-wrap bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 w-full md:w-auto">
-              <button onClick={() => setDateFilter('this_month')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${dateFilter === 'this_month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>This Month</button>
-              <button onClick={() => setDateFilter('last_month')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${dateFilter === 'last_month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>Last Month</button>
-              <button onClick={() => setDateFilter('all_time')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${dateFilter === 'all_time' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>All Time</button>
-              <button onClick={() => setDateFilter('custom')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all ${dateFilter === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>Custom</button>
+            {/* Date Filters & Refresh */}
+            <div className="flex flex-wrap items-center gap-1.5 bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 w-full md:w-auto">
+              <button onClick={() => setDateFilter('this_month')} className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${dateFilter === 'this_month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>
+                This Month <Kbd variant="glass" size="xs">Alt+1</Kbd>
+              </button>
+              <button onClick={() => setDateFilter('last_month')} className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${dateFilter === 'last_month' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>
+                Last Month <Kbd variant="glass" size="xs">Alt+2</Kbd>
+              </button>
+              <button onClick={() => setDateFilter('all_time')} className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${dateFilter === 'all_time' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>
+                All Time <Kbd variant="glass" size="xs">Alt+3</Kbd>
+              </button>
+              <button onClick={() => setDateFilter('custom')} className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${dateFilter === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-300 hover:text-white'}`}>
+                Custom <Kbd variant="glass" size="xs">Alt+4</Kbd>
+              </button>
+              <button
+                onClick={() => {
+                  setIsRefreshing(true);
+                  fetchRevenueData();
+                }}
+                title="Refresh Analytics (Alt+R)"
+                aria-label="Refresh Analytics"
+                className="p-2 hover:bg-white/20 text-white rounded-xl transition-all flex items-center justify-center ml-1"
+              >
+                <RotateCw size={15} />
+              </button>
             </div>
 
             {/* Custom Date Picker */}
@@ -572,9 +637,8 @@ export default function RevenueDashboard() {
 
         {isRefreshing && (
           <div className="absolute inset-0 z-50 flex items-start justify-center pt-20 pointer-events-none">
-            <div className="bg-white p-4 rounded-2xl shadow-2xl flex items-center gap-3">
-              <Loader2 className="animate-spin text-blue-600 size-6" />
-              <span className="font-black text-gray-900 text-sm">Refreshing Analytics...</span>
+            <div className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-2xl flex items-center gap-3">
+              <DotsLoader size="sm" variant="primary" label="Refreshing Analytics..." />
             </div>
           </div>
         )}

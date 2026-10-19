@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, ArrowRight, ClipboardCheck, AlertTriangle, Flame } from "lucide-react";
+import { CheckCircle2, ArrowRight, ClipboardCheck, AlertTriangle, Flame } from "lucide-react";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function TeamQCPage() {
   const router = useRouter();
@@ -158,9 +162,29 @@ export default function TeamQCPage() {
     }
   };
 
-  // ---------------- UI Rendering ----------------
+  useKeyboardShortcuts([
+    {
+      key: "s",
+      ctrl: true,
+      description: "Submit QC",
+      action: () => {
+        if (!submitting) handleSubmit();
+      },
+    },
+    {
+      key: "Escape",
+      description: "Back to dashboard",
+      action: () => {
+        if (!submitting) handleSkip();
+      },
+    },
+  ]);
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 dark:text-indigo-400 size-12"/></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6 max-w-xl mx-auto">
+      <PageSkeleton layout="detail" />
+    </div>
+  );
 
   if (!items.length) return (
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] p-6 flex flex-col items-center justify-center">
@@ -259,8 +283,15 @@ export default function TeamQCPage() {
             disabled={submitting}
             className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-lg shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {submitting ? <Loader2 className="animate-spin" size={20}/> : <CheckCircle2 size={20}/>}
-            {submitting ? "Processing..." : "Submit QC"}
+            {submitting ? (
+              <DotsLoader size="sm" variant="white" label="Processing..." />
+            ) : (
+              <>
+                <CheckCircle2 size={20}/>
+                <span>Submit QC</span>
+                <Kbd className="bg-indigo-700 text-indigo-100 border-indigo-500/50 ml-1">⌘S</Kbd>
+              </>
+            )}
           </button>
 
           <button 
@@ -268,7 +299,9 @@ export default function TeamQCPage() {
             disabled={submitting}
             className="w-full py-4 bg-white dark:bg-[#0c1427] text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-800/60 font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-gray-200 dark:border-slate-800"
           >
-            Skip for Now <ArrowRight size={18}/>
+            <span>Skip for Now</span>
+            <Kbd className="bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700 ml-1">Esc</Kbd>
+            <ArrowRight size={18}/>
           </button>
         </div>
       </div>

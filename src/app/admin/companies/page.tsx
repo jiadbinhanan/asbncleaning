@@ -8,10 +8,14 @@ import autoTable from 'jspdf-autotable';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
   Building2, Plus, Search, Trash2, 
-  Home, Key, Layers, ArrowRight, Loader2, 
+  Home, Key, Layers, ArrowRight,
   List, Grid, FileText, Table, Edit,
-  Link as LinkIcon, Copy, MessageCircle, RefreshCw, ShieldAlert
+  Link as LinkIcon, Copy, MessageCircle, RefreshCw, ShieldAlert, RotateCw
 } from 'lucide-react';
+import DotsLoader from '@/components/common/DotsLoader';
+import { TableSkeleton, CardGridSkeleton } from '@/components/common/Skeleton';
+import Kbd from '@/components/common/Kbd';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // --- Types ---
 type Company = {
@@ -65,27 +69,66 @@ export default function CompanyManagement() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // --- SINGLE UNIFIED FETCH ---
-  useEffect(() => {
-    const fetchEverything = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*, units(*)')
-        .order('id', { ascending: true });
+  const fetchEverything = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*, units(*)')
+      .order('id', { ascending: true });
 
-      if (data) {
-        setCompanies(data);
-        setAllData(data);
-        if (data.length > 0 && !selectedCompany) {
-          setSelectedCompany(data[0]);
-          setUnits(data[0].units || []);
-        }
+    if (data) {
+      setCompanies(data);
+      setAllData(data);
+      if (data.length > 0 && !selectedCompany) {
+        setSelectedCompany(data[0]);
+        setUnits(data[0].units || []);
       }
-      setLoading(false);
-    };
+    }
+    setLoading(false);
+  };
 
+  useEffect(() => {
     if (allData.length === 0) fetchEverything();
   }, [supabase]);
+
+  useKeyboardShortcuts([
+    {
+      combo: 'Alt+N',
+      description: 'Add new client company',
+      category: 'Actions',
+      handler: () => setIsAddCompanyOpen(true),
+    },
+    {
+      combo: 'Alt+R',
+      description: 'Refresh companies and properties',
+      category: 'Actions',
+      handler: fetchEverything,
+    },
+    {
+      combo: '1',
+      description: 'Switch to Grid View',
+      category: 'Navigation',
+      handler: () => setViewMode('grid'),
+    },
+    {
+      combo: '2',
+      description: 'Switch to List View',
+      category: 'Navigation',
+      handler: () => setViewMode('list'),
+    },
+    {
+      combo: 'Escape',
+      description: 'Close active modal',
+      category: 'Modals',
+      handler: () => {
+        setIsAddCompanyOpen(false);
+        setIsAddUnitOpen(false);
+        setIsEditCompanyOpen(false);
+        setIsEditUnitOpen(false);
+        setIsPortalModalOpen(false);
+      },
+    },
+  ]);
 
   // --- LOCAL UPDATE ---
   useEffect(() => {
@@ -359,10 +402,35 @@ export default function CompanyManagement() {
            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
 
              {/* View Toggle */}
-             <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10">
-               <button onClick={() => setViewMode('grid')} className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} title="Grid View"><Grid size={18}/></button>
-               <button onClick={() => setViewMode('list')} className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} title="List View"><List size={18}/></button>
+             <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 items-center gap-1">
+               <button 
+                 onClick={() => setViewMode('grid')} 
+                 className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
+                 title="Grid View (1)"
+               >
+                 <Grid size={16}/>
+                 <Kbd variant="glass" size="xs">1</Kbd>
+               </button>
+               <button 
+                 onClick={() => setViewMode('list')} 
+                 className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-white'}`} 
+                 title="List View (2)"
+               >
+                 <List size={16}/>
+                 <Kbd variant="glass" size="xs">2</Kbd>
+               </button>
              </div>
+
+             {/* Refresh Button */}
+             <button
+               onClick={fetchEverything}
+               disabled={loading}
+               className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center gap-1.5 backdrop-blur-md"
+               title="Refresh (Alt+R)"
+             >
+               {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16}/>}
+               <Kbd variant="glass" size="xs">Alt+R</Kbd>
+             </button>
 
              {/* Export Buttons */}
              {viewMode === 'list' && (
@@ -374,9 +442,11 @@ export default function CompanyManagement() {
 
              <button 
                onClick={() => setIsAddCompanyOpen(true)}
-               className="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/30"
+               className="flex-1 md:flex-none px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/30"
+               title="Add Client (Alt+N)"
              >
                <Plus size={16}/> Add Client
+               <Kbd variant="glass" size="xs">Alt+N</Kbd>
              </button>
            </div>
           </div>
@@ -384,7 +454,9 @@ export default function CompanyManagement() {
 
         <div className="px-4 md:px-8 -mt-12 relative z-20">
           {loading ? (
-            <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="animate-spin text-blue-600 size-12"/></div>
+            <div className="bg-white dark:bg-[#0c1427]/80 rounded-[2.5rem] p-6 md:p-10 border border-gray-100 dark:border-blue-500/20">
+              {viewMode === 'list' ? <TableSkeleton rows={5} /> : <CardGridSkeleton count={4} />}
+            </div>
           ) : (
             <AnimatePresence mode="wait">
               {viewMode === 'list' ? (
@@ -397,7 +469,9 @@ export default function CompanyManagement() {
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   className="bg-white dark:bg-[#0c1427]/80 dark:backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-blue-500/20"
                 >
-                  {allData.length === 0 ? <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="animate-spin text-blue-500 mx-auto my-10" size={32}/></div> : (
+                  {allData.length === 0 ? (
+                    <div className="text-center py-16 text-gray-400 dark:text-slate-500 font-bold">No registered clients found.</div>
+                  ) : (
                     <div className="space-y-6">
                       {allData.map(comp => (
                         <div key={comp.id} className="border border-gray-200 dark:border-slate-800 rounded-[2rem] overflow-hidden">
@@ -641,8 +715,7 @@ export default function CompanyManagement() {
               <div className='flex gap-3 mt-8'>
                 <button onClick={() => setIsAddCompanyOpen(false)} className='flex-1 py-3 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
                 <button onClick={handleAddCompany} className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
-                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
-                  Save Client
+                  {isSaving ? <DotsLoader size="xs" variant="white" /> : 'Save Client'}
                 </button>
               </div>
             </motion.div>
@@ -725,8 +798,7 @@ export default function CompanyManagement() {
               <div className='flex gap-3 mt-8'>
                 <button onClick={() => setIsAddUnitOpen(false)} className='flex-1 py-3 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
                 <button onClick={handleAddUnit} className='flex-1 py-3 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-medium hover:bg-black dark:hover:bg-blue-500 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
-                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
-                  Add Unit
+                  {isSaving ? <DotsLoader size="xs" variant="white" /> : 'Add Unit'}
                 </button>
               </div>
             </motion.div>
@@ -764,8 +836,7 @@ export default function CompanyManagement() {
               <div className='flex gap-3 mt-8'>
                 <button onClick={() => setIsEditCompanyOpen(false)} className='flex-1 py-3 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
                 <button onClick={handleEditCompany} className='flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
-                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
-                  Update Client
+                  {isSaving ? <DotsLoader size="xs" variant="white" /> : 'Update Client'}
                 </button>
               </div>
             </motion.div>
@@ -842,8 +913,7 @@ export default function CompanyManagement() {
               <div className='flex gap-3 mt-8'>
                 <button onClick={() => setIsEditUnitOpen(false)} className='flex-1 py-3 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium disabled:opacity-50' disabled={isSaving}>Cancel</button>
                 <button onClick={handleEditUnit} className='flex-1 py-3 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-medium hover:bg-black dark:hover:bg-blue-500 disabled:opacity-50 flex items-center justify-center gap-2' disabled={isSaving}>
-                  {isSaving && <Loader2 size={16} className="animate-spin"/>} 
-                  Update Unit
+                  {isSaving ? <DotsLoader size="xs" variant="white" /> : 'Update Unit'}
                 </button>
               </div>
             </motion.div>
@@ -887,8 +957,7 @@ export default function CompanyManagement() {
                        disabled={isGeneratingLink}
                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                      >
-                       {isGeneratingLink ? <Loader2 className="animate-spin" size={18}/> : <Plus size={18}/>}
-                       Generate Secure Link
+                       {isGeneratingLink ? <DotsLoader size="xs" variant="white" /> : <><Plus size={18}/> Generate Secure Link</>}
                      </button>
                   </div>
                 ) : (
@@ -926,7 +995,7 @@ export default function CompanyManagement() {
                             disabled={isGeneratingLink}
                             className="px-4 py-2 bg-white dark:bg-[#070b14] border border-red-200 dark:border-rose-900/60 text-red-600 dark:text-rose-400 hover:bg-red-600 hover:text-white rounded-lg text-xs font-black transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
                           >
-                            {isGeneratingLink ? <Loader2 size={14} className="animate-spin"/> : <RefreshCw size={14}/>} Revoke & Reset Link
+                            {isGeneratingLink ? <DotsLoader size="xs" variant="primary" /> : <><RefreshCw size={14}/> Revoke & Reset Link</>}
                           </button>
                         </div>
                       </div>

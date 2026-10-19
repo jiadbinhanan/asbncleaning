@@ -4,10 +4,14 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   UsersRound, UserPlus, Archive, CheckCircle2, User,
-  ShieldCheck, Loader2, X, Edit3, Clock, CalendarIcon,
+  ShieldCheck, X, Edit3, Clock, CalendarIcon,
   ListFilter, Check, ArrowLeftRight, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { format, parseISO, addDays, subDays } from 'date-fns';
+import DotsLoader from '@/components/common/DotsLoader';
+import { CardGridSkeleton } from '@/components/common/Skeleton';
+import Kbd from '@/components/common/Kbd';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 import SupervisorAssignmentPanel, { type Booking, type Team } from './SupervisorAssignmentPanel';
 
@@ -305,6 +309,40 @@ export default function SupervisorTeamManagement() {
     return format(d, 'EEE, d MMM yyyy');
   };
 
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      altKey: true,
+      description: 'Form new squad',
+      action: () => openCreateModal()
+    },
+    {
+      key: '1',
+      description: 'Active roster tab',
+      action: () => {
+        setActiveTab('active');
+        setArchiveDate('');
+        closeAssignPanel();
+      }
+    },
+    {
+      key: '2',
+      description: 'Archived history tab',
+      action: () => {
+        setActiveTab('archived');
+        closeAssignPanel();
+      }
+    },
+    {
+      key: 'Escape',
+      description: 'Close panel or modal',
+      action: () => {
+        if (isModalOpen) setIsModalOpen(false);
+        else if (isPanelOpen) setSelectedTeamId(null);
+      }
+    }
+  ]);
+
   // ─────────────────────────────────────────────────────────────
   // JSX
   // ─────────────────────────────────────────────────────────────
@@ -332,6 +370,7 @@ export default function SupervisorTeamManagement() {
             <div className="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity" />
             <UserPlus size={18} className="relative z-10 text-indigo-600" />
             <span className="relative z-10">Form New Squad</span>
+            <Kbd variant="dark" size="xs">⌥N</Kbd>
           </button>
         </div>
       </div>
@@ -341,18 +380,20 @@ export default function SupervisorTeamManagement() {
 
         {/* Tabs & Filters */}
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-          <div className="flex bg-slate-50 p-1.5 rounded-xl w-full md:w-auto">
+          <div className="flex bg-slate-50 p-1.5 rounded-xl w-full md:w-auto gap-1">
             <button
               onClick={() => { setActiveTab('active'); setArchiveDate(''); closeAssignPanel(); }}
-              className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all ${activeTab === 'active' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'active' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Active Roster
+              <span>Active Roster</span>
+              <Kbd variant="glass" size="xs">1</Kbd>
             </button>
             <button
               onClick={() => { setActiveTab('archived'); closeAssignPanel(); }}
-              className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all ${activeTab === 'archived' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'archived' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Archived History
+              <span>Archived History</span>
+              <Kbd variant="glass" size="xs">2</Kbd>
             </button>
           </div>
 
@@ -429,10 +470,9 @@ export default function SupervisorTeamManagement() {
             className={`w-full ${isPanelOpen ? 'hidden md:block md:w-[38%] lg:w-[35%] shrink-0' : 'w-full'}`}
           >
             {isLoading ? (
-              <div className="flex justify-center items-center min-h-[300px]">
-                <Loader2 className="animate-spin text-indigo-600 size-12" />
+              <div className="py-6">
+                <CardGridSkeleton count={4} />
               </div>
-
             ) : displayTeams.length === 0 ? (
               <div className="text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
                 <UsersRound size={56} className="mx-auto text-indigo-100 mb-4" />

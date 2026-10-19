@@ -5,10 +5,14 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Clock, PlayCircle, Calendar, CheckCircle, 
-  MapPin, AlertCircle, Loader2, ArrowRight, 
-  CheckCircle2, Building2, UserCircle, Key, LayoutGrid, HandHeart, LogOut, Users, X
+  MapPin, AlertCircle, ArrowRight, 
+  CheckCircle2, Building2, UserCircle, Key, LayoutGrid, HandHeart, LogOut, Users, X, RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
+import DotsLoader from "@/components/common/DotsLoader";
+import { PageSkeleton } from "@/components/common/Skeleton";
+import Kbd from "@/components/common/Kbd";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // --- 🚨 Time Formatter Helper ---
 const formatTime = (timeString: string) => {
@@ -62,62 +66,68 @@ export default function TeamDashboard() {
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<any>(null);
 
   // --- Initial Fetch ---
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/team/login'); return; }
-      const userId = session.user.id;
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push('/team/login'); return; }
+    const userId = session.user.id;
 
-      // todayStr একবারই তৈরি করা হচ্ছে — সব filter-এ same value ব্যবহার হবে
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-      // 1. Fetch Agent Profile
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      setAgentProfile(profile);
+    // 1. Fetch Agent Profile
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    setAgentProfile(profile);
 
-      // 2. ✅ FIX: শুধু আজকের shift_date থাকা teams fetch করা হচ্ছে।
-      //    আগে status='active' দিয়ে fetch হতো — তাই আগামীকাল বা পরের দিনের
-      //    active team-ও চলে আসত। এখন shift_date = today দিয়ে strictly filter।
-      const { data: teamsData } = await supabase.from('teams')
-        .select('*')
-        .contains('member_ids', [userId])
-        .eq('shift_date', todayStr);  // ← status-এর পরিবর্তে date দিয়ে filter
+    // 2. Fetch today's shift teams
+    const { data: teamsData } = await supabase.from('teams')
+      .select('*')
+      .contains('member_ids', [userId])
+      .eq('shift_date', todayStr);
 
-      if (teamsData && teamsData.length > 0) {
-        setTeams(teamsData);
+    if (teamsData && teamsData.length > 0) {
+      setTeams(teamsData);
 
-        const allMemberIds = [...new Set(teamsData.flatMap(t => t.member_ids || []))];
-        const teamIds = teamsData.map(t => t.id);
+      const allMemberIds = [...new Set(teamsData.flatMap(t => t.member_ids || []))];
+      const teamIds = teamsData.map(t => t.id);
 
-        // 3. ✅ FIX: Bookings fetch-এ দুটো কঠোর condition:
-        //    (a) cleaning_date = today  →  অন্য দিনের booking কখনোই আসবে না
-        //    (b) status = active / in_progress / completed
-        //        in_progress: resume button দেখানোর জন্য
-        //        completed: done section-এ দেখানোর জন্য
-        //    (c) assigned_team_id আজকের team-এর মধ্যে, অথবা null
-        //        null হলেও (a) নিশ্চিত করছে যে সেটা আজকের booking
-        //    আগে cleaning_date filter থাকলেও .or() এর null branch-এ
-        //    অন্য দিনের unassigned booking আসার ঝুঁকি ছিল — এখন বন্ধ।
-        const [profilesRes, bookingsRes] = await Promise.all([
-          supabase.from('profiles').select('id, full_name, avatar_url').in('id', allMemberIds),
-          supabase.from('bookings')
-            .select('*, units(unit_number, layout, door_code, building_name, companies(name)), checklist_templates(title), work_status')
-            .eq('cleaning_date', todayStr)                           // ← primary date guard
-            .in('status', ['active', 'in_progress', 'completed'])   // ← in_progress যোগ করা হয়েছে
-            .or(`assigned_team_id.in.(${teamIds.join(',')}),assigned_team_id.is.null`)
-        ]);
+      const [profilesRes, bookingsRes] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, avatar_url').in('id', allMemberIds),
+        supabase.from('bookings')
+          .select('*, units(unit_number, layout, door_code, building_name, companies(name)), checklist_templates(title), work_status')
+          .eq('cleaning_date', todayStr)
+          .in('status', ['active', 'in_progress', 'completed'])
+          .or(`assigned_team_id.in.(${teamIds.join(',')}),assigned_team_id.is.null`)
+      ]);
 
-        if (profilesRes.data) {
-          const profileMap: any = {};
-          profilesRes.data.forEach(p => profileMap[p.id] = p);
-          setTeamMembers(profileMap);
-        }
-        if (bookingsRes.data) setBookings(bookingsRes.data);
+      if (profilesRes.data) {
+        const profileMap: any = {};
+        profilesRes.data.forEach(p => profileMap[p.id] = p);
+        setTeamMembers(profileMap);
       }
-      setLoading(false);
-    };
+      if (bookingsRes.data) setBookings(bookingsRes.data);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchDashboardData();
   }, [router, supabase]);
+
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      altKey: true,
+      description: 'Refresh team dashboard',
+      action: () => fetchDashboardData()
+    },
+    {
+      key: 'Escape',
+      description: 'Close task assignment modal',
+      action: () => {
+        if (selectedBookingForAssign) setSelectedBookingForAssign(null);
+      }
+    }
+  ]);
 
   // --- Handlers ---
   const handleLogout = async () => {
@@ -145,7 +155,13 @@ export default function TeamDashboard() {
   const unassignedTasks = bookings.filter(b => !b.assigned_team_id && ['active', 'in_progress'].includes(b.status));
   const completedTasks = bookings.filter(b => b.status === 'completed');
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans max-w-xl mx-auto p-4 py-8">
+        <PageSkeleton layout="cards" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans">
@@ -332,8 +348,14 @@ export default function TeamDashboard() {
                         disabled={assigningId === booking.id}
                         className="w-full mt-4 py-4 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black rounded-2xl border border-orange-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                       >
-                        {assigningId === booking.id ? <Loader2 className="animate-spin" size={18}/> : <HandHeart size={18}/>}
-                        {assigningId === booking.id ? "Assigning..." : "Accept Task"}
+                        {assigningId === booking.id ? (
+                          <DotsLoader size="sm" variant="warning" label="Assigning..." />
+                        ) : (
+                          <>
+                            <HandHeart size={18}/>
+                            <span>Accept Task</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   ))}
