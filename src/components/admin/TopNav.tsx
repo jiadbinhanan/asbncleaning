@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 import { motion } from 'framer-motion';
 import { useModalStore } from '@/store/modalStore';
 
+import ThemeToggle from '@/components/common/ThemeToggle';
+
 interface TopNavProps {
   onMenuClick: () => void;
 }
@@ -35,7 +37,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
     : 'AD';
 
   return (
-    <header className="h-16 md:h-[68px] bg-white border-b border-gray-100 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
+    <header className="h-16 md:h-[68px] bg-white dark:bg-[#090e1a]/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-colors duration-300">
 
       {/* ── LEFT: Hamburger + Modal buttons ───────────────────────── */}
       <div className="flex items-center gap-2 md:gap-3">
@@ -43,7 +45,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
         {/* Hamburger — mobile only */}
         <button
           onClick={onMenuClick}
-          className="md:hidden p-2 -ml-1.5 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors shrink-0"
+          className="md:hidden p-2 -ml-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800/80 rounded-xl transition-colors shrink-0"
         >
           <Menu size={22} />
         </button>
@@ -99,39 +101,41 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
         </motion.button>
       </div>
 
-      {/* ── RIGHT: Profile ────────────────────────────────────────── */}
-      <motion.div
-        className="flex items-center gap-2.5 cursor-pointer select-none pl-2 pr-1 py-1 rounded-2xl"
-        whileHover={{
-          backgroundColor: 'rgba(239,246,255,1)',
-          boxShadow: '0 0 0 1.5px rgba(59,130,246,0.25)',
-          y: -1,
-        }}
-        whileTap={{ scale: 0.96 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-      >
-        {/* Name — always visible */}
-        <div className="text-right hidden md:block">
-          <p className="text-xs font-black text-gray-800 leading-none whitespace-nowrap">
-            {profile?.full_name || 'Admin'}
-          </p>
-          <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5 leading-none">
-            Online
-          </p>
-        </div>
+      {/* ── RIGHT: Theme Toggle + Profile ─────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
 
-        {/* Avatar */}
-        <div className="relative w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gray-200 shrink-0">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-              <span className="text-white font-black text-xs">{initials}</span>
-            </div>
-          )}
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
-        </div>
-      </motion.div>
+        <motion.div
+          className="flex items-center gap-2.5 cursor-pointer select-none pl-2 pr-1 py-1 rounded-2xl hover:bg-blue-50 dark:hover:bg-slate-800/60 transition-colors"
+          whileHover={{
+            y: -1,
+          }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+        >
+          {/* Name — always visible */}
+          <div className="text-right hidden md:block">
+            <p className="text-xs font-black text-gray-800 dark:text-slate-100 leading-none whitespace-nowrap">
+              {profile?.full_name || 'Admin'}
+            </p>
+            <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5 leading-none">
+              Online
+            </p>
+          </div>
+
+          {/* Avatar */}
+          <div className="relative w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gray-200 dark:border-slate-700 shrink-0 shadow-sm">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                <span className="text-white font-black text-xs">{initials}</span>
+              </div>
+            )}
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-slate-900 rounded-full" />
+          </div>
+        </motion.div>
+      </div>
 
     </header>
   );

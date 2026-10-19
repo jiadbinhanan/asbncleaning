@@ -271,10 +271,10 @@ export default function AdminProfile() {
     setActionPasswordUpdating(false);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
+  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
 
   return (
-    <div className="min-h-screen pb-20 p-2 md:p-6">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-20 p-2 md:p-6 font-sans">
       
       {/* ---------------- PROFILE HEADER (Cover & Avatar) ---------------- */}
       <div className="mb-8">
@@ -289,12 +289,12 @@ export default function AdminProfile() {
 
           {/* Avatar + Buttons Group */}
           <div className="relative self-center sm:self-auto shrink-0">
-            <div className="w-32 h-32 md:w-40 md:h-40 bg-white p-1.5 rounded-full shadow-2xl">
-              <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center overflow-hidden relative">
+            <div className="w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-[#0c1427] p-1.5 rounded-full shadow-2xl border dark:border-slate-800">
+              <div className="w-full h-full bg-gray-100 dark:bg-[#090d1a] rounded-full flex items-center justify-center overflow-hidden relative">
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={64} className="text-gray-400" />
+                  <User size={64} className="text-gray-400 dark:text-slate-600" />
                 )}
                 {uploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -307,7 +307,7 @@ export default function AdminProfile() {
             {/* Camera Button */}
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || isEditing} // Disable image upload while editing text if you want, or leave open
+              disabled={uploading || isEditing}
               className="absolute bottom-2 right-2 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:scale-105 transition-all"
             >
               <Camera size={20} />
@@ -317,14 +317,14 @@ export default function AdminProfile() {
 
           {/* Info + Remove Button Group */}
           <div className="py-4 text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{profile.full_name || "Admin User"}</h1>
-            <p className="text-blue-600 font-bold tracking-widest text-xs uppercase mt-1 flex items-center gap-1 justify-center sm:justify-start">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{profile.full_name || "Admin User"}</h1>
+            <p className="text-blue-600 dark:text-blue-400 font-bold tracking-widest text-xs uppercase mt-1 flex items-center gap-1 justify-center sm:justify-start">
               <ShieldCheck size={14} /> Super Admin
             </p>
             {profile.avatar_url && (
                 <button 
                   onClick={handleRemoveAvatar} 
-                  className="mt-3 mx-auto sm:mx-0 text-xs text-red-500 hover:text-red-600 font-bold flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full transition-all"
+                  className="mt-3 mx-auto sm:mx-0 text-xs text-red-500 dark:text-red-400 hover:text-red-600 font-bold flex items-center gap-1 bg-red-50 dark:bg-red-950/40 px-3 py-1 rounded-full transition-all"
                 >
                   <Trash2 size={12} /> Remove Picture
                 </button>
@@ -340,13 +340,13 @@ export default function AdminProfile() {
         <div className="lg:col-span-1 space-y-2">
           <button 
             onClick={() => setActiveTab('personal')}
-            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'personal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'}`}
+            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'personal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
           >
             <User size={20} /> Personal Details
           </button>
           <button 
             onClick={() => setActiveTab('security')}
-            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'security' ? 'bg-gray-900 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'}`}
+            className={`w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'security' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#0c1427] text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800'}`}
           >
             <KeyRound size={20} /> Security & Password
           </button>
@@ -361,14 +361,14 @@ export default function AdminProfile() {
               <motion.div 
                 key="personal"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm"
+                className="bg-white dark:bg-[#0c1427] p-8 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm"
               >
-                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                  <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
+                <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Profile Information</h2>
                   {!isEditing && (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold flex items-center gap-2 transition-all"
+                      className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 rounded-xl font-bold flex items-center gap-2 transition-all"
                     >
                       <Edit2 size={16} /> Edit Details
                     </button>
@@ -378,21 +378,21 @@ export default function AdminProfile() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Full Name</label>
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Full Name</label>
                       {isEditing ? (
                         <input 
                           value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})}
-                          className="w-full p-4 bg-gray-50 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold transition-all"
+                          className="w-full p-4 bg-gray-50 dark:bg-[#090d1a] border border-blue-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-bold transition-all"
                         />
                       ) : (
-                        <div className="w-full p-4 bg-gray-50 border border-transparent rounded-xl text-gray-900 font-bold">
+                        <div className="w-full p-4 bg-gray-50 dark:bg-[#090d1a] border border-transparent dark:border-slate-800/60 rounded-xl text-gray-900 dark:text-white font-bold">
                           {profile.full_name || "N/A"}
                         </div>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Username (ID)</label>
-                      <div className="w-full p-4 bg-gray-50 border border-transparent rounded-xl text-gray-900 font-bold">
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Username (ID)</label>
+                      <div className="w-full p-4 bg-gray-50 dark:bg-[#090d1a] border border-transparent dark:border-slate-800/60 rounded-xl text-gray-900 dark:text-white font-bold">
                         @{profile.username || "N/A"}
                       </div>
                     </div>
@@ -400,49 +400,46 @@ export default function AdminProfile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Phone Number</label>
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Phone Number</label>
                       {isEditing ? (
                         <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
                           <input 
                             value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                            className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold transition-all"
+                            className="w-full pl-11 pr-4 py-4 bg-gray-50 dark:bg-[#090d1a] border border-blue-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-bold transition-all"
                           />
                         </div>
                       ) : (
-                        <div className="relative w-full p-4 pl-11 bg-gray-50 border border-transparent rounded-xl text-gray-900 font-bold">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <div className="relative w-full p-4 pl-11 bg-gray-50 dark:bg-[#090d1a] border border-transparent dark:border-slate-800/60 rounded-xl text-gray-900 dark:text-white font-bold">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                           {profile.phone || "No phone added"}
                         </div>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">System Email</label>
-                      <div className="relative w-full p-4 pl-11 bg-gray-100 border border-transparent rounded-xl text-gray-600 font-medium">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">System Email</label>
+                      <div className="relative w-full p-4 pl-11 bg-gray-100 dark:bg-[#090d1a] border border-transparent dark:border-slate-800/60 rounded-xl text-gray-600 dark:text-slate-300 font-medium">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                         {email}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* UUID (Read Only) I deleted this function*/}
-                  
 
                   {/* Edit Actions */}
                   {isEditing && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                      className="pt-6 border-t border-gray-100 flex justify-end gap-3"
+                      className="pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3"
                     >
                       <button 
                         onClick={handleCancelEdit} 
-                        className="px-6 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                        className="px-6 py-3.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Cancel
                       </button>
                       <button 
                         onClick={handleSaveProfile} disabled={saving}
-                        className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-70"
+                        className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all disabled:opacity-70"
                       >
                         {saving ? <Loader2 className="animate-spin" size={20}/> : <Save size={20} />} 
                         Save Changes
@@ -458,19 +455,19 @@ export default function AdminProfile() {
               <motion.div 
                 key="security"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm"
+                className="bg-white dark:bg-[#0c1427] p-8 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Security Settings</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">Security Settings</h2>
                 
                 <form onSubmit={handleSecurityUpdate} className="space-y-6 max-w-md">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">New User ID</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">New User ID</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                       <input 
                         type="text" 
                         placeholder="Leave blank to keep current ID" 
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-bold placeholder:text-gray-400 dark:placeholder:text-slate-500 transition-all"
                         value={securityData.newUsername}
                         onChange={(e) => setSecurityData({ ...securityData, newUsername: e.target.value })}
                       />
@@ -478,16 +475,16 @@ export default function AdminProfile() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">New Password</label>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">New Password</label>
                     <div className="relative">
-                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                        <input 
                          type={showNewPass ? "text" : "password"} 
                          value={securityData.newPassword} onChange={e => setSecurityData({...securityData, newPassword: e.target.value})}
-                         className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
+                         className="w-full pl-11 pr-12 py-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                          placeholder="Leave blank to keep current"
                        />
-                       <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                       <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                           <AnimatePresence mode="wait">
                             <motion.div key={showNewPass ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
                               {showNewPass ? <EyeOff size={20}/> : <Eye size={20}/>}
@@ -498,16 +495,16 @@ export default function AdminProfile() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Confirm New Password</label>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Confirm New Password</label>
                     <div className="relative">
-                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                        <input 
                          type={showConfirmPass ? "text" : "password"}
                          value={securityData.confirmPassword} onChange={e => setSecurityData({...securityData, confirmPassword: e.target.value})}
-                         className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-gray-900 text-gray-900 font-bold transition-all"
+                         className="w-full pl-11 pr-12 py-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                          placeholder="Must match new password"
                        />
-                       <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                       <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                           <AnimatePresence mode="wait">
                             <motion.div key={showConfirmPass ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
                               {showConfirmPass ? <EyeOff size={20}/> : <Eye size={20}/>}
@@ -520,7 +517,7 @@ export default function AdminProfile() {
                   <div className="pt-4">
                     <button 
                       type="submit" disabled={passwordUpdating}
-                      className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black shadow-lg transition-all disabled:opacity-70"
+                      className="w-full py-4 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black dark:hover:bg-blue-700 shadow-lg transition-all disabled:opacity-70"
                     >
                       {passwordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
                       Update Security
@@ -528,23 +525,23 @@ export default function AdminProfile() {
                   </div>
                 </form>
 
-                <div className="mt-10 mb-6 border-t border-gray-100 pt-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-6">Dynamic Action Password</h3>
-                  <p className="text-sm text-gray-500 mb-6">This password is required for deleting expenses and other sensitive actions.</p>
+                <div className="mt-10 mb-6 border-t border-gray-100 dark:border-slate-800 pt-8">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Dynamic Action Password</h3>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">This password is required for deleting expenses and other sensitive actions.</p>
                   
                   <form onSubmit={handleActionPasswordUpdate} className="space-y-6 max-w-md">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Current Action Password</label>
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Current Action Password</label>
                       <div className="relative">
-                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                          <input 
                            type={showActionCurrent ? "text" : "password"} 
                            value={actionPasswordData.currentPassword} onChange={e => setActionPasswordData({...actionPasswordData, currentPassword: e.target.value})}
-                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                            placeholder="Enter current action password"
                            required
                          />
-                         <button type="button" onClick={() => setShowActionCurrent(!showActionCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                         <button type="button" onClick={() => setShowActionCurrent(!showActionCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                             <AnimatePresence mode="wait">
                               <motion.div key={showActionCurrent ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
                                 {showActionCurrent ? <EyeOff size={20}/> : <Eye size={20}/>}
@@ -555,17 +552,17 @@ export default function AdminProfile() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">New Action Password</label>
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">New Action Password</label>
                       <div className="relative">
-                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                          <input 
                            type={showActionNew ? "text" : "password"} 
                            value={actionPasswordData.newPassword} onChange={e => setActionPasswordData({...actionPasswordData, newPassword: e.target.value})}
-                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                            placeholder="Enter new action password"
                            required
                          />
-                         <button type="button" onClick={() => setShowActionNew(!showActionNew)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                         <button type="button" onClick={() => setShowActionNew(!showActionNew)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                             <AnimatePresence mode="wait">
                               <motion.div key={showActionNew ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
                                 {showActionNew ? <EyeOff size={20}/> : <Eye size={20}/>}
@@ -576,17 +573,17 @@ export default function AdminProfile() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Confirm New Password</label>
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">Confirm New Password</label>
                       <div className="relative">
-                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                          <input 
                            type={showActionConfirm ? "text" : "password"}
                            value={actionPasswordData.confirmPassword} onChange={e => setActionPasswordData({...actionPasswordData, confirmPassword: e.target.value})}
-                           className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 font-bold transition-all"
+                           className="w-full pl-11 pr-12 py-4 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                            placeholder="Must match new action password"
                            required
                          />
-                         <button type="button" onClick={() => setShowActionConfirm(!showActionConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                         <button type="button" onClick={() => setShowActionConfirm(!showActionConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                             <AnimatePresence mode="wait">
                               <motion.div key={showActionConfirm ? 'off' : 'on'} initial={{opacity: 0, rotate: -30}} animate={{opacity: 1, rotate: 0}} exit={{opacity: 0, rotate: 30}} transition={{duration: 0.2}}>
                                 {showActionConfirm ? <EyeOff size={20}/> : <Eye size={20}/>}
@@ -599,7 +596,7 @@ export default function AdminProfile() {
                     <div className="pt-4">
                       <button 
                         type="submit" disabled={actionPasswordUpdating}
-                        className="w-full py-4 bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg shadow-red-200 transition-all disabled:opacity-70"
+                        className="w-full py-4 bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all disabled:opacity-70"
                       >
                         {actionPasswordUpdating ? <Loader2 className="animate-spin" size={20}/> : <ShieldCheck size={20} />} 
                         Update Action Password
@@ -624,21 +621,21 @@ export default function AdminProfile() {
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl z-10 w-full max-w-sm overflow-hidden flex flex-col"
+              className="bg-white dark:bg-[#0c1427] rounded-3xl shadow-2xl z-10 w-full max-w-sm overflow-hidden flex flex-col border border-gray-100 dark:border-slate-800"
             >
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-gray-900">Crop Avatar</h3>
-                <button onClick={() => { setIsCropModalOpen(false); setPreviewUrl(null); }} className="text-gray-400 hover:text-gray-600">
+              <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-[#090d1a]">
+                <h3 className="font-bold text-gray-900 dark:text-white">Crop Avatar</h3>
+                <button onClick={() => { setIsCropModalOpen(false); setPreviewUrl(null); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
                   <X size={20} />
                 </button>
               </div>
               
-              <div className="p-6 bg-gray-100 flex flex-col items-center justify-center">
-                <p className="text-xs text-gray-500 mb-4 font-medium text-center">
+              <div className="p-6 bg-gray-100 dark:bg-[#070b14] flex flex-col items-center justify-center">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 font-medium text-center">
                   Image will be auto-cropped to a 1:1 square from the center.
                 </p>
                 {/* 1:1 Preview Container */}
-                <div className="w-48 h-48 rounded-full border-4 border-white shadow-lg overflow-hidden relative bg-white">
+                <div className="w-48 h-48 rounded-full border-4 border-white dark:border-slate-700 shadow-lg overflow-hidden relative bg-white dark:bg-[#090d1a]">
                   <img src={previewUrl} alt="Crop Preview" className="w-full h-full object-cover" />
                   {uploading && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -648,10 +645,10 @@ export default function AdminProfile() {
                 </div>
               </div>
 
-              <div className="p-5 flex gap-3 bg-white border-t border-gray-100">
+              <div className="p-5 flex gap-3 bg-white dark:bg-[#0c1427] border-t border-gray-100 dark:border-slate-800">
                 <button 
                   onClick={() => { setIsCropModalOpen(false); setPreviewUrl(null); }}
-                  className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 hover:bg-gray-200 rounded-xl"
+                  className="flex-1 py-3 text-gray-600 dark:text-slate-300 font-bold bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
                   disabled={uploading}
                 >
                   Cancel
@@ -659,7 +656,7 @@ export default function AdminProfile() {
                 <button 
                   onClick={handleCropAndUpload}
                   disabled={uploading}
-                  className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl flex justify-center items-center gap-2 hover:bg-blue-700 shadow-md disabled:opacity-70"
+                  className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl flex justify-center items-center gap-2 hover:bg-blue-700 shadow-md transition-colors disabled:opacity-70"
                 >
                   {uploading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} 
                   Upload

@@ -38,11 +38,11 @@ export type Team = {
 const STATUS_CONFIG: Record<string, {
   label: string; color: string; bg: string; border: string; icon: React.ReactNode;
 }> = {
-  pending:     { label: 'Pending',     color: 'text-amber-700',   bg: 'bg-amber-50',    border: 'border-amber-200',   icon: <Circle size={11} /> },
-  confirmed:   { label: 'Confirmed',   color: 'text-blue-700',    bg: 'bg-blue-50',     border: 'border-blue-200',    icon: <CheckCircle2 size={11} /> },
-  completed:   { label: 'Completed',   color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200', icon: <Check size={11} /> },
-  cancelled:   { label: 'Cancelled',   color: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200',     icon: <X size={11} /> },
-  in_progress: { label: 'In Progress', color: 'text-violet-700',  bg: 'bg-violet-50',   border: 'border-violet-200',  icon: <Zap size={11} /> },
+  pending:     { label: 'Pending',     color: 'text-amber-700 dark:text-amber-300',   bg: 'bg-amber-50 dark:bg-amber-950/40',    border: 'border-amber-200 dark:border-amber-800/50',   icon: <Circle size={11} /> },
+  confirmed:   { label: 'Confirmed',   color: 'text-blue-700 dark:text-blue-300',    bg: 'bg-blue-50 dark:bg-blue-950/40',     border: 'border-blue-200 dark:border-blue-800/50',    icon: <CheckCircle2 size={11} /> },
+  completed:   { label: 'Completed',   color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/40',  border: 'border-emerald-200 dark:border-emerald-800/50', icon: <Check size={11} /> },
+  cancelled:   { label: 'Cancelled',   color: 'text-red-700 dark:text-red-300',     bg: 'bg-red-50 dark:bg-red-950/40',      border: 'border-red-200 dark:border-red-800/50',     icon: <X size={11} /> },
+  in_progress: { label: 'In Progress', color: 'text-violet-700 dark:text-violet-300',  bg: 'bg-violet-50 dark:bg-violet-950/40',   border: 'border-violet-200 dark:border-violet-800/50',  icon: <Zap size={11} /> },
 };
 
 // ── Props ─────────────────────────────────────────────────────
@@ -90,20 +90,20 @@ function BookingCard({
       onClick={() => !isSaving && onAssign(booking)}
       className={`rounded-2xl border-2 p-4 cursor-pointer transition-all active:scale-[0.98] select-none
         ${isAssignedToThis
-          ? 'border-blue-400 bg-blue-50/40 shadow-sm shadow-blue-100'
+          ? 'border-blue-400 bg-blue-50/40 shadow-sm shadow-blue-100 dark:bg-blue-950/30 dark:border-blue-500/80 dark:shadow-none'
           : isAssignedElsewhere
-          ? 'border-amber-200 bg-amber-50/30 hover:border-amber-300'
-          : 'border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm'
+          ? 'border-amber-200 bg-amber-50/30 hover:border-amber-300 dark:bg-amber-950/20 dark:border-amber-800/40'
+          : 'border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm dark:bg-[#0c1427] dark:border-slate-800/80 dark:hover:border-slate-700'
         }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           {/* Company + Unit */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-black text-sm text-gray-900 truncate">
+            <span className="font-black text-sm text-gray-900 dark:text-white truncate">
               {booking.units?.companies?.name ?? '—'}
             </span>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/60 px-2 py-0.5 rounded-md">
               <Hash size={9} /> {booking.units?.unit_number ?? '—'}
             </span>
           </div>
@@ -115,14 +115,14 @@ function BookingCard({
             </span>
 
             {booking.cleaning_time && (
-              <span className="flex items-center gap-1 text-[10px] text-gray-700 font-black bg-gray-100 border border-gray-200 px-2 py-1 rounded-lg">
-                <Clock size={10} className="text-gray-500" />
+              <span className="flex items-center gap-1 text-[10px] text-gray-700 dark:text-slate-300 font-black bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/60 px-2 py-1 rounded-lg">
+                <Clock size={10} className="text-gray-500 dark:text-slate-400" />
                 {booking.cleaning_time.slice(0, 5)} {/* Shows 10:00 instead of 10:00:00 */}
               </span>
             )}
 
             {booking.service_type && (
-               <span className="text-[10px] font-bold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg capitalize">
+               <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800 px-2 py-1 rounded-lg capitalize">
                  {booking.service_type}
                </span>
             )}
@@ -130,7 +130,7 @@ function BookingCard({
 
           {/* Assigned-elsewhere warning */}
           {isAssignedElsewhere && (
-            <p className="text-[10px] text-amber-600 font-black mt-2 flex items-center gap-1 bg-amber-100/50 w-fit px-2 py-1 rounded">
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-black mt-2 flex items-center gap-1 bg-amber-100/50 dark:bg-amber-950/50 w-fit px-2 py-1 rounded">
               <Tag size={10} /> {compact ? '' : 'Currently: '}{elseTeam?.team_name ?? `Team #${booking.assigned_team_id}`}
             </p>
           )}
@@ -138,7 +138,7 @@ function BookingCard({
 
         {/* Toggle indicator */}
         <div className={`shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all shadow-sm
-          ${isAssignedToThis ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-200 text-gray-300'}`}
+          ${isAssignedToThis ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-200 dark:border-slate-700 text-gray-300 dark:text-slate-600'}`}
         >
           {isSaving
             ? <Loader2 size={14} className="animate-spin" />
@@ -159,24 +159,24 @@ function FilterBar({
 }: Pick<AssignmentPanelProps, 'bookingSearch' | 'bookingStatusFilter' | 'onSearchChangeAction' | 'onStatusFilterChangeAction'>) {
   return (
     <div className="flex gap-3">
-      <div className="flex items-center gap-2 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-50 transition-all">
-        <Search size={14} className="text-gray-400 shrink-0" />
+      <div className="flex items-center gap-2 flex-1 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 focus-within:border-blue-400 dark:focus-within:border-blue-500/60 focus-within:ring-2 focus-within:ring-blue-50 dark:focus-within:ring-blue-950/30 transition-all">
+        <Search size={14} className="text-gray-400 dark:text-slate-500 shrink-0" />
         <input
           type="text"
           placeholder="Search company or unit…"
           value={bookingSearch}
           onChange={e => onSearchChangeAction(e.target.value)}
-          className="bg-transparent outline-none text-sm font-bold text-gray-700 w-full placeholder:text-gray-400 placeholder:font-medium"
+          className="bg-transparent outline-none text-sm font-bold text-gray-700 dark:text-slate-200 w-full placeholder:text-gray-400 dark:placeholder:text-slate-500 font-medium"
         />
       </div>
       <select
         value={bookingStatusFilter}
         onChange={e => onStatusFilterChangeAction(e.target.value)}
-        className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 outline-none cursor-pointer focus:border-blue-400"
+        className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 dark:text-slate-300 outline-none cursor-pointer focus:border-blue-400 dark:focus:border-blue-500"
       >
         <option value="all">All Status</option>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-          <option key={key} value={key}>{cfg.label}</option>
+          <option key={key} value={key} className="dark:bg-[#0c1427] dark:text-white">{cfg.label}</option>
         ))}
       </select>
     </div>
@@ -208,9 +208,9 @@ function BookingList({
   );
 
   if (filteredBookings.length === 0) return (
-    <div className="text-center py-16 text-gray-400">
+    <div className="text-center py-16 text-gray-400 dark:text-slate-500">
       <Building2 size={40} className="mx-auto mb-3 opacity-30" />
-      <p className="font-bold text-sm text-gray-500">No bookings found</p>
+      <p className="font-bold text-sm text-gray-500 dark:text-slate-400">No bookings found</p>
       <p className="font-medium text-xs mt-1">Try adjusting your search filters.</p>
     </div>
   );
@@ -259,32 +259,32 @@ export default function AssignmentPanel({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 60 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="hidden md:flex flex-col flex-1 min-w-0 bg-white rounded-3xl border border-gray-100 shadow-lg overflow-hidden sticky top-6 max-h-[calc(100vh-6rem)]"
+        className="hidden md:flex flex-col flex-1 min-w-0 bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-lg overflow-hidden sticky top-6 max-h-[calc(100vh-6rem)]"
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white flex justify-between items-start shrink-0">
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800/80 bg-gradient-to-r from-blue-50 to-white dark:from-[#0c1427] dark:to-[#070b14] flex justify-between items-start shrink-0">
           <div>
             {/* 🚨 UPDATED: Shift Date Badge added in header */}
             <div className="flex items-center gap-2 mb-1.5">
-              <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest">Assigning to</p>
-              <span className="text-[9px] font-black text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200">
+              <p className="text-[10px] text-blue-500 dark:text-blue-400 font-black uppercase tracking-widest">Assigning to</p>
+              <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-950/40 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200 dark:border-indigo-800/50">
                 <Calendar size={10} />
                 {selectedTeam?.shift_date ? format(new Date(selectedTeam.shift_date), 'dd MMM yyyy') : 'Date Not Set'}
               </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900">{selectedTeam?.team_name}</h2>
-            <p className="text-xs text-gray-500 font-bold mt-1">Click a booking to assign or unassign</p>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">{selectedTeam?.team_name}</h2>
+            <p className="text-xs text-gray-500 dark:text-slate-400 font-bold mt-1">Click a booking to assign or unassign</p>
           </div>
           <button
             onClick={onCloseAction}
-            className="p-2 bg-white hover:bg-gray-100 text-gray-400 rounded-full border border-gray-200 transition-colors shadow-sm"
+            className="p-2 bg-white dark:bg-slate-800/60 hover:bg-gray-100 dark:hover:bg-slate-700/60 text-gray-400 dark:text-slate-400 rounded-full border border-gray-200 dark:border-slate-700 transition-colors shadow-sm"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-6 py-4 border-b border-gray-50 shrink-0">
+        <div className="px-6 py-4 border-b border-gray-50 dark:border-slate-800/60 shrink-0">
           <FilterBar
             bookingSearch={bookingSearch}
             bookingStatusFilter={bookingStatusFilter}
@@ -294,7 +294,7 @@ export default function AssignmentPanel({
         </div>
 
         {/* List */}
-        <div className="overflow-y-auto flex-1 p-5 bg-gray-50/30">
+        <div className="overflow-y-auto flex-1 p-5 bg-gray-50/30 dark:bg-[#070b14]/50">
           <BookingList
             filteredBookings={filteredBookings}
             loadingBookings={loadingBookings}
@@ -306,8 +306,8 @@ export default function AssignmentPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-          <p className="text-xs text-gray-500 font-bold text-center flex items-center justify-center gap-1.5">
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800/80 bg-white dark:bg-[#0c1427] shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+          <p className="text-xs text-gray-500 dark:text-slate-400 font-bold text-center flex items-center justify-center gap-1.5">
             <CheckCircle2 size={14} className="text-emerald-500"/> {assignedCount} booking(s) assigned to this team
           </p>
         </div>
@@ -329,33 +329,33 @@ export default function AssignmentPanel({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[2rem] shadow-2xl flex flex-col max-h-[85vh]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#0c1427] dark:border-t dark:border-slate-800 rounded-t-[2rem] shadow-2xl flex flex-col max-h-[85vh]"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-4 pb-2 shrink-0">
-          <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+          <div className="w-12 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-start shrink-0">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-start shrink-0">
           <div>
             {/* 🚨 UPDATED: Shift Date Badge added in header */}
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest">Assigning to</p>
-              <span className="text-[9px] font-black text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200">
+              <p className="text-[10px] text-blue-500 dark:text-blue-400 font-black uppercase tracking-widest">Assigning to</p>
+              <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-950/40 px-2 py-0.5 rounded flex items-center gap-1 border border-indigo-200 dark:border-indigo-800/50">
                 <Calendar size={10} />
                 {selectedTeam?.shift_date ? format(new Date(selectedTeam.shift_date), 'dd MMM yyyy') : ''}
               </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900">{selectedTeam?.team_name}</h2>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">{selectedTeam?.team_name}</h2>
           </div>
-          <button onClick={onCloseAction} className="p-2 bg-gray-50 border border-gray-200 rounded-full text-gray-500 mt-1">
+          <button onClick={onCloseAction} className="p-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full text-gray-500 dark:text-slate-400 mt-1">
             <X size={18} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-4 py-3 border-b border-gray-50 shrink-0 bg-white">
+        <div className="px-4 py-3 border-b border-gray-50 dark:border-slate-800 shrink-0 bg-white dark:bg-[#0c1427]">
           <FilterBar
             bookingSearch={bookingSearch}
             bookingStatusFilter={bookingStatusFilter}
@@ -365,7 +365,7 @@ export default function AssignmentPanel({
         </div>
 
         {/* List */}
-        <div className="overflow-y-auto flex-1 p-4 bg-gray-50/30">
+        <div className="overflow-y-auto flex-1 p-4 bg-gray-50/30 dark:bg-[#070b14]/50">
           <BookingList
             filteredBookings={filteredBookings}
             loadingBookings={loadingBookings}

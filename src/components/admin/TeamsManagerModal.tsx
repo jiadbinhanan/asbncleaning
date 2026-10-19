@@ -364,7 +364,7 @@ export default function TeamsManagerModal() {
             variants={modalVariants}
             initial="hidden" animate="visible" exit="exit"
             transition={{ type: 'spring' as const, stiffness: 320, damping: 28 }}
-            className="relative w-full sm:max-w-6xl bg-[#F8FAFC] rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
+            className="relative w-full sm:max-w-6xl bg-[#F8FAFC] dark:bg-[#070b14] rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
             style={{ height: '94vh' }}
           >
 
@@ -411,7 +411,7 @@ export default function TeamsManagerModal() {
                     onClick={() => { setActiveTab(tab); closeAssignPanel(); }}
                     className={`px-5 py-1.5 rounded-lg text-xs font-black transition-all ${
                       activeTab === tab
-                        ? 'bg-white text-blue-700 shadow-sm'
+                        ? 'bg-white dark:bg-blue-600 text-blue-700 dark:text-white shadow-sm'
                         : 'text-blue-200/70 hover:text-white'
                     }`}
                   >
@@ -501,18 +501,18 @@ export default function TeamsManagerModal() {
 
                   {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
                         <Loader2 size={22} className="animate-spin text-blue-500" />
                       </div>
-                      <p className="text-gray-400 text-sm font-semibold">Loading teams…</p>
+                      <p className="text-gray-400 dark:text-slate-500 text-sm font-semibold">Loading teams…</p>
                     </div>
 
                   ) : displayTeams.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm mt-2">
-                      <Users size={48} className="text-gray-200" />
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white dark:bg-[#0c1427] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 shadow-sm mt-2">
+                      <Users size={48} className="text-gray-200 dark:text-slate-700" />
                       <div className="text-center">
-                        <p className="font-black text-gray-600 text-base">No squads found</p>
-                        <p className="text-gray-400 text-sm mt-1">
+                        <p className="font-black text-gray-600 dark:text-slate-300 text-base">No squads found</p>
+                        <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">
                           {activeTab === 'active'
                             ? `No teams for ${getFormatDateLabel(activeDateFilter)}.`
                             : 'No archived records for this date.'}
@@ -521,7 +521,7 @@ export default function TeamsManagerModal() {
                       {activeTab === 'active' && (
                         <button
                           onClick={openCreateModal}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-black transition-all"
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all"
                         >
                           <Plus size={14} /> Create Squad
                         </button>
@@ -535,11 +535,11 @@ export default function TeamsManagerModal() {
                         <div key={date}>
                           {activeDateFilter === 'all' && (
                             <div className="flex items-center gap-3 mb-3">
-                              <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black flex items-center gap-1.5 border border-blue-200">
+                              <div className="px-3 py-1 bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded-lg text-[10px] font-black flex items-center gap-1.5 border border-blue-200 dark:border-blue-800">
                                 <CalendarDays size={11} />
                                 {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                               </div>
-                              <div className="h-px bg-gray-200 flex-1" />
+                              <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1" />
                             </div>
                           )}
                           <div className={`grid gap-4 ${isPanelOpen ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
@@ -555,29 +555,29 @@ export default function TeamsManagerModal() {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ delay: idx * 0.04 }}
                                     onClick={() => openAssignPanel(team.id)}
-                                    className={`bg-white rounded-2xl border-2 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group ${
+                                    className={`bg-white dark:bg-[#0c1427] rounded-2xl border-2 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group ${
                                       isSelected
-                                        ? 'border-blue-400 ring-2 ring-blue-100 shadow-blue-100'
-                                        : 'border-gray-100 hover:border-blue-200'
+                                        ? 'border-blue-400 dark:border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/40 shadow-blue-100 dark:shadow-none'
+                                        : 'border-gray-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-slate-700'
                                     }`}
                                   >
                                     {/* Card header */}
                                     <div className={`p-4 border-b flex justify-between items-start transition-colors ${
-                                      isSelected ? 'bg-blue-50/60 border-blue-100' : 'bg-blue-50/20 border-gray-50'
+                                      isSelected ? 'bg-blue-50/60 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900/40' : 'bg-blue-50/20 dark:bg-slate-900/40 border-gray-50 dark:border-slate-800'
                                     }`}>
                                       <div className="flex-1 min-w-0">
-                                        <h3 className="font-black text-base text-gray-900 truncate">{team.team_name}</h3>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                                        <h3 className="font-black text-base text-gray-900 dark:text-white truncate">{team.team_name}</h3>
+                                        <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1">
                                           <Clock size={10} className="text-blue-400" />
                                           Updated: {format(new Date(team.updated_at), 'h:mm a')}
                                         </p>
                                         <div className="mt-2">
                                           {team.bookings && team.bookings.length > 0 ? (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase border border-emerald-100">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase border border-emerald-100 dark:border-emerald-800/60">
                                               <Check size={10} /> {team.bookings.length} Assigned
                                             </span>
                                           ) : (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-black uppercase border border-gray-200">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-400 text-[10px] font-black uppercase border border-gray-200 dark:border-slate-700">
                                               <Users size={10} /> Not Assigned
                                             </span>
                                           )}
@@ -588,14 +588,14 @@ export default function TeamsManagerModal() {
                                       <div className="flex gap-1.5 ml-2 shrink-0" onClick={e => e.stopPropagation()}>
                                         <button
                                           onClick={() => openEditModal(team)}
-                                          className="p-1.5 bg-white text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-100 transition-all shadow-sm"
+                                          className="p-1.5 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white rounded-lg border border-blue-100 dark:border-slate-700 transition-all shadow-sm"
                                           title="Edit"
                                         >
                                           <Edit size={13} />
                                         </button>
                                         <button
                                           onClick={() => handleArchiveTeam(team.id)}
-                                          className="p-1.5 bg-white text-red-500 hover:bg-red-500 hover:text-white rounded-lg border border-red-100 transition-all shadow-sm"
+                                          className="p-1.5 bg-white dark:bg-slate-800 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-lg border border-red-100 dark:border-slate-700 transition-all shadow-sm"
                                           title="Archive"
                                         >
                                           <Archive size={13} />
@@ -606,8 +606,8 @@ export default function TeamsManagerModal() {
                                     {/* Members */}
                                     <div className="p-4 flex-1">
                                       <div className="flex justify-between items-center mb-2">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Members</p>
-                                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black">
+                                        <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Members</p>
+                                        <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-black">
                                           {team.member_ids?.length ?? 0}
                                         </span>
                                       </div>
@@ -615,13 +615,13 @@ export default function TeamsManagerModal() {
                                         {team.member_ids?.map(memberId => {
                                           const agent = getAgentDetails(memberId);
                                           return (
-                                            <div key={memberId} className="flex items-center gap-1 pl-1 pr-2 py-0.5 bg-white rounded-full border border-gray-200 shadow-sm">
-                                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[9px] font-bold text-gray-600 overflow-hidden shrink-0">
+                                            <div key={memberId} className="flex items-center gap-1 pl-1 pr-2 py-0.5 bg-white dark:bg-slate-800/80 rounded-full border border-gray-200 dark:border-slate-700 shadow-sm">
+                                              <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-gray-600 dark:text-slate-300 overflow-hidden shrink-0">
                                                 {agent?.avatar_url
                                                   ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
                                                   : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={10} />}
                                               </div>
-                                              <span className="text-[10px] font-bold text-gray-700 truncate max-w-[80px]">
+                                              <span className="text-[10px] font-bold text-gray-700 dark:text-slate-200 truncate max-w-[80px]">
                                                 {agent?.full_name ?? agent?.username ?? 'Unknown'}
                                               </span>
                                             </div>
@@ -633,7 +633,7 @@ export default function TeamsManagerModal() {
                                     {/* Assign CTA */}
                                     {!isPanelOpen && (
                                       <div className="px-4 pb-3">
-                                        <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-[10px] font-black uppercase tracking-wider group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                                        <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
                                           <ArrowLeftRight size={11} /> Assign Tasks
                                         </div>
                                       </div>
@@ -656,14 +656,14 @@ export default function TeamsManagerModal() {
                     <div className="space-y-10 mt-2">
                       {sortedArchivedDates.map(date => (
                         <div key={date} className="relative">
-                          <div className="flex items-center gap-3 mb-5 sticky top-0 z-10 bg-[#F8FAFC] py-1.5">
-                            <div className="px-3 py-1 bg-gray-200 text-gray-600 rounded-lg text-xs font-bold flex items-center gap-2">
-                              <CalendarDays size={13} className="text-gray-500" />
+                          <div className="flex items-center gap-3 mb-5 sticky top-0 z-10 bg-[#F8FAFC] dark:bg-[#070b14] py-1.5">
+                            <div className="px-3 py-1 bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-slate-300 rounded-lg text-xs font-bold flex items-center gap-2">
+                              <CalendarDays size={13} className="text-gray-500 dark:text-slate-400" />
                               {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                             </div>
-                            <div className="h-px bg-gray-200 flex-1" />
+                            <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1" />
                           </div>
-                          <div className="border-l-2 border-gray-200 ml-6 space-y-5">
+                          <div className="border-l-2 border-gray-200 dark:border-slate-800 ml-6 space-y-5">
                             {groupedArchivedTeams[date].map(team => (
                               <motion.div
                                 key={team.id}
@@ -671,25 +671,25 @@ export default function TeamsManagerModal() {
                                 animate={{ opacity: 1, x: 0 }}
                                 className="relative pl-8"
                               >
-                                <div className="absolute -left-[10px] top-4 w-4 h-4 rounded-full border-4 border-[#F8FAFC] bg-blue-400" />
-                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="absolute -left-[10px] top-4 w-4 h-4 rounded-full border-4 border-[#F8FAFC] dark:border-[#070b14] bg-blue-400" />
+                                <div className="bg-white dark:bg-[#0c1427] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                                   <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h3 className="font-black text-sm text-gray-800">{team.team_name}</h3>
-                                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-black uppercase">Closed</span>
+                                      <h3 className="font-black text-sm text-gray-800 dark:text-white">{team.team_name}</h3>
+                                      <span className="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 rounded text-[10px] font-black uppercase">Closed</span>
                                     </div>
-                                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold flex items-center gap-1">
                                       <Clock size={10} /> Closed at {format(new Date(team.updated_at), 'h:mm a')}
                                     </p>
                                     <div className="mt-1.5">
                                       {team.bookings && team.bookings.length > 0 ? (
-                                        <span className="text-[10px] text-emerald-600 font-black">
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black">
                                           {team.bookings.map((b: Booking) =>
                                             `${b.units?.companies?.name ?? 'Unknown'} (U-${b.units?.unit_number ?? '?'})`
                                           ).join(', ')}
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] text-gray-400 font-black">Not Assigned</span>
+                                        <span className="text-[10px] text-gray-400 dark:text-slate-500 font-black">Not Assigned</span>
                                       )}
                                     </div>
                                   </div>
@@ -697,13 +697,13 @@ export default function TeamsManagerModal() {
                                     {team.member_ids?.map(memberId => {
                                       const agent = getAgentDetails(memberId);
                                       return (
-                                        <div key={memberId} className="flex items-center gap-1 pl-1 pr-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
-                                          <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-black text-gray-600 overflow-hidden shrink-0">
+                                        <div key={memberId} className="flex items-center gap-1 pl-1 pr-2 py-0.5 bg-gray-50 dark:bg-slate-800/80 rounded-full border border-gray-100 dark:border-slate-700">
+                                          <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[9px] font-black text-gray-600 dark:text-slate-300 overflow-hidden shrink-0">
                                             {agent?.avatar_url
                                               ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
                                               : agent?.username?.slice(0, 2).toUpperCase() ?? <User size={10} />}
                                           </div>
-                                          <span className="text-[10px] font-bold text-gray-600 truncate max-w-[80px]">
+                                          <span className="text-[10px] font-bold text-gray-600 dark:text-slate-300 truncate max-w-[80px]">
                                             {agent?.full_name?.split(' ')[0] ?? agent?.username ?? 'Unknown'}
                                           </span>
                                         </div>
@@ -724,7 +724,7 @@ export default function TeamsManagerModal() {
               {/* RIGHT: Assignment Panel */}
               <AnimatePresence>
                 {isPanelOpen && (
-                  <div className="flex-1 overflow-hidden border-l border-gray-100 bg-white">
+                  <div className="flex-1 overflow-hidden border-l border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0c1427]">
                     <AssignmentPanel
                       selectedTeam={selectedTeam}
                       activeTeams={activeTeams}
@@ -760,22 +760,22 @@ export default function TeamsManagerModal() {
                     variants={formVariants}
                     initial="hidden" animate="visible" exit="exit"
                     transition={{ type: 'spring' as const, stiffness: 380, damping: 30 }}
-                    className="relative w-full sm:max-w-2xl bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
+                    className="relative w-full sm:max-w-2xl bg-white dark:bg-[#0c1427] dark:border dark:border-slate-800 rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
                     style={{ maxHeight: '88vh' }}
                   >
                     {/* Form header */}
-                    <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
+                    <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 bg-gray-50 dark:bg-[#090d1a] shrink-0">
                       <div>
-                        <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
                           {formMode === 'create'
-                            ? <><UserPlus size={18} className="text-blue-600" /> Create New Squad</>
-                            : <><Edit size={18} className="text-blue-600" /> Edit Team Details</>}
+                            ? <><UserPlus size={18} className="text-blue-600 dark:text-blue-400" /> Create New Squad</>
+                            : <><Edit size={18} className="text-blue-600 dark:text-blue-400" /> Edit Team Details</>}
                         </h3>
-                        <p className="text-xs text-gray-500 font-medium mt-0.5">Set shift schedule and select agents.</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">Set shift schedule and select agents.</p>
                       </div>
                       <button
                         onClick={() => setIsFormOpen(false)}
-                        className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-400 hover:bg-gray-100 flex items-center justify-center transition-all"
+                        className="w-9 h-9 rounded-full bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/60 flex items-center justify-center transition-all"
                       >
                         <X size={16} />
                       </button>
@@ -786,21 +786,21 @@ export default function TeamsManagerModal() {
                       {/* Name + Date */}
                       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Team Name</label>
+                          <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2">Team Name</label>
                           <input
                             placeholder="e.g. Team Alpha"
                             value={teamName}
                             onChange={e => setTeamName(e.target.value)}
-                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 font-bold transition-all"
+                            className="w-full p-4 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 dark:text-white font-bold transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Shift Date</label>
+                          <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2">Shift Date</label>
                           <input
                             type="date"
                             value={shiftDateInput}
                             onChange={e => setShiftDateInput(e.target.value)}
-                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 font-bold transition-all cursor-pointer"
+                            className="w-full p-4 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg text-gray-900 dark:text-white font-bold transition-all cursor-pointer"
                           />
                         </div>
                       </div>
@@ -808,25 +808,25 @@ export default function TeamsManagerModal() {
                       {/* Agent list */}
                       <div>
                         <div className="flex justify-between items-center mb-3">
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">All Active Agents</label>
-                          <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-md border border-blue-100">
+                          <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">All Active Agents</label>
+                          <span className="text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-1 rounded-md border border-blue-100 dark:border-blue-800/50">
                             {agents.length} Total
                           </span>
                         </div>
 
                         {/* Agent search */}
-                        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-3 focus-within:border-blue-400 transition-all">
-                          <Search size={14} className="text-gray-400 shrink-0" />
+                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 mb-3 focus-within:border-blue-400 transition-all">
+                          <Search size={14} className="text-gray-400 dark:text-slate-500 shrink-0" />
                           <input
                             placeholder="Search agent…"
                             value={agentSearch}
                             onChange={e => setAgentSearch(e.target.value)}
-                            className="bg-transparent outline-none text-sm font-bold text-gray-700 w-full placeholder:text-gray-400 placeholder:font-medium"
+                            className="bg-transparent outline-none text-sm font-bold text-gray-700 dark:text-slate-200 w-full placeholder:text-gray-400 dark:placeholder:text-slate-500 font-medium"
                           />
                         </div>
 
                         {filteredAgentsForForm.length === 0 ? (
-                          <div className="p-6 bg-gray-50 text-gray-500 font-bold rounded-2xl text-sm text-center border-2 border-dashed border-gray-200">
+                          <div className="p-6 bg-gray-50 dark:bg-[#070b14] text-gray-500 dark:text-slate-400 font-bold rounded-2xl text-sm text-center border-2 border-dashed border-gray-200 dark:border-slate-800">
                             No agents found.
                           </div>
                         ) : (
@@ -841,25 +841,25 @@ export default function TeamsManagerModal() {
                                   )}
                                   className={`p-3 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition-all active:scale-95 ${
                                     isSelected
-                                      ? 'border-blue-500 bg-blue-50/50 shadow-sm'
-                                      : 'border-gray-100 hover:border-gray-300 bg-white'
+                                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 dark:border-blue-500/80 shadow-sm'
+                                      : 'border-gray-100 hover:border-gray-300 dark:border-slate-800/80 dark:hover:border-slate-700 bg-white dark:bg-[#090d1a]'
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 overflow-hidden shrink-0 border border-gray-200">
+                                    <div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 dark:text-slate-300 overflow-hidden shrink-0 border border-gray-200 dark:border-slate-700">
                                       {agent.avatar_url
                                         ? <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
                                         : agent.username.slice(0, 2).toUpperCase()}
                                     </div>
                                     <div>
-                                      <span className={`block font-bold text-sm leading-tight ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
+                                      <span className={`block font-bold text-sm leading-tight ${isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-800 dark:text-slate-200'}`}>
                                         {agent.full_name ?? agent.username}
                                       </span>
-                                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Agent</span>
+                                      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider">Agent</span>
                                     </div>
                                   </div>
                                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-200'
+                                    isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-200 dark:border-slate-700'
                                   }`}>
                                     {isSelected && <Check size={14} strokeWidth={3} />}
                                   </div>
@@ -872,17 +872,17 @@ export default function TeamsManagerModal() {
                     </div>
 
                     {/* Form footer */}
-                    <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-4 shrink-0">
+                    <div className="p-6 border-t border-gray-100 dark:border-slate-800/80 bg-gray-50 dark:bg-[#090d1a] flex gap-4 shrink-0">
                       <button
                         onClick={() => setIsFormOpen(false)}
-                        className="w-1/3 py-3.5 text-gray-500 hover:bg-gray-200 rounded-xl font-bold transition-colors"
+                        className="w-1/3 py-3.5 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSubmit}
                         disabled={!teamName || selectedAgentIds.length === 0 || !shiftDateInput || submitting}
-                        className="w-2/3 py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-black disabled:opacity-50 transition-all flex justify-center items-center gap-2 shadow-lg"
+                        className="w-2/3 py-3.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-blue-500 disabled:opacity-50 transition-all flex justify-center items-center gap-2 shadow-lg"
                       >
                         {submitting
                           ? <Loader2 size={16} className="animate-spin" />

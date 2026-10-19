@@ -39,12 +39,12 @@ type Team = { id: number; team_name: string; shift_date: string };
 
 // ── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CFG: Record<string, { label: string; dot: string; badge: string }> = {
-  pending:     { label: 'Pending',     dot: 'bg-amber-400',   badge: 'bg-amber-50 text-amber-700 border-amber-200' },
-  active:      { label: 'Active',      dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  in_progress: { label: 'In Progress', dot: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700 border-violet-200' },
-  completed:   { label: 'Completed',   dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  finalized:   { label: 'Finalized',   dot: 'bg-teal-500',    badge: 'bg-teal-50 text-teal-700 border-teal-200' },
-  cancelled:   { label: 'Cancelled',   dot: 'bg-red-400',     badge: 'bg-red-50 text-red-700 border-red-200' },
+  pending:     { label: 'Pending',     dot: 'bg-amber-400',   badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50' },
+  active:      { label: 'Active',      dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50' },
+  in_progress: { label: 'In Progress', dot: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/50' },
+  completed:   { label: 'Completed',   dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50' },
+  finalized:   { label: 'Finalized',   dot: 'bg-teal-500',    badge: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/50' },
+  cancelled:   { label: 'Cancelled',   dot: 'bg-red-400',     badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/50' },
 };
 
 // ── Framer variants ───────────────────────────────────────────────────────────
@@ -68,13 +68,13 @@ const formV: Variants = {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">{label}</label>
+      <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">{label}</label>
       {children}
     </div>
   );
 }
 
-const inputCls = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium text-sm transition-all";
+const inputCls = "w-full px-4 py-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white font-medium text-sm transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500";
 const selectCls = inputCls + " cursor-pointer";
 
 // ── Custom Combobox (Searchable Dropdown) ────────────────────────────────────
@@ -148,7 +148,7 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
           ref={inputRef}
           type="text"
           disabled={disabled}
-          className="w-full p-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium disabled:opacity-50 transition-all cursor-text"
+          className="w-full p-3.5 pr-10 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium disabled:opacity-50 transition-all cursor-text placeholder:text-gray-400 dark:placeholder:text-slate-500"
           placeholder={placeholder}
           value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : "")}
           onChange={(e) => {
@@ -174,10 +174,10 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
               if (!isOpen) inputRef.current?.focus();
             }
           }}
-          className="absolute right-0 top-0 h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50 outline-none"
+          className="absolute right-0 top-0 h-full px-4 flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors disabled:opacity-50 outline-none"
         >
           <ChevronDown
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-500' : ''}`}
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-500 dark:text-blue-400' : ''}`}
             size={18}
           />
         </button>
@@ -190,7 +190,7 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] max-h-60 overflow-y-auto"
+            className="absolute z-50 w-full mt-1 bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] max-h-60 overflow-y-auto"
           >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt: any, index: number) => (
@@ -202,15 +202,15 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
                     setSearchTerm("");
                   }}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`p-3 cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
-                    index === highlightedIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                  } ${opt.id === "" ? 'text-gray-400 italic bg-gray-50/50 hover:bg-gray-100' : ''}`}
+                  className={`p-3 cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 dark:border-slate-800/60 last:border-0 ${
+                    index === highlightedIndex ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'text-gray-700 dark:text-slate-200'
+                  } ${opt.id === "" ? 'text-gray-400 dark:text-slate-500 italic bg-gray-50/50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800' : ''}`}
                 >
                   {opt.label}
                 </div>
               ))
             ) : (
-              <div className="p-3 text-sm text-gray-400 text-center font-medium">No results found</div>
+              <div className="p-3 text-sm text-gray-400 dark:text-slate-500 text-center font-medium">No results found</div>
             )}
           </motion.div>
         )}
@@ -498,7 +498,7 @@ export default function BookingsManagerModal() {
               variants={modalV}
               initial="hidden" animate="visible" exit="exit"
               transition={{ type: 'spring' as const, stiffness: 320, damping: 28 }}
-              className="relative w-full sm:max-w-5xl bg-[#F8FAFC] rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
+              className="relative w-full sm:max-w-5xl bg-[#F8FAFC] dark:bg-[#070b14] rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden dark:border dark:border-slate-800"
               style={{ height: '94vh' }}
             >
 
@@ -552,19 +552,19 @@ export default function BookingsManagerModal() {
               </div>
 
               {/* ══ FILTER BAR ════════════════════════════════════════════ */}
-              <div className="shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 bg-white space-y-2">
+              <div className="shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 dark:border-slate-800/80 bg-white dark:bg-[#0c1427] space-y-2">
                 {/* Search + date range + filter toggle */}
                 <div className="flex gap-2">
-                  <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-all">
-                    <Search size={14} className="text-gray-400 shrink-0" />
+                  <div className="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 focus-within:border-blue-400 dark:focus-within:border-blue-500/60 transition-all">
+                    <Search size={14} className="text-gray-400 dark:text-slate-500 shrink-0" />
                     <input
                       placeholder="Search ref, company, unit…"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="bg-transparent outline-none text-sm font-medium text-gray-700 w-full placeholder:text-gray-400"
+                      className="bg-transparent outline-none text-sm font-medium text-gray-700 dark:text-slate-200 w-full placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     />
                     {searchQuery && (
-                      <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                      <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
                         <X size={13} />
                       </button>
                     )}
@@ -572,14 +572,14 @@ export default function BookingsManagerModal() {
                   <button
                     onClick={() => setShowFilters(v => !v)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black transition-all ${
-                      showFilters ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300'
+                      showFilters ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 dark:bg-[#070b14] text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500/50'
                     }`}
                   >
                     <Filter size={13} /> Filters {showFilters && <X size={11} />}
                   </button>
                   <button
                     onClick={fetchBookings}
-                    className="w-9 h-9 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-all"
+                    className="w-9 h-9 flex items-center justify-center bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-gray-500 dark:text-slate-400 hover:border-blue-300 dark:hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
                   >
                     <RotateCcw size={14} />
                   </button>
@@ -596,35 +596,35 @@ export default function BookingsManagerModal() {
                     >
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 pb-1">
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">From</p>
+                          <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">From</p>
                           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-blue-400 cursor-pointer" />
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-medium text-gray-700 dark:text-slate-200 outline-none focus:border-blue-400 dark:focus:border-blue-500 cursor-pointer" />
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">To</p>
+                          <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">To</p>
                           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-blue-400 cursor-pointer" />
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-medium text-gray-700 dark:text-slate-200 outline-none focus:border-blue-400 dark:focus:border-blue-500 cursor-pointer" />
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Company</p>
+                          <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Company</p>
                           <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-blue-400 cursor-pointer">
-                            <option value="">All Companies</option>
-                            {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-medium text-gray-700 dark:text-slate-200 outline-none focus:border-blue-400 dark:focus:border-blue-500 cursor-pointer">
+                            <option value="" className="dark:bg-[#0c1427]">All Companies</option>
+                            {companies.map(c => <option key={c.id} value={c.name} className="dark:bg-[#0c1427]">{c.name}</option>)}
                           </select>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                          <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
                           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-blue-400 cursor-pointer">
-                            <option value="">All Statuses</option>
-                            {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                            className="w-full px-3 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-medium text-gray-700 dark:text-slate-200 outline-none focus:border-blue-400 dark:focus:border-blue-500 cursor-pointer">
+                            <option value="" className="dark:bg-[#0c1427]">All Statuses</option>
+                            {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k} className="dark:bg-[#0c1427]">{v.label}</option>)}
                           </select>
                         </div>
                       </div>
                       <button
                         onClick={() => { setSearchQuery(''); setFilterCompany(''); setFilterStatus(''); }}
-                        className="w-full py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg font-black text-xs flex items-center justify-center gap-1.5 transition-all"
+                        className="w-full py-2 text-red-500 bg-red-50 dark:bg-red-950/30 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg font-black text-xs flex items-center justify-center gap-1.5 transition-all"
                       >
                         <FilterX size={13} /> Clear Filters
                       </button>
@@ -637,22 +637,22 @@ export default function BookingsManagerModal() {
               <div className="flex-1 overflow-y-auto px-4 py-4">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-24 gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
                       <Loader2 size={22} className="animate-spin text-blue-500" />
                     </div>
-                    <p className="text-gray-400 text-sm font-semibold">Loading bookings…</p>
+                    <p className="text-gray-400 dark:text-slate-500 text-sm font-semibold">Loading bookings…</p>
                   </div>
 
                 ) : filteredBookings.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-3xl border border-dashed border-gray-200 mt-2">
-                    <Calendar size={48} className="text-gray-200" />
+                  <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white dark:bg-[#0c1427] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 mt-2">
+                    <Calendar size={48} className="text-gray-200 dark:text-slate-700" />
                     <div className="text-center">
-                      <p className="font-black text-gray-600 text-base">No bookings found</p>
-                      <p className="text-gray-400 text-sm mt-1">Try adjusting your dates or filters.</p>
+                      <p className="font-black text-gray-600 dark:text-slate-300 text-base">No bookings found</p>
+                      <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">Try adjusting your dates or filters.</p>
                     </div>
                     <button
                       onClick={() => setIsAddOpen(true)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-black transition-all"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all"
                     >
                       <Plus size={14} /> Add Booking
                     </button>
@@ -663,13 +663,13 @@ export default function BookingsManagerModal() {
                     {sortedDates.map(date => (
                       <div key={date}>
                         {/* Date header */}
-                        <div className="flex items-center gap-3 mb-3 sticky top-0 z-10 bg-[#F8FAFC] py-1.5">
-                          <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black border border-blue-200">
+                        <div className="flex items-center gap-3 mb-3 sticky top-0 z-10 bg-[#F8FAFC] dark:bg-[#070b14] py-1.5">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg text-[10px] font-black border border-blue-200 dark:border-blue-800/50">
                             <Calendar size={11} />
                             {format(parseISO(date), 'EEEE, dd MMM yyyy')}
                           </div>
-                          <div className="h-px bg-gray-200 flex-1" />
-                          <span className="text-[10px] font-black text-gray-400">
+                          <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1" />
+                          <span className="text-[10px] font-black text-gray-400 dark:text-slate-500">
                             {groupedBookings[date].length} booking{groupedBookings[date].length !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -686,7 +686,7 @@ export default function BookingsManagerModal() {
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.03 }}
-                                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                                className="bg-white dark:bg-[#0c1427] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
                               >
                                 {/* Status bar */}
                                 <div className={`h-0.5 ${cfg.dot}`} />
@@ -695,13 +695,13 @@ export default function BookingsManagerModal() {
                                   {/* Left: icon + identity */}
                                   <div className="flex items-center gap-3 flex-1 min-w-0">
                                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                                      ['completed', 'finalized'].includes(booking.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+                                      ['completed', 'finalized'].includes(booking.status) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
                                     }`}>
                                       <Home size={20} />
                                     </div>
                                     <div className="min-w-0">
                                       <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                        <span className="text-[9px] font-black text-gray-400 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 uppercase tracking-widest">
+                                        <span className="text-[9px] font-black text-gray-400 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/60 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700/60 uppercase tracking-widest">
                                           {booking.booking_ref || `ID-${booking.id}`}
                                         </span>
                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${cfg.badge} flex items-center gap-1`}>
@@ -709,10 +709,10 @@ export default function BookingsManagerModal() {
                                           {cfg.label}
                                         </span>
                                       </div>
-                                      <p className="font-black text-gray-900 text-base leading-tight truncate">
+                                      <p className="font-black text-gray-900 dark:text-white text-base leading-tight truncate">
                                         Unit {booking.units?.unit_number}
                                       </p>
-                                      <p className="text-xs text-gray-500 font-medium truncate">
+                                      <p className="text-xs text-gray-500 dark:text-slate-400 font-medium truncate">
                                         {booking.units?.companies?.name} · {booking.units?.building_name}
                                       </p>
                                     </div>
@@ -721,31 +721,31 @@ export default function BookingsManagerModal() {
                                   {/* Mid: details */}
                                   <div className="grid grid-cols-3 gap-3 md:flex md:items-center md:gap-4 text-left shrink-0">
                                     <div>
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Time</p>
-                                      <p className="text-xs font-bold text-gray-800 flex items-center gap-1">
+                                      <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Time</p>
+                                      <p className="text-xs font-bold text-gray-800 dark:text-slate-200 flex items-center gap-1">
                                         <Clock size={11} className="text-blue-500" />
                                         {booking.cleaning_time?.slice(0, 5)}
                                       </p>
                                     </div>
                                     <div className="col-span-2 md:w-[130px]">
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Service</p>
-                                      <p className="text-xs font-bold text-gray-800 truncate">{booking.service_type}</p>
+                                      <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Service</p>
+                                      <p className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">{booking.service_type}</p>
                                       {booking.checklist_templates ? (
-                                        <p className="text-[10px] text-gray-500 flex items-center gap-1 truncate">
+                                        <p className="text-[10px] text-gray-500 dark:text-slate-400 flex items-center gap-1 truncate">
                                           <ClipboardList size={9} /> {booking.checklist_templates.title}
                                         </p>
                                       ) : (
-                                        <p className="text-[10px] text-orange-400 italic">No checklist</p>
+                                        <p className="text-[10px] text-orange-400 dark:text-amber-400 italic">No checklist</p>
                                       )}
                                     </div>
                                     <div className="col-span-3 md:w-[120px]">
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Team</p>
+                                      <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Team</p>
                                       {booking.teams ? (
-                                        <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                                        <span className="text-xs font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
                                           <Users size={11} className="shrink-0" /> {booking.teams.team_name}
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] text-orange-500 font-black flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-md w-fit border border-orange-100">
+                                        <span className="text-[10px] text-orange-500 dark:text-amber-400 font-black flex items-center gap-1 bg-orange-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md w-fit border border-orange-100 dark:border-amber-800/50">
                                           <AlertCircle size={10} /> Unassigned
                                         </span>
                                       )}
@@ -755,8 +755,8 @@ export default function BookingsManagerModal() {
                                   {/* Right: price + actions */}
                                   <div className="flex items-center gap-2 shrink-0 md:ml-2">
                                     <div className="text-right hidden md:block">
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Price</p>
-                                      <p className="font-black text-gray-900 text-base">
+                                      <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Price</p>
+                                      <p className="font-black text-gray-900 dark:text-white text-base">
                                         {booking.price ? `AED ${booking.price}` : '—'}
                                       </p>
                                     </div>
@@ -769,8 +769,8 @@ export default function BookingsManagerModal() {
                                         title={booking.status === 'pending' ? 'Activate' : 'Revert to Pending'}
                                         className={`p-2 rounded-xl border transition-all ${
                                           booking.status === 'active'
-                                            ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white'
-                                            : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-600 hover:text-white'
+                                            ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/60 hover:bg-blue-600 hover:text-white'
+                                            : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60 hover:bg-amber-600 hover:text-white'
                                         }`}
                                       >
                                         {activatingId === booking.id
@@ -812,17 +812,17 @@ export default function BookingsManagerModal() {
                       variants={formV}
                       initial="hidden" animate="visible" exit="exit"
                       transition={{ type: 'spring' as const, stiffness: 380, damping: 30 }}
-                      className="relative w-full sm:max-w-2xl bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
+                      className="relative w-full sm:max-w-2xl bg-white dark:bg-[#0c1427] dark:border dark:border-slate-800 rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
                       style={{ maxHeight: '88vh' }}
                     >
-                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 bg-gray-50 dark:bg-[#090d1a] shrink-0">
                         <div>
-                          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                            <Plus size={18} className="text-blue-600" /> New Cleaning Request
+                          <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                            <Plus size={18} className="text-blue-600 dark:text-blue-400" /> New Cleaning Request
                           </h3>
-                          <p className="text-xs text-gray-500 font-medium mt-0.5">Fill in the details below to create a booking.</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">Fill in the details below to create a booking.</p>
                         </div>
-                        <button onClick={() => setIsAddOpen(false)} className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-400 hover:bg-gray-100 flex items-center justify-center">
+                        <button onClick={() => setIsAddOpen(false)} className="w-9 h-9 rounded-full bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/60 flex items-center justify-center">
                           <X size={16} />
                         </button>
                       </div>
@@ -890,9 +890,9 @@ export default function BookingsManagerModal() {
                               else { setIsCustomService(false); setFormData(f => ({ ...f, service_type: e.target.value })); }
                             }}>
                             {['Check-out Cleaning', 'Deep Cleaning', 'General Cleaning', 'Sofa Bed setup'].map(s => (
-                              <option key={s} value={s}>{s}</option>
+                              <option key={s} value={s} className="dark:bg-[#0c1427] dark:text-white">{s}</option>
                             ))}
-                            <option value="Other">Other (specify)</option>
+                            <option value="Other" className="dark:bg-[#0c1427] dark:text-white">Other (specify)</option>
                           </select>
                           {isCustomService && (
                             <motion.input
@@ -908,12 +908,12 @@ export default function BookingsManagerModal() {
                         <Field label="Assign Checklist">
                           <select className={selectCls}
                             onChange={e => setFormData(f => ({ ...f, checklist_template_id: e.target.value }))}>
-                            <option value="">No Checklist (Optional)</option>
-                            {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                            <option value="" className="dark:bg-[#0c1427] dark:text-white">No Checklist (Optional)</option>
+                            {checklists.map(c => <option key={c.id} value={c.id} className="dark:bg-[#0c1427] dark:text-white">{c.title}</option>)}
                           </select>
                         </Field>
 
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100 dark:border-slate-800">
                           <Field label="Price (AED) — Optional">
                             <input type="number" placeholder="0.00" className={inputCls}
                               value={formData.price}
@@ -921,18 +921,18 @@ export default function BookingsManagerModal() {
                           </Field>
                           <Field label="Assign Team">
                             {!formData.cleaning_date ? (
-                              <div className={inputCls + ' text-gray-400 italic'}>Select a date first</div>
+                              <div className={inputCls + ' text-gray-400 dark:text-slate-500 italic'}>Select a date first</div>
                             ) : availableTeamsForAdd.length > 0 ? (
-                              <select className={selectCls + ' bg-blue-50 border-blue-200'}
+                              <select className={selectCls + ' bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-300'}
                                 value={formData.assigned_team_id}
                                 onChange={e => setFormData(f => ({ ...f, assigned_team_id: e.target.value }))}>
-                                <option value="">Unassigned (Pending)</option>
+                                <option value="" className="dark:bg-[#0c1427] dark:text-white">Unassigned (Pending)</option>
                                 {availableTeamsForAdd.map(t => (
-                                  <option key={t.id} value={t.id}>{t.team_name}{getTeamAlert(t.id, formData.cleaning_date)}</option>
+                                  <option key={t.id} value={t.id} className="dark:bg-[#0c1427] dark:text-white">{t.team_name}{getTeamAlert(t.id, formData.cleaning_date)}</option>
                                 ))}
                               </select>
                             ) : (
-                              <div className={inputCls + ' bg-red-50 text-red-600 font-bold text-xs'}>
+                              <div className={inputCls + ' bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/50 font-bold text-xs'}>
                                 No active teams for {format(parseISO(formData.cleaning_date), 'dd MMM')}
                               </div>
                             )}
@@ -941,11 +941,11 @@ export default function BookingsManagerModal() {
 
                         <div className="flex gap-3 pt-2">
                           <button type="button" onClick={() => setIsAddOpen(false)}
-                            className="w-1/3 py-3.5 text-gray-500 hover:bg-gray-100 rounded-xl font-black text-sm transition-colors">
+                            className="w-1/3 py-3.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-black text-sm transition-colors">
                             Cancel
                           </button>
                           <button type="submit" disabled={saving}
-                            className="w-2/3 py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition-all">
+                            className="w-2/3 py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white rounded-xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition-all">
                             {saving ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : <><Plus size={15} /> Confirm Booking</>}
                           </button>
                         </div>
@@ -969,17 +969,17 @@ export default function BookingsManagerModal() {
                       variants={formV}
                       initial="hidden" animate="visible" exit="exit"
                       transition={{ type: 'spring' as const, stiffness: 380, damping: 30 }}
-                      className="relative w-full sm:max-w-2xl bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
+                      className="relative w-full sm:max-w-2xl bg-white dark:bg-[#0c1427] dark:border dark:border-slate-800 rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
                       style={{ maxHeight: '88vh' }}
                     >
-                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
+                      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 bg-gray-50 dark:bg-[#090d1a] shrink-0">
                         <div>
-                          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                            <Edit2 size={18} className="text-blue-600" /> Update Booking
+                          <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                            <Edit2 size={18} className="text-blue-600 dark:text-blue-400" /> Update Booking
                           </h3>
-                          <p className="text-xs text-gray-500 font-medium mt-0.5">Modify booking details below.</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">Modify booking details below.</p>
                         </div>
-                        <button onClick={() => setIsEditOpen(false)} className="w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-400 hover:bg-gray-100 flex items-center justify-center">
+                        <button onClick={() => setIsEditOpen(false)} className="w-9 h-9 rounded-full bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/60 flex items-center justify-center">
                           <X size={16} />
                         </button>
                       </div>
@@ -990,17 +990,17 @@ export default function BookingsManagerModal() {
                             <select required className={selectCls}
                               value={editData.company_id}
                               onChange={e => setEditData(d => d ? { ...d, company_id: e.target.value, unit_id: '' } : d)}>
-                              <option value="">Select Company</option>
-                              {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              <option value="" className="dark:bg-[#0c1427]">Select Company</option>
+                              {companies.map(c => <option key={c.id} value={c.id} className="dark:bg-[#0c1427]">{c.name}</option>)}
                             </select>
                           </Field>
                           <Field label="Unit Number">
                             <select required disabled={!editData.company_id} className={selectCls + ' disabled:opacity-50'}
                               value={editData.unit_id}
                               onChange={e => setEditData(d => d ? { ...d, unit_id: e.target.value } : d)}>
-                              <option value="">Select Unit</option>
+                              <option value="" className="dark:bg-[#0c1427]">Select Unit</option>
                               {units.filter(u => u.company_id.toString() === editData.company_id)
-                                .map(u => <option key={u.id} value={u.id}>{u.unit_number} – {u.building_name}</option>)}
+                                .map(u => <option key={u.id} value={u.id} className="dark:bg-[#0c1427]">{u.unit_number} – {u.building_name}</option>)}
                             </select>
                           </Field>
                         </div>
@@ -1026,9 +1026,9 @@ export default function BookingsManagerModal() {
                               else { setIsEditCustomService(false); setEditData(d => d ? { ...d, service_type: e.target.value } : d); }
                             }}>
                             {['Check-out Cleaning', 'Deep Cleaning', 'General Cleaning', 'Sofa Bed setup'].map(s => (
-                              <option key={s} value={s}>{s}</option>
+                              <option key={s} value={s} className="dark:bg-[#0c1427] dark:text-white">{s}</option>
                             ))}
-                            <option value="Other">Other (specify)</option>
+                            <option value="Other" className="dark:bg-[#0c1427] dark:text-white">Other (specify)</option>
                           </select>
                           {isEditCustomService && (
                             <motion.input
@@ -1045,12 +1045,12 @@ export default function BookingsManagerModal() {
                           <select className={selectCls}
                             value={editData.checklist_template_id}
                             onChange={e => setEditData(d => d ? { ...d, checklist_template_id: e.target.value } : d)}>
-                            <option value="">No Checklist (Optional)</option>
-                            {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                            <option value="" className="dark:bg-[#0c1427] dark:text-white">No Checklist (Optional)</option>
+                            {checklists.map(c => <option key={c.id} value={c.id} className="dark:bg-[#0c1427] dark:text-white">{c.title}</option>)}
                           </select>
                         </Field>
 
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100 dark:border-slate-800">
                           <Field label="Price (AED)">
                             <input type="number" placeholder="0.00" className={inputCls}
                               value={editData.price}
@@ -1058,18 +1058,18 @@ export default function BookingsManagerModal() {
                           </Field>
                           <Field label="Assign / Change Team">
                             {!editData.cleaning_date ? (
-                              <div className={inputCls + ' text-gray-400 italic'}>Select a date first</div>
+                              <div className={inputCls + ' text-gray-400 dark:text-slate-500 italic'}>Select a date first</div>
                             ) : availableTeamsForEdit.length > 0 ? (
-                              <select className={selectCls + ' bg-blue-50 border-blue-200'}
+                              <select className={selectCls + ' bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-800/50 dark:text-blue-300'}
                                 value={editData.assigned_team_id}
                                 onChange={e => setEditData(d => d ? { ...d, assigned_team_id: e.target.value } : d)}>
-                                <option value="">Unassigned</option>
+                                <option value="" className="dark:bg-[#0c1427] dark:text-white">Unassigned</option>
                                 {availableTeamsForEdit.map(t => (
-                                  <option key={t.id} value={t.id}>{t.team_name}{getTeamAlert(t.id, editData.cleaning_date, editData.id)}</option>
+                                  <option key={t.id} value={t.id} className="dark:bg-[#0c1427] dark:text-white">{t.team_name}{getTeamAlert(t.id, editData.cleaning_date, editData.id)}</option>
                                 ))}
                               </select>
                             ) : (
-                              <div className={inputCls + ' bg-red-50 text-red-600 font-bold text-xs'}>
+                              <div className={inputCls + ' bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/50 font-bold text-xs'}>
                                 No active teams for {format(parseISO(editData.cleaning_date), 'dd MMM')}
                               </div>
                             )}
@@ -1078,7 +1078,7 @@ export default function BookingsManagerModal() {
 
                         <div className="flex gap-3 pt-2">
                           <button type="button" onClick={() => setIsEditOpen(false)}
-                            className="w-1/3 py-3.5 text-gray-500 hover:bg-gray-100 rounded-xl font-black text-sm transition-colors">
+                            className="w-1/3 py-3.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-black text-sm transition-colors">
                             Cancel
                           </button>
                           <button type="submit" disabled={saving}
@@ -1132,7 +1132,7 @@ function SmartMenu({
       <button
         ref={btnRef}
         onClick={onToggle}
-        className="p-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-all"
+        className="p-2 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
       >
         <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -1145,18 +1145,18 @@ function SmartMenu({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92 }}
             transition={{ type: 'spring' as const, stiffness: 420, damping: 28 }}
-            className="bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden"
+            className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
           >
             <button
               onClick={onEdit}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              className="flex items-center gap-2 w-full px-4 py-3 text-sm font-bold text-gray-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
               <Edit2 size={14} /> Edit
             </button>
-            <div className="h-px bg-gray-100" />
+            <div className="h-px bg-gray-100 dark:bg-slate-800" />
             <button
               onClick={onDelete}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 w-full px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
             >
               <Trash2 size={14} /> Delete
             </button>

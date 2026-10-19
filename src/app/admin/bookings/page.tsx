@@ -117,7 +117,7 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
           ref={inputRef}
           type="text"
           disabled={disabled}
-          className="w-full p-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium disabled:opacity-50 transition-all cursor-text"
+          className="w-full p-3.5 pr-10 bg-gray-50 dark:bg-[#11192e] border border-gray-200 dark:border-slate-700/80 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium disabled:opacity-50 transition-all cursor-text placeholder-gray-400 dark:placeholder-slate-500"
           placeholder={placeholder}
           value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : "")}
           onChange={(e) => {
@@ -143,7 +143,7 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
               if (!isOpen) inputRef.current?.focus();
             }
           }}
-          className="absolute right-0 top-0 h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50 outline-none"
+          className="absolute right-0 top-0 h-full px-4 flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors disabled:opacity-50 outline-none"
         >
           <ChevronDown 
             className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} 
@@ -159,7 +159,7 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] max-h-60 overflow-y-auto"
+            className="absolute z-50 w-full mt-1 bg-white dark:bg-[#11192e] border border-gray-100 dark:border-slate-700/80 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] max-h-60 overflow-y-auto"
           >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt: any, index: number) => (
@@ -171,15 +171,17 @@ function CustomCombobox({ options, value, onChange, placeholder, clearText = "Se
                     setSearchTerm("");
                   }}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`p-3 cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
-                    index === highlightedIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                  } ${opt.id === "" ? 'text-gray-400 italic bg-gray-50/50 hover:bg-gray-100' : ''}`}
+                  className={`p-3 cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 dark:border-slate-800 last:border-0 ${
+                    index === highlightedIndex
+                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/50'
+                  } ${opt.id === "" ? 'text-gray-400 dark:text-slate-500 italic bg-gray-50/50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800' : ''}`}
                 >
                   {opt.label}
                 </div>
               ))
             ) : (
-              <div className="p-3 text-sm text-gray-400 text-center font-medium">No results found</div>
+              <div className="p-3 text-sm text-gray-400 dark:text-slate-500 text-center font-medium">No results found</div>
             )}
           </motion.div>
         )}
@@ -557,37 +559,43 @@ export default function BookingManagement() {
     printWindow.document.close();
   };
 
-  // --- Dynamic Styling Helpers (Soft Aura & Borders) ---
+  // --- Dynamic Styling Helpers (Soft Aura & Borders - Glow on Hover Only in Dark Mode) ---
   const getCardStyle = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-white border-amber-200 shadow-[0_0_20px_-5px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_-5px_rgba(251,191,36,0.4)]';
-      case 'active': return 'bg-white border-blue-200 shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(59,130,246,0.4)]';
-      case 'in_progress': return 'bg-white border-violet-200 shadow-[0_0_20px_-5px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(139,92,246,0.4)]';
-      case 'completed': return 'bg-white border-teal-200 shadow-[0_0_20px_-5px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)]';
-      case 'finalized': return 'bg-white border-green-200 shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_-5px_rgba(34,197,94,0.4)]';
-      default: return 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md';
+      case 'pending': 
+        return 'bg-white dark:bg-[#0c1427] border-amber-200 dark:border-slate-800/90 shadow-[0_0_20px_-5px_rgba(251,191,36,0.3)] dark:shadow-none hover:shadow-[0_0_25px_-5px_rgba(251,191,36,0.4)] dark:hover:border-amber-400/70 dark:hover:shadow-[0_0_30px_rgba(245,158,11,0.25)] transition-all duration-300';
+      case 'active': 
+        return 'bg-white dark:bg-[#0c1427] border-blue-200 dark:border-slate-800/90 shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] dark:shadow-none hover:shadow-[0_0_25px_-5px_rgba(59,130,246,0.4)] dark:hover:border-blue-400/70 dark:hover:shadow-[0_0_30px_rgba(59,130,246,0.28)] transition-all duration-300';
+      case 'in_progress': 
+        return 'bg-white dark:bg-[#0c1427] border-violet-200 dark:border-slate-800/90 shadow-[0_0_20px_-5px_rgba(139,92,246,0.3)] dark:shadow-none hover:shadow-[0_0_25px_-5px_rgba(139,92,246,0.4)] dark:hover:border-violet-400/70 dark:hover:shadow-[0_0_30px_rgba(139,92,246,0.28)] transition-all duration-300';
+      case 'completed': 
+        return 'bg-white dark:bg-[#0c1427] border-teal-200 dark:border-slate-800/90 shadow-[0_0_20px_-5px_rgba(20,184,166,0.3)] dark:shadow-none hover:shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)] dark:hover:border-emerald-400/70 dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all duration-300';
+      case 'finalized': 
+        return 'bg-white dark:bg-[#0c1427] border-green-200 dark:border-slate-800/90 shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)] dark:shadow-none hover:shadow-[0_0_25px_-5px_rgba(34,197,94,0.4)] dark:hover:border-cyan-400/70 dark:hover:shadow-[0_0_30px_rgba(6,182,212,0.25)] transition-all duration-300';
+      default: 
+        return 'bg-white dark:bg-[#0c1427] border-gray-100 dark:border-slate-800/90 hover:border-gray-200 dark:hover:border-slate-700 shadow-sm dark:shadow-none dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)] transition-all duration-300';
     }
   };
 
   const getBadgeStyle = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-amber-100 text-amber-700';
-      case 'active': return 'bg-blue-100 text-blue-700';
-      case 'in_progress': return 'bg-violet-100 text-violet-700';
-      case 'completed': return 'bg-teal-100 text-teal-700';
-      case 'finalized': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'pending': return 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30';
+      case 'active': return 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30';
+      case 'in_progress': return 'bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-300 dark:border-violet-500/30';
+      case 'completed': return 'bg-teal-100 dark:bg-sky-950/40 text-teal-700 dark:text-sky-300 border border-teal-300 dark:border-sky-500/30';
+      case 'finalized': return 'bg-green-100 dark:bg-cyan-950/40 text-green-700 dark:text-cyan-300 border border-emerald-300 dark:border-cyan-500/30';
+      default: return 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700';
     }
   };
 
   const getIconColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'text-amber-500 bg-amber-50';
-      case 'active': return 'text-blue-500 bg-blue-50';
-      case 'in_progress': return 'text-violet-500 bg-violet-50';
-      case 'completed': return 'text-teal-500 bg-teal-50';
-      case 'finalized': return 'text-green-600 bg-green-50';
-      default: return 'text-gray-500 bg-gray-50';
+      case 'pending': return 'text-amber-500 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30';
+      case 'active': return 'text-blue-500 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30';
+      case 'in_progress': return 'text-violet-500 bg-violet-50 dark:bg-violet-950/40 dark:text-violet-400 border border-violet-200 dark:border-violet-500/30';
+      case 'completed': return 'text-teal-500 bg-teal-50 dark:bg-sky-950/40 dark:text-sky-400 border border-teal-200 dark:border-sky-500/30';
+      case 'finalized': return 'text-green-600 bg-green-50 dark:bg-cyan-950/40 dark:text-cyan-400 border border-emerald-200 dark:border-cyan-500/30';
+      default: return 'text-gray-500 bg-gray-50 dark:bg-slate-800 dark:text-slate-400';
     }
   };
 
@@ -595,27 +603,89 @@ export default function BookingManagement() {
     <div className="min-h-screen pb-10 p-2 md:p-4">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
-      {/* Header with Gradient & Stats */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden'>
-        <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
-        <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none'></div>
+      {/* Header — Cosmic Cyber-Wave & Neon Nebula (dark) */}
+      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden dark:border dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]'>
+        {/* Light mode gradient */}
+        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+        {/* Dark mode multi-color cosmic gradient */}
+        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #050814 0%, #0d0f28 18%, #1a0b3b 38%, #0b224d 62%, #041226 82%, #020612 100%)' }} />
+
+        {/* Dark mode luminous mesh orbs */}
+        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-violet-600/25 rounded-full blur-[100px] pointer-events-none' />
+        <div className='absolute -top-10 right-1/4 w-80 h-80 hidden dark:block bg-cyan-500/20 rounded-full blur-[90px] pointer-events-none' />
+        <div className='absolute bottom-0 right-0 w-96 h-96 hidden dark:block bg-pink-500/18 rounded-full blur-[100px] pointer-events-none' />
+        <div className='absolute top-1/2 left-1/3 w-64 h-64 hidden dark:block bg-emerald-500/12 rounded-full blur-[80px] pointer-events-none' />
+
+        {/* Dark mode SVG Organic Multi-Layer Fluid Waves */}
+        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="book-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                <stop offset="35%" stopColor="#3B82F6" stopOpacity="0.25" />
+                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#10B981" stopOpacity="0.10" />
+              </linearGradient>
+              <linearGradient id="book-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#EC4899" stopOpacity="0.30" />
+                <stop offset="40%" stopColor="#8B5CF6" stopOpacity="0.24" />
+                <stop offset="75%" stopColor="#06B6D4" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.06" />
+              </linearGradient>
+              <linearGradient id="book-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#C084FC" stopOpacity="0.9" />
+                <stop offset="45%" stopColor="#38BDF8" stopOpacity="0.95" />
+                <stop offset="85%" stopColor="#34D399" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.4" />
+              </linearGradient>
+              <linearGradient id="book-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F472B6" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#818CF8" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="book-glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <filter id="book-glow-pink" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            {/* Background Upper Aurora Wave - prominently visible behind title and actions */}
+            <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70 L1440,320 L0,320 Z" fill="url(#book-grad-wave1)" />
+            <path d="M0,100 C320,30 560,170 860,80 C1160,0 1320,140 1440,70" stroke="url(#book-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#book-glow-cyan)" />
+
+            {/* Foreground Silk Wave - flows across mid-header right above the stats cards */}
+            <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130 L1440,320 L0,320 Z" fill="url(#book-grad-wave2)" />
+            <path d="M0,150 C260,190 480,80 780,140 C1080,200 1280,90 1440,130" stroke="url(#book-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#book-glow-pink)" />
+
+            {/* Tertiary Whispering Wave Ribbon */}
+            <path d="M0,220 C360,260 680,170 1020,230 C1240,270 1380,200 1440,210" stroke="url(#book-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+          </svg>
+        </div>
+
+        {/* Light mode decorative orbs */}
+        <div className='absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
+        <div className='absolute bottom-0 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none dark:hidden' />
 
         <div className='relative z-20'>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
             <div>
-              <p className='text-blue-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
+              <p className='text-blue-300 dark:text-cyan-300 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-2'>
                 <LayoutDashboard size={12}/> Operations Control
               </p>
               <h1 className='text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3'>
-                <ClipboardList className='text-blue-500' size={28}/> Booking Management
+                <ClipboardList className='text-blue-500 dark:text-cyan-400' size={28}/> Booking Management
               </h1>
             </div>
 
             <div className="flex gap-2 w-full md:w-auto flex-wrap">
-              <button onClick={handleExportExcel} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+              <button onClick={handleExportExcel} className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
                 <FileSpreadsheet size={14}/> Export Excel
               </button>
-              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
+              <button onClick={handleExportPDF} className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/60 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5">
                 <Download size={14}/> Export PDF
               </button>
               <button onClick={() => setShowFilters(!showFilters)} className={`px-4 py-1.5 rounded-lg font-black transition-all flex items-center justify-center gap-1.5 border text-xs w-full md:w-auto ${showFilters ? 'bg-white text-gray-900 border-white' : 'bg-white/10 text-white hover:bg-white/20 border-white/10 backdrop-blur-md'}`}>
@@ -658,13 +728,13 @@ export default function BookingManagement() {
       </div>
 
       <div className="relative mb-4">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
         <input
           type="text"
           placeholder="Search by Ref, Company, Unit or Building..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 transition-all"
+          className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-md outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
         />
       </div>
 
@@ -674,40 +744,40 @@ export default function BookingManagement() {
             initial={{ opacity: 0, height: 0 }} 
             animate={{ opacity: 1, height: 'auto' }} 
             exit={{ opacity: 0, height: 0 }}
-            className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl shadow-sm dark:shadow-md border border-gray-100 dark:border-slate-800 mb-6 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date From</label>
-                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Date From</label>
+                <input type="date" className="w-full p-2.5 bg-gray-50 dark:bg-[#11192e] border border-gray-200 dark:border-slate-700/80 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                   value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date To</label>
-                <input type="date" className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Date To</label>
+                <input type="date" className="w-full p-2.5 bg-gray-50 dark:bg-[#11192e] border border-gray-200 dark:border-slate-700/80 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                   value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Company</label>
-                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Company</label>
+                <select className="w-full p-2.5 bg-gray-50 dark:bg-[#11192e] border border-gray-200 dark:border-slate-700/80 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                   value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)}>
                   <option value="">All Companies</option>
-                  {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {companies.map(c => <option key={c.id} value={c.name} className="dark:bg-[#11192e]">{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Status</label>
-                <select className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</label>
+                <select className="w-full p-2.5 bg-gray-50 dark:bg-[#11192e] border border-gray-200 dark:border-slate-700/80 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                   value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                   <option value="">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="active">Active (Live)</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="finalized">Finalized</option>
+                  <option value="pending" className="dark:bg-[#11192e]">Pending</option>
+                  <option value="active" className="dark:bg-[#11192e]">Active (Live)</option>
+                  <option value="in_progress" className="dark:bg-[#11192e]">In Progress</option>
+                  <option value="completed" className="dark:bg-[#11192e]">Completed</option>
+                  <option value="finalized" className="dark:bg-[#11192e]">Finalized</option>
                 </select>
               </div>
               <div className="md:col-span-4">
-                <button onClick={clearFilters} className="w-full py-2.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg font-bold flex justify-center items-center gap-2 transition-all">
+                <button onClick={clearFilters} className="w-full py-2.5 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg font-bold flex justify-center items-center gap-2 transition-all">
                   <FilterX size={18} /> Clear Filters
                 </button>
               </div>
@@ -719,10 +789,10 @@ export default function BookingManagement() {
       {loading ? (
         <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-500" /></div>
       ) : filteredBookings.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
-          <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
-          <h3 className="text-gray-500 font-bold">No bookings found</h3>
-          <p className="text-sm text-gray-400 mt-1">Try adjusting your dates or filters.</p>
+        <div className="text-center py-20 bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 border-dashed">
+          <Calendar size={48} className="mx-auto text-gray-300 dark:text-slate-600 mb-3" />
+          <h3 className="text-gray-500 dark:text-slate-300 font-bold">No bookings found</h3>
+          <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">Try adjusting your dates or filters.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -732,9 +802,9 @@ export default function BookingManagement() {
               <div key={date} className="space-y-4">
                 {/* Date Header */}
                 <div className="flex items-center gap-3 pl-2">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar size={18} /></div>
-                  <h2 className="text-lg font-bold text-gray-800">{format(parseISO(date), 'EEEE, dd MMM yyyy')}</h2>
-                  <div className="h-px bg-gray-200 flex-1 ml-4"></div>
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg"><Calendar size={18} /></div>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">{format(parseISO(date), 'EEEE, dd MMM yyyy')}</h2>
+                  <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1 ml-4"></div>
                 </div>
 
                 {dayBookings.map((booking) => (
@@ -745,65 +815,65 @@ export default function BookingManagement() {
                     className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all relative ${getCardStyle(booking.status)}`}
                   >
                     <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/50 shadow-sm ${getIconColor(booking.status)}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/50 dark:border-white/10 shadow-sm ${getIconColor(booking.status)}`}>
                         <Home size={24} />
                       </div>
                       <div className="overflow-hidden">
                         <div className="mb-2">
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                          <span className="text-[10px] font-bold text-gray-400 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/80 px-2 py-1 rounded-md border border-gray-100 dark:border-slate-700/60">
                             Added: {format(parseISO(booking.created_at), 'hh:mm a')}
                           </span>
                         </div>
-                        <span className="px-2 py-0.5 bg-gray-50 text-gray-600 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider border border-gray-100">
+                        <span className="px-2 py-0.5 bg-gray-50 dark:bg-slate-800/80 text-gray-600 dark:text-slate-300 font-bold text-[10px] rounded mb-1 inline-block uppercase tracking-wider border border-gray-100 dark:border-slate-700/60">
                           {booking.booking_ref || `ID-${booking.id}`}
                         </span>
-                        <h3 className="font-bold text-gray-800 text-lg leading-tight truncate">Unit {booking.units?.unit_number}</h3>
-                        <p className="text-sm text-gray-500 mt-0.5 truncate font-medium">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
+                        <h3 className="font-bold text-gray-800 dark:text-white text-lg leading-tight truncate">Unit {booking.units?.unit_number}</h3>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 truncate font-medium">{booking.units?.companies?.name} • {booking.units?.building_name}</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-4 mt-4 md:mt-0 shrink-0">
                       <div className="md:w-[80px] shrink-0">
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Time</p>
-                        <p className="text-xs font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-400 tracking-wider mb-1">Time</p>
+                        <p className="text-xs font-semibold text-gray-900 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Clock size={12} className="text-blue-500 shrink-0" /> <span className="truncate">{booking.cleaning_time}</span>
                         </p>
                       </div>
 
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Service</p>
-                        <p className="text-sm font-semibold text-gray-900 truncate">{booking.service_type}</p>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-400 tracking-wider mb-1">Service</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-slate-200 truncate">{booking.service_type}</p>
                         {booking.checklist_templates ? (
-                          <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 truncate">
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
                             <ClipboardList size={10} className="shrink-0" /> <span className="truncate">{booking.checklist_templates.title}</span>
                           </p>
                         ) : (
-                          <p className="text-[11px] text-orange-500 font-medium italic mt-0.5">No checklist</p>
+                          <p className="text-[11px] text-orange-500 dark:text-orange-400 font-medium italic mt-0.5">No checklist</p>
                         )}
                       </div>
 
                       <div className="md:w-[130px] shrink-0 overflow-hidden">
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Team</p>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-400 tracking-wider mb-1">Team</p>
                         {booking.teams ? (
-                          <span className="text-sm font-medium bg-gray-50 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800 truncate border border-gray-100">
+                          <span className="text-sm font-medium bg-gray-50 dark:bg-slate-800/80 px-2 py-1 rounded-md flex items-center gap-1 text-gray-800 dark:text-slate-200 truncate border border-gray-100 dark:border-slate-700/60">
                             <Users size={14} className="shrink-0" /> <span className="truncate">{booking.teams.team_name}</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-orange-600 font-bold flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md w-fit border border-orange-100">
+                          <span className="text-xs text-orange-600 dark:text-orange-400 font-bold flex items-center gap-1 bg-orange-50 dark:bg-orange-950/40 px-2 py-1 rounded-md w-fit border border-orange-100 dark:border-orange-900/60">
                             <AlertCircle size={14} className="shrink-0" /> Unassigned
                           </span>
                         )}
                       </div>
 
                       <div className="md:w-[90px] shrink-0 flex flex-col items-start md:items-end gap-2 col-span-2 md:col-span-1">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-white/50 ${getBadgeStyle(booking.status)}`}>
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-white/50 dark:border-white/10 ${getBadgeStyle(booking.status)}`}>
                           {booking.status.replace('_', ' ')}
                         </span>
 
                         {booking.price > 0 ? (
-                          <p className="text-xs text-green-700 font-black tracking-wide truncate">AED {booking.price}</p>
+                          <p className="text-xs text-green-700 dark:text-cyan-300 font-black tracking-wide truncate">AED {booking.price}</p>
                         ) : (
-                          <p className="text-[10px] text-gray-400 font-bold italic flex items-center gap-1">
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold italic flex items-center gap-1">
                             <AlertCircle size={10} className="shrink-0" /> No Price
                           </p>
                         )}
@@ -826,7 +896,7 @@ export default function BookingManagement() {
                         <button
                           onClick={() => handleToggleActivation(booking.id, 'active')}
                           disabled={activatingId === booking.id}
-                          className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95 shadow-sm"
+                          className="px-3 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 disabled:opacity-70 active:scale-95 shadow-sm"
                         >
                           {activatingId === booking.id ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>}
                           Active <RotateCcw size={11} className="ml-0.5 text-blue-400"/>
@@ -837,7 +907,7 @@ export default function BookingManagement() {
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <button 
                           onClick={() => setActiveMenuId(activeMenuId === booking.id ? null : booking.id)}
-                          className={`p-2 rounded-xl transition-colors ${activeMenuId === booking.id ? 'bg-gray-100 shadow-sm text-blue-600' : 'hover:bg-gray-50 text-gray-400'}`}>
+                          className={`p-2 rounded-xl transition-colors ${activeMenuId === booking.id ? 'bg-gray-100 dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400' : 'hover:bg-gray-50 dark:hover:bg-slate-800/60 text-gray-400 dark:text-slate-400'}`}>
                           <MoreVertical size={20} />
                         </button>
 
@@ -848,7 +918,7 @@ export default function BookingManagement() {
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.9, y: -10 }}
                               transition={{ duration: 0.15, ease: "easeOut" }}
-                              className="absolute left-0 sm:left-auto sm:right-0 top-12 w-60 bg-white border border-gray-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] rounded-2xl z-30 p-2 flex flex-col gap-1"
+                              className="absolute left-0 sm:left-auto sm:right-0 top-12 w-60 bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] rounded-2xl z-30 p-2 flex flex-col gap-1"
                             >
                               {/* --- SEPARATE CONDITIONS FOR SUBMIT AND EDIT --- */}
                               {['completed', 'finalized'].includes(booking.status) ? (
@@ -858,9 +928,9 @@ export default function BookingManagement() {
                                     setIsEditLogModalOpen(true);
                                     setActiveMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-3 text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
+                                  className="w-full text-left px-3 py-3 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
                                 >
-                                  <div className="p-1.5 bg-purple-100/50 rounded-lg text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors shadow-sm">
+                                  <div className="p-1.5 bg-purple-100/50 dark:bg-purple-900/50 rounded-lg text-purple-600 dark:text-purple-300 group-hover:bg-purple-600 group-hover:text-white transition-colors shadow-sm">
                                     <Edit2 size={16} />
                                   </div>
                                   Edit Work Log
@@ -872,16 +942,16 @@ export default function BookingManagement() {
                                     setIsDutyModalOpen(true);
                                     setActiveMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-3 text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
+                                  className="w-full text-left px-3 py-3 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl flex items-center gap-3 text-sm font-bold transition-all group"
                                 >
-                                  <div className="p-1.5 bg-indigo-100/50 rounded-lg text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">
+                                  <div className="p-1.5 bg-indigo-100/50 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-300 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">
                                     <ShieldCheck size={16} />
                                   </div>
                                   Manage Duty
                                 </button>
                               )}
 
-                              <div className="h-px bg-gray-100 my-1 mx-2"></div>
+                              <div className="h-px bg-gray-100 dark:bg-slate-800/80 my-1 mx-2"></div>
 
                               <button 
                                 onClick={() => {
@@ -901,7 +971,7 @@ export default function BookingManagement() {
                                   setIsEditOpen(true);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full text-left px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
+                                className="w-full text-left px-3 py-2.5 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/60 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
                                 <div className="p-1.5 text-gray-400 group-hover:text-blue-500 transition-colors">
                                   <Edit2 size={16} />
                                 </div>
@@ -910,7 +980,7 @@ export default function BookingManagement() {
 
                               <button 
                                 onClick={() => handleDeleteBooking(booking.id)}
-                                className="w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
+                                className="w-full text-left px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl flex items-center gap-3 text-sm font-semibold transition-colors group">
                                 <div className="p-1.5 text-red-400 group-hover:text-red-600 transition-colors">
                                   <Trash2 size={16} />
                                 </div>
@@ -936,19 +1006,21 @@ export default function BookingManagement() {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsAddOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-900">New Cleaning Request</h2>
-                <button onClick={() => setIsAddOpen(false)}><X className="text-gray-500" /></button>
+              className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800/80 w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-[#0f172a]">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">New Cleaning Request</h2>
+                <button onClick={() => setIsAddOpen(false)} className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                  <X size={20} />
+                </button>
               </div>
 
               <form onSubmit={handleAddBooking} className="p-6 space-y-5 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Client / Company</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Client / Company</label>
                     <CustomCombobox
                       clearText="Clear Selection"
                       options={companies.map(c => ({ id: c.id, label: c.name }))}
@@ -958,7 +1030,7 @@ export default function BookingManagement() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Unit Number</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Unit Number</label>
                     <CustomCombobox
                       clearText="Clear Selection"
                       options={units.filter(u => formData.company_id ? u.company_id.toString() === formData.company_id : true).map(u => {
@@ -991,21 +1063,21 @@ export default function BookingManagement() {
 
                 <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Date</label>
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={formData.cleaning_date}
                       onChange={(e) => setFormData({...formData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Time</label>
+                    <input type="time" className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={formData.cleaning_time} onChange={(e) => setFormData({...formData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Service Type</label>
+                  <select className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                     value={isCustomService ? "Other" : formData.service_type}
                     onChange={(e) => {
                       if (e.target.value === "Other") { setIsCustomService(true); setFormData({...formData, service_type: ""}); } 
@@ -1020,25 +1092,25 @@ export default function BookingManagement() {
                   {isCustomService && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
                       <input type="text" required={isCustomService} placeholder="Enter service name..."
-                        className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                        className="w-full p-3.5 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                         value={formData.service_type} onChange={(e) => setFormData({...formData, service_type: e.target.value})} />
                     </motion.div>
                   )}
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Assign Checklist</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Assign Checklist</label>
+                  <select className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                     onChange={(e) => setFormData({...formData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100 dark:border-slate-800">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Price (AED) - Optional</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Price (AED) - Optional</label>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                   </div>
 
@@ -1047,7 +1119,7 @@ export default function BookingManagement() {
                     {formData.cleaning_date ? (
                       availableTeamsForAddDate.length > 0 ? (
                         <select
-                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          className="w-full p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 dark:text-blue-200 font-medium cursor-pointer"
                           value={formData.assigned_team_id}
                           onChange={(e) => setFormData({...formData, assigned_team_id: e.target.value})}>
                           <option value="">Unassigned (Pending)</option>
@@ -1058,19 +1130,19 @@ export default function BookingManagement() {
                           ))}
                         </select>
                       ) : (
-                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm font-bold text-red-600">
+                        <div className="w-full p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/60 rounded-xl text-sm font-bold text-red-600 dark:text-red-400">
                           No active teams for {format(parseISO(formData.cleaning_date), 'dd MMM yyyy')}.
                         </div>
                       )
                     ) : (
-                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-400">
+                      <div className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-400 dark:text-slate-500">
                         Select a date first.
                       </div>
                     )}
                   </div>
                 </div>
 
-                <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-70">
+                <button type="submit" disabled={saving} className="w-full py-4 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70">
                   {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Confirm Booking"}
                 </button>
               </form>
@@ -1083,17 +1155,19 @@ export default function BookingManagement() {
       <AnimatePresence>
         {isEditOpen && editData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsEditOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-900">Update Booking Details</h2>
-                <button onClick={() => setIsEditOpen(false)}><X className="text-gray-500" /></button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsEditOpen(false)} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800/80 w-full max-w-2xl rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-[#0f172a]">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Update Booking Details</h2>
+                <button onClick={() => setIsEditOpen(false)} className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                  <X size={20} />
+                </button>
               </div>
 
               <form onSubmit={handleUpdateBooking} className="p-6 space-y-5 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Client / Company</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Client / Company</label>
                     <CustomCombobox
                       clearText="Clear Selection"
                       options={companies.map(c => ({ id: c.id, label: c.name }))}
@@ -1103,7 +1177,7 @@ export default function BookingManagement() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Unit Number</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Unit Number</label>
                     <CustomCombobox
                       clearText="Clear Selection"
                       options={units.filter(u => editData.company_id ? u.company_id.toString() === editData.company_id : true).map(u => {
@@ -1136,21 +1210,21 @@ export default function BookingManagement() {
 
                 <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Date</label>
-                    <input type="date" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Date</label>
+                    <input type="date" required className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={editData.cleaning_date}
                       onChange={(e) => setEditData({...editData, cleaning_date: e.target.value, assigned_team_id: ""})} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Time</label>
-                    <input type="time" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Time</label>
+                    <input type="time" className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={editData.cleaning_time} onChange={(e) => setEditData({...editData, cleaning_time: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Service Type</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Service Type</label>
+                  <select className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                     value={isEditCustomService ? "Other" : editData.service_type}
                     onChange={(e) => {
                       if (e.target.value === "Other") { setIsEditCustomService(true); setEditData({...editData, service_type: ""}); } 
@@ -1165,25 +1239,25 @@ export default function BookingManagement() {
                   {isEditCustomService && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
                       <input type="text" required={isEditCustomService} placeholder="Enter service name..."
-                        className="w-full p-3.5 bg-white border border-blue-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                        className="w-full p-3.5 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                         value={editData.service_type} onChange={(e) => setEditData({...editData, service_type: e.target.value})} />
                     </motion.div>
                   )}
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Assign Checklist</label>
-                  <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Assign Checklist</label>
+                  <select className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                     value={editData.checklist_template_id} onChange={(e) => setEditData({...editData, checklist_template_id: e.target.value})}>
                     <option value="">Select a Checklist (Optional)</option>
                     {checklists.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-5 pt-2 border-t border-gray-100 dark:border-slate-800">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Price (AED)</label>
-                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1 block">Price (AED)</label>
+                    <input type="number" placeholder="0.00" className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white font-medium"
                       value={editData.price} onChange={(e) => setEditData({...editData, price: e.target.value})} />
                   </div>
 
@@ -1192,7 +1266,7 @@ export default function BookingManagement() {
                     {editData.cleaning_date ? (
                       availableTeamsForEditDate.length > 0 ? (
                         <select
-                          className="w-full p-3.5 bg-blue-50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 font-medium cursor-pointer"
+                          className="w-full p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-blue-900 dark:text-blue-200 font-medium cursor-pointer"
                           value={editData.assigned_team_id}
                           onChange={(e) => setEditData({...editData, assigned_team_id: e.target.value})}>
                           <option value="">Unassigned</option>
@@ -1203,19 +1277,19 @@ export default function BookingManagement() {
                           ))}
                         </select>
                       ) : (
-                        <div className="w-full p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm font-bold text-red-600">
+                        <div className="w-full p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/60 rounded-xl text-sm font-bold text-red-600 dark:text-red-400">
                           No active teams for {format(parseISO(editData.cleaning_date), 'dd MMM yyyy')}.
                         </div>
                       )
                     ) : (
-                      <div className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-400">
+                      <div className="w-full p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-400 dark:text-slate-500">
                         Select a date first.
                       </div>
                     )}
                   </div>
                 </div>
 
-                <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl mt-4 shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70">
+                <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl mt-4 shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70">
                   {saving ? <><Loader2 size={18} className="animate-spin"/> Saving...</> : "Save Changes"}
                 </button>
               </form>

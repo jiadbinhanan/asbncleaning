@@ -49,13 +49,13 @@ function Dropdown({ label, value, onChange, max, colorClass, prefix = "", disabl
 }) {
   return (
     <div className="flex flex-col gap-1 min-w-[72px]">
-      <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest text-center leading-tight">{label}</span>
+      <span className="text-[8px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest text-center leading-tight">{label}</span>
       <div className="relative inline-flex items-center">
         <select value={value} onChange={e => onChange(parseInt(e.target.value))} disabled={disabled}
           className={`appearance-none pl-2.5 pr-6 py-2 rounded-lg border font-black text-sm outline-none w-full transition-all
-            ${disabled ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-500" : `cursor-pointer ${colorClass}`}`}>
+            ${disabled ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400" : `cursor-pointer ${colorClass}`}`}>
           {Array.from({ length: max + 1 }, (_, i) => i).map(n => (
-            <option key={n} value={n}>{prefix}{n}</option>
+            <option key={n} value={n} className="dark:bg-slate-900 dark:text-white">{prefix}{n}</option>
           ))}
         </select>
         {!disabled && <ChevronDown size={12} className="absolute right-1.5 pointer-events-none opacity-50" />}
@@ -66,12 +66,12 @@ function Dropdown({ label, value, onChange, max, colorClass, prefix = "", disabl
 
 function SectionHeader({ icon, title, count, color }: { icon: React.ReactNode; title: string; count: number; color: string }) {
   return (
-    <div className={`px-4 py-3 rounded-xl border flex items-center justify-between shadow-sm ${color}`}>
+    <div className={`px-4 py-3 rounded-xl border flex items-center justify-between shadow-sm ${color} dark:bg-opacity-20`}>
       <div className="flex items-center gap-2.5">
-        <div className="p-1.5 bg-white rounded-lg shadow-sm">{icon}</div>
+        <div className="p-1.5 bg-white dark:bg-slate-900 rounded-lg shadow-sm">{icon}</div>
         <h3 className="font-black text-xs uppercase tracking-widest">{title}</h3>
       </div>
-      <span className="font-black bg-white px-2.5 py-0.5 rounded-md shadow-sm text-[11px]">{count} items</span>
+      <span className="font-black bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-md shadow-sm text-[11px]">{count} items</span>
     </div>
   );
 }
@@ -82,32 +82,32 @@ function InventoryEditCard({ item, onUpdate }: { item: InventoryItem; onUpdate: 
   const hasShortage  = item.shortage_qty > 0;
 
   return (
-    <div className={`p-3.5 bg-white border rounded-2xl shadow-sm flex flex-col gap-3 transition-colors
-      ${hasShortage ? "border-red-200" : "border-gray-200 hover:border-gray-300"}`}>
+    <div className={`p-3.5 bg-white dark:bg-[#0c1427] border rounded-2xl shadow-sm flex flex-col gap-3 transition-colors
+      ${hasShortage ? "border-red-200 dark:border-red-900/50" : "border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700"}`}>
       <div>
         <div className="flex items-start justify-between gap-2">
-          <h4 className="font-black text-gray-900 text-sm leading-tight">{item.name}</h4>
+          <h4 className="font-black text-gray-900 dark:text-white text-sm leading-tight">{item.name}</h4>
           {item.log_id
-            ? <span className="shrink-0 text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md uppercase">Logged</span>
-            : <span className="shrink-0 text-[8px] font-black bg-gray-100 text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded-md uppercase">New</span>
+            ? <span className="shrink-0 text-[8px] font-black bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 px-1.5 py-0.5 rounded-md uppercase">Logged</span>
+            : <span className="shrink-0 text-[8px] font-black bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-400 border border-gray-200 dark:border-slate-700 px-1.5 py-0.5 rounded-md uppercase">New</span>
           }
         </div>
         <div className="flex flex-wrap gap-1.5 mt-1.5">
-          <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded text-[9px] font-black text-gray-500 uppercase">
+          <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-slate-800 rounded text-[9px] font-black text-gray-500 dark:text-slate-300 uppercase">
             Std: {item.standard_qty}
           </span>
           {!isConsumable && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] font-black text-amber-700 uppercase">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 rounded text-[9px] font-black text-amber-700 dark:text-amber-300 uppercase">
               <Info size={8} /> Target: {item.target_collect_qty}
             </span>
           )}
           {item.extra_unit_price > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 border border-purple-100 rounded text-[9px] font-black text-purple-600 uppercase">
+            <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 rounded text-[9px] font-black text-purple-600 dark:text-purple-300 uppercase">
               +AED {item.extra_unit_price}/extra
             </span>
           )}
           {hasShortage && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 border border-red-200 rounded text-[9px] font-black text-red-600 uppercase">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded text-[9px] font-black text-red-600 dark:text-red-300 uppercase">
               <AlertTriangle size={8} /> Short: {item.shortage_qty}
             </span>
           )}
@@ -117,10 +117,10 @@ function InventoryEditCard({ item, onUpdate }: { item: InventoryItem; onUpdate: 
       <div className="flex items-end gap-2 flex-wrap">
         <Dropdown label="Base Provided" value={item.base_provide_qty}
           onChange={v => onUpdate(item.equipment_id, "base_provide_qty", v)}
-          max={50} colorClass="bg-blue-50/60 text-blue-900 border-blue-200 hover:border-blue-400" />
+          max={50} colorClass="bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-900/50 hover:border-blue-400" />
         <Dropdown label="Extra" value={item.extra_provided_qty}
           onChange={v => onUpdate(item.equipment_id, "extra_provided_qty", v)}
-          max={30} prefix="+" colorClass="bg-purple-50/60 text-purple-900 border-purple-200 hover:border-purple-400" />
+          max={30} prefix="+" colorClass="bg-purple-50/60 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 border-purple-200 dark:border-purple-900/50 hover:border-purple-400" />
 
         {!isConsumable && (
           <Dropdown
@@ -128,13 +128,13 @@ function InventoryEditCard({ item, onUpdate }: { item: InventoryItem; onUpdate: 
             value={item.collected_qty}
             onChange={v => onUpdate(item.equipment_id, "collected_qty", v)}
             max={item.target_collect_qty}
-            colorClass="bg-red-50/60 text-red-900 border-red-200 hover:border-red-400"
+            colorClass="bg-red-50/60 dark:bg-red-950/30 text-red-900 dark:text-red-200 border-red-200 dark:border-red-900/50 hover:border-red-400"
           />
         )}
 
         <div className="flex flex-col gap-1 min-w-[52px]">
-          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center">Final</span>
-          <div className="h-[34px] flex items-center justify-center bg-gray-900 text-white rounded-lg text-sm font-black shadow px-2.5 gap-1">
+          <span className="text-[8px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest text-center">Final</span>
+          <div className="h-[34px] flex items-center justify-center bg-gray-900 dark:bg-blue-600 text-white rounded-lg text-sm font-black shadow px-2.5 gap-1">
             <CheckSquare size={11} className="opacity-50" />{finalProvide}
           </div>
         </div>
@@ -251,16 +251,16 @@ export default function AdminEditEquipmentTracker({ bookingId, unitId, onDataCha
 
   return (
     <div className="space-y-5">
-      <div className="px-4 py-3 rounded-xl flex items-center justify-between border bg-gray-50 border-gray-200 shadow-sm">
+      <div className="px-4 py-3 rounded-xl flex items-center justify-between border bg-gray-50 dark:bg-[#0c1427] border-gray-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h3 className="font-black flex items-center gap-2 text-gray-800 text-sm"><PackagePlus size={15} /> Inventory Edit</h3>
-          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">
+          <h3 className="font-black flex items-center gap-2 text-gray-800 dark:text-white text-sm"><PackagePlus size={15} /> Inventory Edit</h3>
+          <p className="text-[9px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">
             {items.length} items
-            {totalExtra > 0 && <> · <span className="text-purple-600">{totalExtra} extra</span></>}
-            {totalShort > 0 && <> · <span className="text-red-500">{totalShort} shortage</span></>}
+            {totalExtra > 0 && <> · <span className="text-purple-600 dark:text-purple-400">{totalExtra} extra</span></>}
+            {totalShort > 0 && <> · <span className="text-red-500 dark:text-red-400">{totalShort} shortage</span></>}
           </p>
         </div>
-        <button onClick={fetchInventoryData} title="Reload" className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"><RefreshCcw size={14} /></button>
+        <button onClick={fetchInventoryData} title="Reload" className="p-2 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors"><RefreshCcw size={14} /></button>
       </div>
 
       {returnables.length > 0 && (

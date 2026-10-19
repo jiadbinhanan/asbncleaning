@@ -306,16 +306,78 @@ export default function WorkRecords() {
   };
 
   return (
-    <div className='min-h-screen bg-[#F4F7FA] pb-24 font-sans relative overflow-hidden'>
+    <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden'>
 
-      {/* --- HEADER (z-index 40 fixes dropdown overlap) --- */}
-      <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-16 md:pb-24 px-4 md:px-8 shadow-2xl relative z-40 mb-16'>
-        <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none'></div>
+      {/* --- HEADER — Velvet Sunset & Molten Silk Waves (dark) --- */}
+      <div className='text-white pt-10 pb-16 md:pb-24 px-4 md:px-8 shadow-2xl relative z-40 mb-16 dark:border-b dark:border-rose-500/20 dark:shadow-[0_12px_40px_rgba(225,29,72,0.15)]'>
+        {/* Isolated background layer with overflow-hidden so floating stats cards are not cut off */}
+        <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+          {/* Light mode gradient */}
+          <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+          {/* Dark mode multi-color velvet gradient */}
+          <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #09030b 0%, #1a0518 18%, #290820 38%, #1f0b29 62%, #0e0416 82%, #050208 100%)' }} />
+
+          {/* Dark mode glowing sunset orbs */}
+          <div className='absolute -top-12 right-12 w-96 h-96 hidden dark:block bg-rose-600/25 rounded-full blur-[100px] pointer-events-none' />
+          <div className='absolute bottom-0 -left-10 w-80 h-80 hidden dark:block bg-amber-500/20 rounded-full blur-[90px] pointer-events-none' />
+          <div className='absolute top-1/4 left-1/3 w-64 h-64 hidden dark:block bg-fuchsia-600/18 rounded-full blur-[80px] pointer-events-none' />
+          <div className='absolute -bottom-10 right-1/4 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[85px] pointer-events-none' />
+
+          {/* Dark mode SVG Velvet Silk Waves */}
+          <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="work-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.32" />
+                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.22" />
+                  <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.10" />
+                </linearGradient>
+                <linearGradient id="work-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#C026D3" stopOpacity="0.30" />
+                  <stop offset="40%" stopColor="#E11D48" stopOpacity="0.22" />
+                  <stop offset="75%" stopColor="#8B5CF6" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+                </linearGradient>
+                <linearGradient id="work-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.95" />
+                  <stop offset="45%" stopColor="#FBBF24" stopOpacity="0.95" />
+                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#FEF08A" stopOpacity="0.4" />
+                </linearGradient>
+                <linearGradient id="work-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#E879F9" stopOpacity="0.85" />
+                  <stop offset="50%" stopColor="#FB7185" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.8" />
+                </linearGradient>
+                <filter id="work-glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="work-glow-rose" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              {/* Background Silk Wave */}
+              <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150 L1440,320 L0,320 Z" fill="url(#work-grad-wave1)" />
+              <path d="M0,170 C360,90 600,250 900,130 C1200,30 1340,210 1440,150" stroke="url(#work-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#work-glow-amber)" />
+              {/* Foreground Velvet Wave */}
+              <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210 L1440,320 L0,320 Z" fill="url(#work-grad-wave2)" />
+              <path d="M0,220 C240,280 460,150 720,230 C980,310 1220,160 1440,210" stroke="url(#work-crest-2)" strokeWidth="2" strokeLinecap="round" filter="url(#work-glow-rose)" />
+            </svg>
+          </div>
+
+          {/* Light mode decorative orbs */}
+          <div className='absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden' />
+        </div>
+
         <div className='relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-            <p className='text-blue-300 font-bold uppercase tracking-widest text-xs mb-1'>Quality Control</p>
+            <p className='text-blue-300 dark:text-rose-300 font-bold uppercase tracking-widest text-xs mb-1'>Quality Control</p>
             <h1 className='text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3'>
-              <FileCheck className='text-blue-500' size={32}/> Work Logs & Audits
+              <FileCheck className='text-blue-500 dark:text-rose-400' size={32}/> Work Logs & Audits
             </h1>
           </motion.div>
           
@@ -349,9 +411,9 @@ export default function WorkRecords() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
-                    className='absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100]'
+                    className='absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#0c1427] rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden z-[100]'
                   >
-                    <div className='p-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50'>Quick Filters</div>
+                    <div className='p-3 text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest border-b border-gray-50 dark:border-slate-800'>Quick Filters</div>
                     {searchShortcuts.map((shortcut) => (
                       <button
                         key={shortcut.value}
@@ -359,7 +421,7 @@ export default function WorkRecords() {
                           setSearchQuery(shortcut.value);
                           setShowSearchDropdown(false);
                         }}
-                        className='w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors'
+                        className='w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
                       >
                         {shortcut.label}
                       </button>
@@ -397,25 +459,25 @@ export default function WorkRecords() {
               transition={{ delay: 0.2, staggerChildren: 0.1 }}
               className='grid grid-cols-1 md:grid-cols-3 gap-4 pointer-events-auto'
             >
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-blue-50 text-blue-600 rounded-full'><Activity size={20}/></div>
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-rose-500/25 dark:shadow-[0_8px_32px_rgba(244,63,94,0.12)] hover:dark:border-rose-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-300 rounded-full border border-rose-200/40 dark:border-rose-500/30 shadow-sm'><Activity size={20}/></div>
                 <div>
-                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Total Records</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900'>{stats.totalBookings}</p>
+                  <p className='text-[10px] font-bold text-gray-500 dark:text-rose-200/70 uppercase tracking-widest'>Total Records</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.totalBookings}</p>
                 </div>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-orange-50 text-orange-600 rounded-full'><Wallet size={20}/></div>
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-amber-500/25 dark:shadow-[0_8px_32px_rgba(245,158,11,0.12)] hover:dark:border-amber-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-300 rounded-full border border-amber-200/40 dark:border-amber-500/30 shadow-sm'><Wallet size={20}/></div>
                 <div>
-                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Extra Revenue</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900'>AED {stats.totalExtra.toFixed(2)}</p>
+                  <p className='text-[10px] font-bold text-gray-500 dark:text-amber-200/70 uppercase tracking-widest'>Extra Revenue</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>AED {stats.totalExtra.toFixed(2)}</p>
                 </div>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} className='bg-white/95 backdrop-blur-xl p-4 md:p-5 rounded-full shadow-lg border border-gray-100 flex items-center justify-center gap-4 cursor-default'>
-                <div className='p-3 bg-rose-50 text-rose-600 rounded-full'><FileCheck size={20}/></div>
+              <motion.div whileHover={{ scale: 1.02 }} className='bg-white dark:bg-[#150a1e]/60 dark:backdrop-blur-2xl p-4 md:p-5 rounded-full shadow-xl border border-gray-100 dark:border-purple-500/25 dark:shadow-[0_8px_32px_rgba(168,85,247,0.12)] hover:dark:border-purple-400/40 transition-all flex items-center justify-center gap-4 cursor-default'>
+                <div className='p-3 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 rounded-full border border-purple-200/40 dark:border-purple-500/30 shadow-sm'><FileCheck size={20}/></div>
                 <div>
-                  <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest'>Pending Audits</p>
-                  <p className='text-xl md:text-2xl font-black text-gray-900'>{stats.pendingAudits}</p>
+                  <p className='text-[10px] font-bold text-gray-500 dark:text-purple-200/70 uppercase tracking-widest'>Pending Audits</p>
+                  <p className='text-xl md:text-2xl font-black text-gray-900 dark:text-white'>{stats.pendingAudits}</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -432,36 +494,36 @@ export default function WorkRecords() {
               initial={{ opacity: 0, height: 0, y: -20 }} 
               animate={{ opacity: 1, height: 'auto', y: 0 }} 
               exit={{ opacity: 0, height: 0, y: -20 }}
-              className='bg-white p-6 rounded-[2rem] shadow-xl border border-gray-100 mb-8 overflow-hidden'
+              className='bg-white dark:bg-[#0c1427] p-6 rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 mb-8 overflow-hidden'
             >
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
                 <div>
-                  <label className='text-[10px] font-bold text-gray-400 uppercase'>From Date</label>
-                  <input type='date' value={dateFrom} onChange={e => setDateFrom(e.target.value)} className='w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-900'/>
+                  <label className='text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase'>From Date</label>
+                  <input type='date' value={dateFrom} onChange={e => setDateFrom(e.target.value)} className='w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-gray-900 dark:text-white'/>
                 </div>
                 <div>
-                  <label className='text-[10px] font-bold text-gray-400 uppercase'>To Date</label>
-                  <input type='date' value={dateTo} onChange={e => setDateTo(e.target.value)} className='w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-900'/>
+                  <label className='text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase'>To Date</label>
+                  <input type='date' value={dateTo} onChange={e => setDateTo(e.target.value)} className='w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-gray-900 dark:text-white'/>
                 </div>
                 <div>
-                  <label className='text-[10px] font-bold text-gray-400 uppercase'>Company</label>
-                  <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className='w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-900'>
+                  <label className='text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase'>Company</label>
+                  <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className='w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-gray-900 dark:text-white'>
                     <option value=''>All Companies</option>
                     {companies.map((c, i) => <option key={i} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className='text-[10px] font-bold text-gray-400 uppercase'>Status</label>
-                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className='w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-bold text-gray-900'>
+                  <label className='text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase'>Status</label>
+                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className='w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-gray-900 dark:text-white'>
                     <option value=''>All Statuses</option>
                     <option value='completed'>Needs Audit</option>
                     <option value='finalized'>Finalized</option>
                   </select>
                 </div>
                 <div className='flex items-end'>
-                  <label className='flex items-center justify-center gap-2 cursor-pointer p-3 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-xl w-full h-[46px] transition-colors'>
+                  <label className='flex items-center justify-center gap-2 cursor-pointer p-3 border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl w-full h-[46px] transition-colors'>
                     <input type='checkbox' checked={filterHasExtra} onChange={e => setFilterHasExtra(e.target.checked)} className='w-4 h-4 accent-indigo-600'/>
-                    <span className='text-xs font-black text-indigo-900'>Has Extra Charges</span>
+                    <span className='text-xs font-black text-indigo-900 dark:text-indigo-300'>Has Extra Charges</span>
                   </label>
                 </div>
               </div>
@@ -473,24 +535,24 @@ export default function WorkRecords() {
         {loading ? (
           <div className='space-y-6 mt-4'>
             {[1, 2, 3].map(i => (
-              <div key={i} className='bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 animate-pulse ml-8'>
+              <div key={i} className='bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-slate-800 animate-pulse ml-8'>
                 <div className='flex justify-between mb-6'>
                    <div className='space-y-3 w-1/2'>
-                     <div className='h-4 bg-gray-200 rounded w-1/3'></div>
-                     <div className='h-6 bg-gray-200 rounded w-3/4'></div>
-                     <div className='h-4 bg-gray-200 rounded w-1/2'></div>
+                     <div className='h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/3'></div>
+                     <div className='h-6 bg-gray-200 dark:bg-slate-700 rounded w-3/4'></div>
+                     <div className='h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/2'></div>
                    </div>
-                   <div className='h-8 bg-gray-200 rounded w-20'></div>
+                   <div className='h-8 bg-gray-200 dark:bg-slate-700 rounded w-20'></div>
                 </div>
-                <div className='h-12 bg-gray-100 rounded-xl mb-4'></div>
-                <div className='h-12 bg-gray-200 rounded-xl'></div>
+                <div className='h-12 bg-gray-100 dark:bg-slate-800 rounded-xl mb-4'></div>
+                <div className='h-12 bg-gray-200 dark:bg-slate-700 rounded-xl'></div>
               </div>
             ))}
           </div>
         ) : groupedBookings.sortedDates.length === 0 ? (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white p-12 rounded-[2rem] border border-gray-100 text-center text-gray-400 shadow-sm'>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='bg-white dark:bg-[#0c1427] p-12 rounded-[2rem] border border-gray-100 dark:border-slate-800 text-center text-gray-400 dark:text-slate-500 shadow-sm'>
             <CheckSquare size={56} className='mx-auto mb-4 opacity-30 text-blue-500'/>
-            <p className='text-xl font-black text-gray-800'>No work records found.</p>
+            <p className='text-xl font-black text-gray-800 dark:text-white'>No work records found.</p>
             <p className='text-sm mt-2'>Try changing the search or filters.</p>
           </motion.div>
         ) : (
@@ -500,17 +562,17 @@ export default function WorkRecords() {
 
                 {/* Pill Style Date Header */}
                 <motion.div layout className='flex items-center gap-3 pl-2'>
-                  <div className='flex items-center gap-2 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-sm border border-gray-100'>
-                    <div className='p-1.5 bg-blue-100 text-blue-700 rounded-lg'><Calendar size={16} strokeWidth={2.5}/></div>
-                    <h2 className='text-base md:text-lg font-black text-gray-800 tracking-tight'>
+                  <div className='flex items-center gap-2 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800'>
+                    <div className='p-1.5 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-lg'><Calendar size={16} strokeWidth={2.5}/></div>
+                    <h2 className='text-base md:text-lg font-black text-gray-800 dark:text-white tracking-tight'>
                       {format(parseISO(dateStr), 'EEEE, dd MMM yyyy')}
                     </h2>
                   </div>
-                  <div className='h-px bg-gray-300 flex-1 ml-2 hidden md:block'></div>
+                  <div className='h-px bg-gray-300 dark:bg-slate-800 flex-1 ml-2 hidden md:block'></div>
                 </motion.div>
 
                 {/* Timeline */}
-                <div className='relative border-l-2 border-gray-200 ml-4 md:ml-6 space-y-6 pb-4'>
+                <div className='relative border-l-2 border-gray-200 dark:border-slate-800 ml-4 md:ml-6 space-y-6 pb-4'>
                   {groupedBookings.groups[dateStr].map((booking) => {
                     const workLog = booking.work_logs?.[0];
                     const members = getTeamMembers(booking.teams?.member_ids);
@@ -538,50 +600,50 @@ export default function WorkRecords() {
                         className='relative pl-8 md:pl-10'
                       >
                         {/* Timeline dot */}
-                        <div className='absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#F4F7FA] shadow-sm'></div>
+                        <div className='absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#F4F7FA] dark:ring-[#070b14] shadow-sm'></div>
 
-                        <div className='bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all'>
+                        <div className='bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-700 transition-all'>
 
                           {/* Top row */}
-                          <div className='flex flex-col md:flex-row justify-between items-start mb-4 border-b border-gray-50 pb-4 gap-4 md:gap-0'>
+                          <div className='flex flex-col md:flex-row justify-between items-start mb-4 border-b border-gray-50 dark:border-slate-800/80 pb-4 gap-4 md:gap-0'>
                             <div>
                               <div className='flex flex-wrap items-center gap-3 mb-2'>
-                                <span className='text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5'>
+                                <span className='text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5'>
                                   <Calendar size={14} className='text-blue-400'/> {format(parseISO(booking.cleaning_date), 'dd MMM yyyy')}
                                 </span>
-                                <span className='text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5'>
+                                <span className='text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5'>
                                   <Clock size={14} className='text-blue-400'/> Shift: {booking.cleaning_time}
                                 </span>
                                 {booking.booking_ref && (
-                                  <span className='px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-black tracking-wider border border-blue-100'>
+                                  <span className='px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-md text-[10px] font-black tracking-wider border border-blue-100 dark:border-blue-800/60'>
                                     ID: {booking.booking_ref}
                                   </span>
                                 )}
                               </div>
-                              <h3 className='text-xl font-black text-gray-900 flex flex-wrap items-center gap-3 mt-1'>
+                              <h3 className='text-xl font-black text-gray-900 dark:text-white flex flex-wrap items-center gap-3 mt-1'>
                                 {companyName || 'Unknown Company'}
                                 {hasLostAndFound && (
-                                  <span className='px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black tracking-widest uppercase border border-rose-100 flex items-center gap-1'>
+                                  <span className='px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-black tracking-widest uppercase border border-rose-100 dark:border-rose-800/60 flex items-center gap-1'>
                                     Lost & Found
                                   </span>
                                 )}
                               </h3>
-                              <p className='text-sm font-bold text-gray-500 flex items-center gap-1.5 mt-1'>
+                              <p className='text-sm font-bold text-gray-500 dark:text-slate-400 flex items-center gap-1.5 mt-1'>
                                 <MapPin size={14}/> Unit {booking.units?.unit_number} - {booking.units?.building_name}
                               </p>
-                              <p className='text-xs font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md mt-2 inline-block border border-gray-200'>{booking.service_type}</p>
+                              <p className='text-xs font-bold bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-md mt-2 inline-block border border-gray-200 dark:border-slate-700'>{booking.service_type}</p>
                             </div>
                             <div className='flex flex-col items-start md:items-end gap-1.5'>
-                              <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest inline-block ${isFinalized ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                              <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest inline-block ${isFinalized ? 'bg-green-100 dark:bg-emerald-950/60 text-green-700 dark:text-emerald-400 border border-green-200 dark:border-emerald-800/50' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50'}`}>
                                 {booking.status}
                               </span>
                               {isFinalized && grandTotal > 0 && (
-                                <span className='text-sm font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded border border-gray-200'>
+                                <span className='text-sm font-black text-gray-900 dark:text-white bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700'>
                                   Total: AED {grandTotal.toFixed(2)}
                                 </span>
                               )}
                               {booking.invoice_no && (
-                                <span className='text-[10px] font-bold text-gray-500 flex items-center gap-1'>
+                                <span className='text-[10px] font-bold text-gray-500 dark:text-slate-400 flex items-center gap-1'>
                                   <FileCheck size={12} className='text-green-500'/> {booking.invoice_no}
                                 </span>
                               )}
@@ -590,15 +652,15 @@ export default function WorkRecords() {
 
                           {/* Extra Inventory Billed */}
                           {extras.length > 0 && (
-                            <div className='mb-3 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl'>
-                              <p className='text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-1'>
+                            <div className='mb-3 p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-xl'>
+                              <p className='text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1'>
                                 <PackagePlus size={12}/> Extra Provide Billed
                               </p>
                               <div className='space-y-1.5'>
                                 {extras.map((inv: any) => (
                                   <div key={inv.id} className='flex justify-between items-center text-xs'>
-                                    <span className='font-bold text-indigo-900'>{inv.qty}x {inv.name}</span>
-                                    <span className={`font-black ${inv.priceLabel === 'Pending Audit' ? 'text-amber-600' : 'text-indigo-700'}`}>
+                                    <span className='font-bold text-indigo-900 dark:text-indigo-200'>{inv.qty}x {inv.name}</span>
+                                    <span className={`font-black ${inv.priceLabel === 'Pending Audit' ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-700 dark:text-indigo-300'}`}>
                                       {inv.priceLabel}
                                     </span>
                                   </div>
@@ -609,18 +671,18 @@ export default function WorkRecords() {
 
                           {/* Extra Manual / Damage Charges */}
                           {extraCharges.length > 0 && (
-                            <div className='mb-4 p-3 bg-orange-50/70 border border-orange-100 rounded-xl'>
-                              <p className='text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2 flex items-center gap-1'>
+                            <div className='mb-4 p-3 bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40 rounded-xl'>
+                              <p className='text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1'>
                                 <AlertTriangle size={12}/> Extra Added Charges
                               </p>
                               <div className='space-y-1.5'>
                                 {extraCharges.map((chg: any) => (
                                   <div key={chg.id} className='flex justify-between items-center text-xs'>
-                                    <span className='font-bold text-orange-900 flex items-center gap-1.5'>
-                                      <span className='text-[8px] bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded uppercase tracking-wider'>{chg.charge_type === 'damage' ? 'DMG' : 'MNL'}</span>
+                                    <span className='font-bold text-orange-900 dark:text-orange-200 flex items-center gap-1.5'>
+                                      <span className='text-[8px] bg-orange-200 dark:bg-orange-900/60 text-orange-800 dark:text-orange-300 px-1.5 py-0.5 rounded uppercase tracking-wider'>{chg.charge_type === 'damage' ? 'DMG' : 'MNL'}</span>
                                       {chg.item_description}
                                     </span>
-                                    <span className='font-black text-orange-700'>
+                                    <span className='font-black text-orange-700 dark:text-orange-300'>
                                       AED {Number(chg.amount).toFixed(2)}
                                     </span>
                                   </div>
@@ -632,18 +694,18 @@ export default function WorkRecords() {
                           {/* Team & Duration row */}
                           <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-4'>
                             <div>
-                              <p className='text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1'>
+                              <p className='text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1'>
                                 <Users size={12}/> {booking.teams?.team_name}
                               </p>
                               <div className='flex items-center'>
                                 {members.map((m: any, i: number) => (
-                                  <div key={m.id} className={`w-10 h-10 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 overflow-hidden shadow-sm ${i !== 0 ? '-ml-3' : ''}`}>
+                                  <div key={m.id} className={`w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-slate-300 overflow-hidden shadow-sm ${i !== 0 ? '-ml-3' : ''}`}>
                                     {m.avatar_url ? <img src={m.avatar_url} className='w-full h-full object-cover' alt=''/> : m.full_name?.charAt(0) || 'U'}
                                   </div>
                                 ))}
                                 {workLog && (
-                                  <div className='ml-3 text-xs font-bold text-gray-500'>
-                                    Submitted by <span className='text-gray-900'>{workLog.agent?.full_name || 'Supervisor'}</span>
+                                  <div className='ml-3 text-xs font-bold text-gray-500 dark:text-slate-400'>
+                                    Submitted by <span className='text-gray-900 dark:text-white'>{workLog.agent?.full_name || 'Supervisor'}</span>
                                   </div>
                                 )}
                               </div>
@@ -651,23 +713,23 @@ export default function WorkRecords() {
 
                             {workLog ? (
                               <div className='flex gap-2 w-full md:w-auto'>
-                                <div className='flex-1 md:flex-none px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2'>
+                                <div className='flex-1 md:flex-none px-3 py-2 bg-gray-50 dark:bg-[#070b14] rounded-xl border border-gray-100 dark:border-slate-800 flex items-center justify-center gap-2'>
                                   <Clock size={16} className='text-blue-500'/>
                                   <div>
-                                    <p className='text-[9px] font-bold text-gray-400 uppercase'>Duration</p>
-                                    <p className='text-xs font-black text-gray-900'>{getDuration(workLog.start_time, workLog.end_time)}</p>
+                                    <p className='text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase'>Duration</p>
+                                    <p className='text-xs font-black text-gray-900 dark:text-white'>{getDuration(workLog.start_time, workLog.end_time)}</p>
                                   </div>
                                 </div>
-                                <div className='flex-1 md:flex-none px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center gap-2'>
+                                <div className='flex-1 md:flex-none px-3 py-2 bg-gray-50 dark:bg-[#070b14] rounded-xl border border-gray-100 dark:border-slate-800 flex items-center justify-center gap-2'>
                                   <Camera size={16} className='text-blue-500'/>
                                   <div>
-                                    <p className='text-[9px] font-bold text-gray-400 uppercase'>Photos</p>
-                                    <p className='text-xs font-black text-gray-900'>{(workLog.before_photos?.length || 0) + (workLog.photo_urls?.length || 0)}</p>
+                                    <p className='text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase'>Photos</p>
+                                    <p className='text-xs font-black text-gray-900 dark:text-white'>{(workLog.before_photos?.length || 0) + (workLog.photo_urls?.length || 0)}</p>
                                   </div>
                                 </div>
                               </div>
                             ) : (
-                              <span className='text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg flex items-center gap-1'>
+                              <span className='text-xs font-bold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-transparent dark:border-red-900/40'>
                                 <AlertCircle size={14}/> No Work Log Found
                               </span>
                             )}
@@ -676,7 +738,7 @@ export default function WorkRecords() {
                           {/* View Report Button */}
                           <button
                             onClick={() => setSelectedBooking(booking)}
-                            className='w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg'
+                            className='w-full py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg'
                           >
                             <FileCheck size={18}/> View Full Report
                           </button>

@@ -42,9 +42,9 @@ import AdminEditEquipmentTracker, { InventoryItem } from "./AdminEditEquipmentTr
 type Tab = "execution" | "inventory" | "finalize";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode; activeColor: string }[] = [
-  { key: "execution", label: "Execution Info",  icon: <FileCheck size={14} />,        activeColor: "border-blue-600 text-blue-700 bg-blue-50/60" },
-  { key: "inventory", label: "Inventory",        icon: <Layers size={14} />,           activeColor: "border-indigo-600 text-indigo-700 bg-indigo-50/60" },
-  { key: "finalize",  label: "Finalize & Save",  icon: <CircleDollarSign size={14} />, activeColor: "border-purple-600 text-purple-700 bg-purple-50/60" },
+  { key: "execution", label: "Execution Info",  icon: <FileCheck size={14} />,        activeColor: "border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40" },
+  { key: "inventory", label: "Inventory",        icon: <Layers size={14} />,           activeColor: "border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40" },
+  { key: "finalize",  label: "Finalize & Save",  icon: <CircleDollarSign size={14} />, activeColor: "border-purple-600 text-purple-700 dark:text-purple-400 bg-purple-50/60 dark:bg-purple-950/40" },
 ];
 
 interface AdminEditLogModalProps {
@@ -198,18 +198,18 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
 
   return (
     <div className={minimal ? "" : "space-y-3"}>
-      {!minimal && <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{title}</h4>}
+      {!minimal && <h4 className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">{title}</h4>}
 
       <div 
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
         onDrop={handleDrop}
-        className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 scale-[1.02]' : 'border-dashed border-gray-200 bg-white'}`}
+        className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 scale-[1.02]' : 'border-dashed border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'}`}
       >
         {displayPhotos.map((p: any, i: number) => {
           const src = typeof p === 'string' ? p : URL.createObjectURL(p);
           return (
-            <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
+            <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm group">
               <img 
                 src={src} 
                 alt="Upload" 
@@ -217,7 +217,7 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
                 onClick={() => setLightboxIndex(i)}
               />
               <button onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
-                className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50">
+                className="absolute top-1 right-1 bg-white/90 dark:bg-slate-900/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50 dark:hover:bg-red-950/40">
                 <Trash2 size={14}/>
               </button>
             </div>
@@ -225,20 +225,20 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
         })}
 
         {hiddenCount > 0 && !expanded && (
-          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
+          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex flex-col items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-sm shrink-0">
             <span className="font-black text-xl">+{hiddenCount}</span>
             <span className="text-[9px] font-bold uppercase tracking-widest mt-1">View All</span>
           </button>
         )}
 
         {expanded && photos.length > 4 && (
-          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
+          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex flex-col items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-sm shrink-0">
             <Eye size={20} className="mb-1" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Show Less</span>
           </button>
         )}
 
-        <label className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-blue-300 flex flex-col items-center justify-center text-blue-500 cursor-pointer hover:bg-blue-50 transition bg-white shadow-sm shrink-0">
+        <label className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-700 flex flex-col items-center justify-center text-blue-500 dark:text-blue-400 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/40 transition bg-white dark:bg-slate-900/60 shadow-sm shrink-0">
           <UploadCloud size={24} className="mb-1" />
           <span className="text-[9px] font-black uppercase tracking-widest">Add Files</span>
           <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
@@ -247,7 +247,7 @@ function EditablePhotoGrid({ title, photos, setPhotos, minimal = false }: any) {
         </label>
 
         {photos.length === 0 && !isDragging && (
-          <span className="text-xs font-bold text-gray-400 ml-2 hidden md:inline">Drag & Drop images here</span>
+          <span className="text-xs font-bold text-gray-400 dark:text-slate-500 ml-2 hidden md:inline">Drag & Drop images here</span>
         )}
         {isDragging && <span className="text-sm font-black text-blue-500 ml-2">Drop it like it's hot! 🔥</span>}
       </div>
@@ -538,7 +538,7 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 18 }}
         transition={{ duration: 0.2 }}
-        className="w-full bg-white rounded-[1.75rem] shadow-2xl flex flex-col overflow-hidden"
+        className="w-full bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-[1.75rem] shadow-2xl flex flex-col overflow-hidden"
         style={{
           // Responsive: tall on small screens, wide on large
           maxWidth: "min(95vw, 1100px)",
@@ -593,22 +593,22 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
         </div>
 
         {/* ─── TABS ─── */}
-        <div className="flex bg-white border-b border-gray-100 shrink-0 overflow-x-auto scrollbar-none">
+        <div className="flex bg-white dark:bg-[#0c1427] border-b border-gray-100 dark:border-slate-800 shrink-0 overflow-x-auto scrollbar-none">
           {TABS.map((tab, i) => (
             <button key={tab.key} onClick={() => switchTab(i)}
               className={`flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-black transition-all border-b-2 whitespace-nowrap flex-1
-                ${activeTab === tab.key ? tab.activeColor : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
+                ${activeTab === tab.key ? tab.activeColor : "border-transparent text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/50"}`}>
               {tab.icon}<span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* ─── CONTENT ─── */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F4F7FA] overscroll-contain"
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F4F7FA] dark:bg-[#070b14] overscroll-contain"
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
               <Loader2 className="animate-spin" size={34} />
               <p className="font-black text-sm uppercase tracking-widest">Loading…</p>
             </div>
@@ -619,25 +619,25 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
               <div className={activeTab === "execution" ? "block space-y-4" : "hidden"}>
 
                 {/* Schedule & Team */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                  <h3 className="font-black text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-2 text-sm">
+                <div className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+                  <h3 className="font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2.5 flex items-center gap-2 text-sm">
                     <Calendar size={15} className="text-blue-500" /> Booking Schedule & Team
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Shift Date</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">Shift Date</label>
                       <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-black text-gray-900 text-sm transition-all" />
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 font-black text-gray-900 dark:text-white text-sm transition-all" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Booking Time</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">Booking Time</label>
                       <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)}
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-black text-gray-900 text-sm transition-all" />
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 font-black text-gray-900 dark:text-white text-sm transition-all" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Assigned Team</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">Assigned Team</label>
                       <select value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-black text-gray-900 text-sm cursor-pointer transition-all">
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 font-black text-gray-900 dark:text-white text-sm cursor-pointer transition-all">
                         <option value="">Unassigned</option>
                         {teams.map(t => {
                           const names = (t.member_ids || []).map((uid: string) => profilesMap.get(uid)).filter(Boolean);
@@ -647,31 +647,31 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
                       {selectedTeam && (() => {
                         const team = teams.find(t => t.id.toString() === selectedTeam);
                         const names = (team?.member_ids || []).map((uid: string) => profilesMap.get(uid)).filter(Boolean);
-                        return names.length ? <p className="mt-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-lg border border-indigo-100">👥 {names.join(" · ")}</p> : null;
+                        return names.length ? <p className="mt-2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">👥 {names.join(" · ")}</p> : null;
                       })()}
                     </div>
                   </div>
                 </div>
 
                 {/* Timings */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                  <h3 className="font-black text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-2 text-sm">
+                <div className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+                  <h3 className="font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2.5 flex items-center gap-2 text-sm">
                     <Clock size={15} className="text-indigo-500" /> Work Log Timings
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Start Time</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">Start Time</label>
                       <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                        className="w-full p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-black text-indigo-900 text-sm transition-all" />
+                        className="w-full p-3 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-black text-indigo-900 dark:text-indigo-200 text-sm transition-all" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">End Time</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">End Time</label>
                       <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                        className="w-full p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-black text-indigo-900 text-sm transition-all" />
+                        className="w-full p-3 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-black text-indigo-900 dark:text-indigo-200 text-sm transition-all" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Total Duration</label>
-                      <div className={`p-3 rounded-xl border text-sm font-black text-center ${duration ? "bg-green-50 border-green-200 text-green-800" : "bg-gray-50 border-gray-200 text-gray-400"}`}>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-1.5">Total Duration</label>
+                      <div className={`p-3 rounded-xl border text-sm font-black text-center ${duration ? "bg-green-50 dark:bg-emerald-950/40 border-green-200 dark:border-emerald-800/60 text-green-800 dark:text-emerald-300" : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-gray-400 dark:text-slate-500"}`}>
                         {duration ? `⏱ ${duration}` : "— set times"}
                       </div>
                     </div>
@@ -679,28 +679,28 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
                 </div>
 
                 {/* Media */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                  <h3 className="font-black text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-2 text-sm">
+                <div className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+                  <h3 className="font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2.5 flex items-center gap-2 text-sm">
                     <Camera size={15} className="text-emerald-500" /> Media & Evidence
-                    <span className="ml-auto text-[9px] font-bold text-gray-400 normal-case">Upload only JPG, PNG, JPEG images</span>
+                    <span className="ml-auto text-[9px] font-bold text-gray-400 dark:text-slate-500 normal-case">Upload only JPG, PNG, JPEG images</span>
                   </h3>
                   <EditablePhotoGrid title="Before Photos" photos={beforePhotos} setPhotos={setBeforePhotos} />
-                  <div className="h-px bg-gray-100" />
+                  <div className="h-px bg-gray-100 dark:bg-slate-800" />
                   <EditablePhotoGrid title="After Photos" photos={afterPhotos} setPhotos={setAfterPhotos} />
                 </div>
 
                 {/* Damage & Lost */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100 shadow-sm space-y-3">
-                    <h3 className="font-black text-red-800 flex items-center gap-2 text-sm"><AlertTriangle size={15} /> Damaged Items</h3>
+                  <div className="bg-red-50/50 dark:bg-red-950/20 p-5 rounded-2xl border border-red-100 dark:border-red-900/40 shadow-sm space-y-3">
+                    <h3 className="font-black text-red-800 dark:text-red-400 flex items-center gap-2 text-sm"><AlertTriangle size={15} /> Damaged Items</h3>
                     <textarea placeholder="Damage details…" value={damagedRemarks} onChange={e => setDamagedRemarks(e.target.value)} rows={2}
-                      className="w-full p-3 bg-white border border-red-200 rounded-xl outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 font-bold text-gray-900 text-sm resize-none transition-all" />
+                      className="w-full p-3 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/50 rounded-xl outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 font-bold text-gray-900 dark:text-white text-sm resize-none transition-all" />
                     <EditablePhotoGrid title="" minimal photos={damagedPhotos} setPhotos={setDamagedPhotos} />
                   </div>
-                  <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm space-y-3">
-                    <h3 className="font-black text-amber-800 flex items-center gap-2 text-sm"><Search size={15} /> Lost & Found</h3>
+                  <div className="bg-amber-50/50 dark:bg-amber-950/20 p-5 rounded-2xl border border-amber-100 dark:border-amber-900/40 shadow-sm space-y-3">
+                    <h3 className="font-black text-amber-800 dark:text-amber-400 flex items-center gap-2 text-sm"><Search size={15} /> Lost & Found</h3>
                     <textarea placeholder="Lost/Found details…" value={lostFoundRemarks} onChange={e => setLostFoundRemarks(e.target.value)} rows={2}
-                      className="w-full p-3 bg-white border border-amber-200 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 font-bold text-gray-900 text-sm resize-none transition-all" />
+                      className="w-full p-3 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/50 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 font-bold text-gray-900 dark:text-white text-sm resize-none transition-all" />
                     <EditablePhotoGrid title="" minimal photos={lostFoundPhotos} setPhotos={setLostFoundPhotos} />
                   </div>
                 </div>
@@ -708,11 +708,11 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
 
               {/* ═══ INVENTORY (always mounted) ═══ */}
               <div className={activeTab === "inventory" ? "block" : "hidden"}>
-                <div className="bg-white p-3 md:p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#0c1427] p-3 md:p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
                   {booking?.units?.id ? (
                     <AdminEditEquipmentTracker bookingId={bookingId} unitId={booking.units.id} onDataChange={setEquipmentData} />
                   ) : (
-                    <p className="text-center font-black text-red-500 py-10 text-sm">Unit info missing.</p>
+                    <p className="text-center font-black text-red-500 dark:text-red-400 py-10 text-sm">Unit info missing.</p>
                   )}
                 </div>
               </div>
@@ -721,51 +721,51 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
               <div className={activeTab === "finalize" ? "block space-y-4" : "hidden"}>
 
                 {/* Pricing */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                  <h3 className="font-black text-gray-900 border-b border-gray-100 pb-2.5 mb-4 flex items-center gap-2 text-sm">
+                <div className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+                  <h3 className="font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2.5 mb-4 flex items-center gap-2 text-sm">
                     <CircleDollarSign size={15} className="text-blue-500" /> Pricing
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Base Cleaning Price (AED)</label>
+                      <label className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-2">Base Cleaning Price (AED)</label>
                       <input type="number" value={priceInput} onChange={e => setPriceInput(e.target.value)}
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-black text-2xl text-gray-900 transition-all" />
+                        className="w-full p-4 bg-gray-50 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-2xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 font-black text-2xl text-gray-900 dark:text-white transition-all" />
                     </div>
                     <div className="flex items-end">
-                      <div className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                      <div className="w-full p-4 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl">
                         <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Extra Charges Total</p>
-                        <p className="text-2xl font-black text-indigo-900">AED {extraChargesTotal.toFixed(2)}</p>
+                        <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200">AED {extraChargesTotal.toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Extra Charges */}
-                <div className="bg-orange-50/50 p-5 rounded-2xl border border-orange-100 shadow-sm">
-                  <h3 className="font-black text-orange-800 border-b border-orange-200 pb-2.5 mb-4 flex items-center gap-2 text-sm">
+                <div className="bg-orange-50/50 dark:bg-orange-950/20 p-5 rounded-2xl border border-orange-100 dark:border-orange-900/40 shadow-sm">
+                  <h3 className="font-black text-orange-800 dark:text-orange-400 border-b border-orange-200 dark:border-orange-900/50 pb-2.5 mb-4 flex items-center gap-2 text-sm">
                     <AlertTriangle size={15} /> Manual Extra Charges
                   </h3>
                   <div className="space-y-2.5">
                     {extraCharges.map((charge, idx) => (
-                      <div key={charge.id} className="flex flex-col sm:flex-row gap-2 sm:items-center p-3 rounded-2xl bg-white border border-orange-200 shadow-sm">
+                      <div key={charge.id} className="flex flex-col sm:flex-row gap-2 sm:items-center p-3 rounded-2xl bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-900/50 shadow-sm">
                         <input type="text" value={charge.description}
                           onChange={e => setExtraCharges(prev => prev.map((c, i) => i === idx ? { ...c, description: e.target.value } : c))}
                           placeholder="Charge description…"
-                          className="w-full sm:flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none text-sm font-black text-gray-900 focus:border-orange-400 transition-colors" />
+                          className="w-full sm:flex-1 p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm font-black text-gray-900 dark:text-white focus:border-orange-400 transition-colors" />
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-orange-400 w-full sm:w-28 transition-colors">
-                            <span className="text-xs font-black text-gray-400">AED</span>
+                          <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2.5 focus-within:border-orange-400 w-full sm:w-28 transition-colors">
+                            <span className="text-xs font-black text-gray-400 dark:text-slate-500">AED</span>
                             <input type="number" value={charge.amount}
                               onChange={e => setExtraCharges(prev => prev.map((c, i) => i === idx ? { ...c, amount: e.target.value } : c))}
-                              placeholder="0.00" className="flex-1 outline-none text-sm font-black text-gray-900 bg-transparent" />
+                              placeholder="0.00" className="flex-1 outline-none text-sm font-black text-gray-900 dark:text-white bg-transparent" />
                           </div>
                           <button onClick={() => setExtraCharges(prev => prev.filter((_, i) => i !== idx))}
-                            className="p-2.5 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                            className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 rounded-xl transition-colors"><Trash2 size={16} /></button>
                         </div>
                       </div>
                     ))}
                     <button onClick={() => setExtraCharges(prev => [...prev, { id: crypto.randomUUID(), charge_type: "manual", description: "", amount: "" }])}
-                      className="w-full py-3.5 border-2 border-dashed border-orange-300 rounded-2xl text-sm font-black text-orange-600 hover:bg-orange-100 hover:border-orange-400 transition-all flex items-center justify-center gap-2">
+                      className="w-full py-3.5 border-2 border-dashed border-orange-300 dark:border-orange-800/80 rounded-2xl text-sm font-black text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-950/30 hover:border-orange-400 transition-all flex items-center justify-center gap-2">
                       + Add Extra Charge
                     </button>
                   </div>
@@ -783,7 +783,7 @@ export default function AdminEditLogModal({ isOpen, onClose, bookingId, onSucces
                       {saving ? <><Loader2 className="animate-spin" size={22} /> Saving… {uploadProgress !== null ? `${uploadProgress}%` : ""}</> : <><Save size={22} /> SAVE AS FINALIZED</>}
                     </button>
                   </div>
-                  <p className="text-center text-[10px] font-bold text-gray-400 mt-3 uppercase tracking-widest">
+                  <p className="text-center text-[10px] font-bold text-gray-400 dark:text-slate-500 mt-3 uppercase tracking-widest">
                     Saves Execution · Inventory · Pricing together
                   </p>
                 </div>

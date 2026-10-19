@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Sparkles, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import { ShieldCheck, Clock, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-6">
               <div className="p-2 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl text-white">
-                <Sparkles size={20} />
+                <ShieldCheck size={20} />
               </div>
               <span className="text-xl font-bold tracking-wider text-white">
                 BTM <span className="text-cyan-500">CLEANING</span>
@@ -23,7 +23,7 @@ export default function Footer() {
               Professional Cleaning & Technical Services CO. providing premium maintenance solutions across Dubai. We ensure a healthy, sparkling clean environment for your luxury apartments and villas.
             </p>
             <div className="mt-8 flex items-center gap-2 text-cyan-400 bg-cyan-950/30 w-fit px-4 py-2 rounded-xl border border-cyan-900/50">
-              <Sparkles size={16} />
+              <Clock size={16} />
               <span className="font-bold text-xs uppercase tracking-widest">Available 24/7 in Dubai</span>
             </div>
           </div>

@@ -39,24 +39,24 @@ function DeleteConfirmModal({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 z-10"
+        className="relative bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-8 z-10 transition-colors"
       >
-        <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-2xl mx-auto mb-5">
-          <AlertTriangle size={32} className="text-red-600" />
+        <div className="flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-rose-950/40 rounded-2xl mx-auto mb-5">
+          <AlertTriangle size={32} className="text-red-600 dark:text-rose-400" />
         </div>
-        <h2 className="text-xl font-black text-gray-900 text-center mb-2">Delete this Invoice?</h2>
-        <p className="text-sm font-bold text-gray-500 text-center mb-6">This action cannot be undone.</p>
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 space-y-2">
-          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 uppercase tracking-widest">Invoice No</span><span className="text-sm font-black text-gray-900">{invoice.invoice_no}</span></div>
-          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 uppercase tracking-widest">Company</span><span className="text-sm font-bold text-gray-700">{invoice.company_name}</span></div>
-          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 uppercase tracking-widest">Amount</span><span className="text-sm font-black text-red-600">AED {Number(invoice.total_amount).toFixed(2)}</span></div>
+        <h2 className="text-xl font-black text-gray-900 dark:text-white text-center mb-2">Delete this Invoice?</h2>
+        <p className="text-sm font-bold text-gray-500 dark:text-slate-400 text-center mb-6">This action cannot be undone.</p>
+        <div className="bg-red-50 dark:bg-rose-950/30 border border-red-100 dark:border-rose-900/50 rounded-2xl p-4 mb-6 space-y-2">
+          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Invoice No</span><span className="text-sm font-black text-gray-900 dark:text-white">{invoice.invoice_no}</span></div>
+          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Company</span><span className="text-sm font-bold text-gray-700 dark:text-slate-300">{invoice.company_name}</span></div>
+          <div className="flex justify-between"><span className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Amount</span><span className="text-sm font-black text-red-600 dark:text-rose-400">AED {Number(invoice.total_amount).toFixed(2)}</span></div>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 flex gap-2">
-          <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs font-bold text-amber-800 leading-relaxed">All bookings will become available for re-invoicing. The PDF will be permanently removed from cloud storage.</p>
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 mb-6 flex gap-2">
+          <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold text-amber-800 dark:text-amber-300 leading-relaxed">All bookings will become available for re-invoicing. The PDF will be permanently removed from cloud storage.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black rounded-2xl transition-all disabled:opacity-50">Cancel</button>
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-black rounded-2xl transition-all disabled:opacity-50">Cancel</button>
           <button onClick={onConfirm} disabled={loading} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
             {loading ? <><Loader2 size={16} className="animate-spin" /> Deleting...</> : <><Trash2 size={16} /> Yes, Delete</>}
           </button>
@@ -112,46 +112,46 @@ function InvoicedPopover({
       exit={{ opacity: 0, y: -6, scale: 0.97 }}
       transition={{ duration: 0.15 }}
       style={{ position: 'fixed', top: topPos, left: leftPos, zIndex: 9999 }}
-      className="w-[360px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+      className="w-[360px] bg-white dark:bg-[#0c1427] rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-red-50/60">
-        <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 bg-red-50/60 dark:bg-rose-950/40">
+        <p className="text-[10px] font-black text-red-600 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
           <AlertCircle size={12} /> Already Invoiced
         </p>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+        <button onClick={onClose} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 rounded-lg transition-colors">
           <X size={15} />
         </button>
       </div>
 
       {inv ? (
-        <div className={`p-5 ${inv.is_paid ? 'bg-white' : 'bg-amber-50/20'}`}>
+        <div className={`p-5 ${inv.is_paid ? 'bg-white dark:bg-[#0c1427]' : 'bg-amber-50/20 dark:bg-amber-950/20'}`}>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <FileText size={16} className="text-blue-600 shrink-0" />
-            <span className="font-black text-gray-900">{inv.invoice_no}</span>
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 ${inv.is_paid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
+            <FileText size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+            <span className="font-black text-gray-900 dark:text-white">{inv.invoice_no}</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 ${inv.is_paid ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/60'}`}>
               {inv.is_paid ? <><CheckCircle2 size={10} /> Paid</> : <><AlertCircle size={10} /> Unpaid</>}
             </span>
           </div>
 
-          <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 mb-1">
-            <Building2 size={12} className="text-gray-400" /> {inv.company_name}
+          <p className="text-xs font-bold text-gray-500 dark:text-slate-400 flex items-center gap-1.5 mb-1">
+            <Building2 size={12} className="text-gray-400 dark:text-slate-500" /> {inv.company_name}
           </p>
           {inv.start_date && inv.end_date && (
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3">
               {format(parseISO(inv.start_date), 'dd MMM')} – {format(parseISO(inv.end_date), 'dd MMM yyyy')}
             </p>
           )}
 
-          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100 mb-4">
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-[#090d1a] rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-800 mb-4">
             <div>
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total Billed</p>
-              <p className="text-xl font-black text-green-600">AED {Number(inv.total_amount).toFixed(2)}</p>
+              <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Total Billed</p>
+              <p className="text-xl font-black text-green-600 dark:text-emerald-400">AED {Number(inv.total_amount).toFixed(2)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Invoice Date</p>
-              <p className="text-[10px] font-black text-gray-700">{format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}</p>
+              <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Invoice Date</p>
+              <p className="text-[10px] font-black text-gray-700 dark:text-slate-300">{format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}</p>
               {inv.created_at && (
-                <p className="text-[9px] font-bold text-gray-400 mt-0.5">
+                <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-0.5">
                   Created: {format(new Date(inv.created_at), 'dd MMM yyyy, hh:mm a')}{inv.created_by && profilesMap?.[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ''}
                 </p>
               )}
@@ -163,7 +163,7 @@ function InvoicedPopover({
               <button
                 onClick={() => onDelete(inv)}
                 disabled={deleting}
-                className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors border border-red-100"
+                className="p-2.5 bg-red-50 dark:bg-rose-950/40 hover:bg-red-600 text-red-600 dark:text-rose-400 hover:text-white rounded-xl transition-colors border border-red-100 dark:border-rose-900/50"
                 title="Delete Invoice"
               >
                 {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -171,10 +171,10 @@ function InvoicedPopover({
             )}
             {inv.pdf_url && (
               <>
-                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="flex-1 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors text-xs font-black text-center flex items-center justify-center gap-1.5">
+                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="flex-1 py-2.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 text-blue-700 dark:text-blue-300 hover:text-white rounded-xl transition-colors text-xs font-black text-center flex items-center justify-center gap-1.5 border border-transparent dark:border-blue-900/50">
                   <Eye size={14} /> View
                 </a>
-                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="flex-1 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors text-xs font-black flex items-center justify-center gap-1.5">
+                <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="flex-1 py-2.5 bg-gray-900 dark:bg-slate-800 hover:bg-black dark:hover:bg-slate-700 text-white rounded-xl transition-colors text-xs font-black flex items-center justify-center gap-1.5">
                   <Download size={14} /> Download
                 </a>
               </>
@@ -182,14 +182,14 @@ function InvoicedPopover({
           </div>
 
           {!inv.is_paid && (
-            <p className="text-[10px] font-bold text-gray-400 text-center mt-3">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 text-center mt-3">
               Delete this invoice to re-invoice these bookings.
             </p>
           )}
         </div>
       ) : (
-        <div className="p-6 text-center text-gray-500">
-          <p className="text-sm font-bold">Invoice <span className="text-gray-900">{data.booking.invoice_no}</span> not found.</p>
+        <div className="p-6 text-center text-gray-500 dark:text-slate-400">
+          <p className="text-sm font-bold">Invoice <span className="text-gray-900 dark:text-white">{data.booking.invoice_no}</span> not found.</p>
           <p className="text-xs mt-1">It may belong to a different period.</p>
         </div>
       )}
@@ -770,11 +770,11 @@ export default function InvoiceManagement() {
   }, [filteredHistory]);
 
 
-  if (loadingInitial) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12" /></div>;
+  if (loadingInitial) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12" /></div>;
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans relative">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200">
       <Toaster position="top-center" />
 
       {/* Delete modal (History tab) */}
@@ -796,17 +796,70 @@ export default function InvoiceManagement() {
         )}
       </AnimatePresence>
 
-      {/* ── HEADER ── */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 shadow-2xl relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+      {/* ── HEADER — Electric Sapphire & Cyber Violet Waves (dark) ── */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white px-6 md:px-10 shadow-2xl relative overflow-hidden dark:border-b dark:border-indigo-500/20 dark:shadow-[0_12px_40px_rgba(99,102,241,0.15)]">
+        {/* Light mode gradient */}
+        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+        {/* Dark mode multi-color sapphire violet gradient */}
+        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #040817 0%, #0a1332 20%, #161042 42%, #0f1f45 68%, #050d22 100%)' }} />
+
+        {/* Dark mode glowing sapphire orbs */}
+        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-indigo-600/22 rounded-full blur-[100px] pointer-events-none' />
+        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/18 rounded-full blur-[90px] pointer-events-none' />
+        <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-violet-600/15 rounded-full blur-[80px] pointer-events-none' />
+
+        {/* Dark mode SVG Electric Sapphire Waves */}
+        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="inv-page-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.32" />
+                <stop offset="35%" stopColor="#6366F1" stopOpacity="0.25" />
+                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.20" />
+                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.08" />
+              </linearGradient>
+              <linearGradient id="inv-page-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.28" />
+                <stop offset="40%" stopColor="#38BDF8" stopOpacity="0.22" />
+                <stop offset="75%" stopColor="#1E40AF" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.05" />
+              </linearGradient>
+              <linearGradient id="inv-page-crest1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#818CF8" stopOpacity="0.95" />
+                <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#C084FC" stopOpacity="0.4" />
+              </linearGradient>
+              <linearGradient id="inv-page-crest2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#818CF8" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="inv-page-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#inv-page-wave1)" />
+            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#inv-page-crest1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#inv-page-glow)" />
+            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#inv-page-wave2)" />
+            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#inv-page-crest2)" strokeWidth="2" strokeLinecap="round" />
+            <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#inv-page-crest1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+          </svg>
+        </div>
+
+        {/* Light mode decorative orbs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between py-6 gap-6">
 
           {/* Left: Title */}
           <div className="shrink-0 w-full md:w-auto">
             <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-              <FileDigit className="text-blue-500" size={30} /> Billing & Invoices
+              <FileDigit className="text-blue-500 dark:text-cyan-400" size={30} /> Billing & Invoices
             </h1>
-            <p className="text-blue-300 font-bold mt-1 text-sm">Generate automated PDF invoices and manage billing history.</p>
+            <p className="text-blue-300 dark:text-indigo-200 font-bold mt-1 text-sm">Generate automated PDF invoices and manage billing history.</p>
           </div>
 
           {/* Right: Navigation (Stacked, 2 on top, 2 on bottom) */}
@@ -858,64 +911,64 @@ export default function InvoiceManagement() {
               >
                 {/* Left: Settings */}
                 <div className="xl:col-span-3 space-y-5">
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
-                      <Building2 size={18} className="text-blue-600" /> Invoice Settings
+                  <div className="bg-white dark:bg-[#0c1427] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
+                    <h2 className="text-lg font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                      <Building2 size={18} className="text-blue-600 dark:text-blue-400" /> Invoice Settings
                     </h2>
                     <div className="space-y-4">
                       <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Company</label>
-                        <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 text-sm">
+                        <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Company</label>
+                        <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white text-sm">
                           <option value="">Select Company...</option>
                           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1 flex items-center justify-between">
+                        <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1 flex items-center justify-between">
                           <span>Invoice Date</span>
-                          <span className="text-[9px] text-blue-600 font-bold lowercase">(official issue date)</span>
+                          <span className="text-[9px] text-blue-600 dark:text-blue-400 font-bold lowercase">(official issue date)</span>
                         </label>
                         <input
                           type="date"
                           value={invoiceDate}
                           onChange={e => setInvoiceDate(e.target.value)}
-                          className="w-full p-2.5 bg-blue-50/40 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900 shadow-sm"
+                          className="w-full p-2.5 bg-blue-50/40 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900 dark:text-white shadow-sm"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">From</label>
-                          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900" />
+                          <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">From</label>
+                          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900 dark:text-white" />
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">To</label>
-                          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900" />
+                          <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">To</label>
+                          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-gray-900 dark:text-white" />
                         </div>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Format</label>
-                        <select value={invoiceMode} onChange={e => setInvoiceMode(e.target.value as any)} className="w-full p-3 bg-indigo-50 border border-indigo-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-900 text-sm">
+                        <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Format</label>
+                        <select value={invoiceMode} onChange={e => setInvoiceMode(e.target.value as any)} className="w-full p-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-900 dark:text-indigo-300 text-sm">
                           <option value="combined">A: Cleaning + Extra Inventory</option>
                           <option value="cleaning_only">B: Cleaning Services Only</option>
                           <option value="inventory_only">C: Extra Inventory Only</option>
                         </select>
                       </div>
-                      <button onClick={fetchBookingsForInvoice} disabled={loadingFetch} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all shadow-sm active:scale-95 flex justify-center items-center gap-2 disabled:opacity-60 text-sm">
+                      <button onClick={fetchBookingsForInvoice} disabled={loadingFetch} className="w-full py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-sm active:scale-95 flex justify-center items-center gap-2 disabled:opacity-60 text-sm">
                         {loadingFetch ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />} Fetch Work Data
                       </button>
                     </div>
                   </div>
 
                   {/* Bank Details */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h2 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2">
-                      Bank Details <span className="text-[9px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md uppercase">Editable</span>
+                  <div className="bg-white dark:bg-[#0c1427] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
+                    <h2 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      Bank Details <span className="text-[9px] bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-md uppercase">Editable</span>
                     </h2>
                     <div className="space-y-3">
                       {[{ label: "Bank Name", key: "bankName" }, { label: "Account Name", key: "accountName" }, { label: "Account No", key: "accountNumber" }, { label: "IBAN", key: "iban" }, { label: "SWIFT", key: "swift" }, { label: "Routing No", key: "routingNo" }].map(({ label, key }) => (
                         <div key={key}>
-                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{label}</label>
-                          <input value={(bankDetails as any)[key]} onChange={e => setBankDetails({ ...bankDetails, [key]: e.target.value })} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500" />
+                          <label className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">{label}</label>
+                          <input value={(bankDetails as any)[key]} onChange={e => setBankDetails({ ...bankDetails, [key]: e.target.value })} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" />
                         </div>
                       ))}
                     </div>
@@ -924,52 +977,52 @@ export default function InvoiceManagement() {
 
                 {/* Right: Preview */}
                 <div className="xl:col-span-9">
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 h-full flex flex-col justify-between min-h-[400px]">
+                  <div className="bg-white dark:bg-[#0c1427] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6 md:p-8 h-full flex flex-col justify-between min-h-[400px] transition-colors">
                     {bookings.length > 0 || unpaidInstantBills.length > 0 ? (
                       <>
                         <div>
-                          <div className="flex justify-between items-start mb-5 pb-5 border-b border-gray-100">
+                          <div className="flex justify-between items-start mb-5 pb-5 border-b border-gray-100 dark:border-slate-800">
                             <div>
-                              <p className="text-xs font-bold text-gray-400">Invoice Draft For</p>
-                              <h3 className="text-xl font-black text-gray-900">{companies.find(c => c.id.toString() === selectedCompany)?.name}</h3>
+                              <p className="text-xs font-bold text-gray-400 dark:text-slate-500">Invoice Draft For</p>
+                              <h3 className="text-xl font-black text-gray-900 dark:text-white">{companies.find(c => c.id.toString() === selectedCompany)?.name}</h3>
                               <div className="mt-2 flex items-center gap-2">
-                                <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg">
-                                  <FileDigit size={13} className="text-blue-500" />
-                                  <span className="text-xs font-black text-blue-800 tracking-wide">{invoiceNo}</span>
+                                <div className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800/60 px-3 py-1.5 rounded-lg">
+                                  <FileDigit size={13} className="text-blue-500 dark:text-blue-400" />
+                                  <span className="text-xs font-black text-blue-800 dark:text-blue-300 tracking-wide">{invoiceNo}</span>
                                 </div>
-                                <button onClick={generateMonthlyInvoiceNo} className="p-1.5 text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-md border border-gray-200" title="Refresh"><RefreshCw size={13} /></button>
+                                <button onClick={generateMonthlyInvoiceNo} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-md border border-gray-200 dark:border-slate-700" title="Refresh"><RefreshCw size={13} /></button>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs font-bold text-gray-400">Valid Items</p>
-                              <p className="text-2xl font-black text-blue-600">{visibleItemsCount}</p>
+                              <p className="text-xs font-bold text-gray-400 dark:text-slate-500">Valid Items</p>
+                              <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{visibleItemsCount}</p>
                             </div>
                           </div>
 
                           {unpaidInstantBills.length > 0 && (
-                            <div className="mb-5 bg-amber-50/50 border border-amber-200 rounded-2xl p-4">
-                              <h4 className="text-sm font-black text-amber-800 flex items-center gap-2 mb-2"><AlertCircle size={15} /> Unpaid Instant Bills in this period</h4>
-                              <p className="text-xs font-medium text-amber-700 mb-3">Select to include in this monthly invoice.</p>
+                            <div className="mb-5 bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4">
+                              <h4 className="text-sm font-black text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-2"><AlertCircle size={15} /> Unpaid Instant Bills in this period</h4>
+                              <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-3">Select to include in this monthly invoice.</p>
                               <div className="space-y-2">
                                 {unpaidInstantBills.map(bill => (
-                                  <label key={bill.id} className="flex items-center justify-between p-3 bg-white border border-amber-100 rounded-xl cursor-pointer hover:bg-amber-50/50 transition-colors">
+                                  <label key={bill.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#090d1a] border border-amber-100 dark:border-amber-900/40 rounded-xl cursor-pointer hover:bg-amber-50/50 dark:hover:bg-amber-950/40 transition-colors">
                                     <div className="flex items-center gap-3">
-                                      <input type="checkbox" checked={selectedInstantBillIds.includes(bill.id)} onChange={() => toggleInstantBill(bill.id)} className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer" />
+                                      <input type="checkbox" checked={selectedInstantBillIds.includes(bill.id)} onChange={() => toggleInstantBill(bill.id)} className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-slate-700 cursor-pointer" />
                                       <div>
-                                        <p className="text-sm font-black text-gray-800">{bill.invoice_no}</p>
+                                        <p className="text-sm font-black text-gray-800 dark:text-white">{bill.invoice_no}</p>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <p className="text-[10px] font-black text-amber-800">
+                                          <p className="text-[10px] font-black text-amber-800 dark:text-amber-300">
                                             Date: {format(parseISO(bill.invoice_date || bill.created_at), 'dd MMM yyyy')}
                                           </p>
                                           {bill.created_at && (
-                                            <span className="text-[9px] font-medium text-gray-400">
+                                            <span className="text-[9px] font-medium text-gray-400 dark:text-slate-500">
                                               (Created: {format(new Date(bill.created_at), 'dd MMM, hh:mm a')}{bill.created_by && profilesMap[bill.created_by] ? ` by ${profilesMap[bill.created_by]}` : ''})
                                             </span>
                                           )}
                                         </div>
                                       </div>
                                     </div>
-                                    <p className="text-sm font-black text-amber-700">AED {Number(bill.total_amount).toFixed(2)}</p>
+                                    <p className="text-sm font-black text-amber-700 dark:text-amber-400">AED {Number(bill.total_amount).toFixed(2)}</p>
                                   </label>
                                 ))}
                               </div>
@@ -979,52 +1032,52 @@ export default function InvoiceManagement() {
                           {/* Bookings list */}
                           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                             {bookings.map((b, i) => (
-                              <div key={i} className={`rounded-xl border overflow-hidden transition-all ${b.isAlreadyInvoiced ? 'bg-red-50/50 border-red-100 opacity-80' : 'bg-gray-50 border-gray-100'}`}>
+                              <div key={i} className={`rounded-xl border overflow-hidden transition-all ${b.isAlreadyInvoiced ? 'bg-red-50/50 dark:bg-rose-950/20 border-red-100 dark:border-rose-900/40 opacity-80' : 'bg-gray-50 dark:bg-[#090d1a] border-gray-100 dark:border-slate-800/80'}`}>
                                 {invoiceMode !== 'inventory_only' && (
                                   <div className="flex justify-between items-center p-3.5">
                                     <div className="truncate pr-3 min-w-0">
-                                      <p className="font-black text-gray-900 text-sm flex items-center gap-1.5 flex-wrap">
+                                      <p className="font-black text-gray-900 dark:text-white text-sm flex items-center gap-1.5 flex-wrap">
                                         Unit {b.units?.unit_number}
-                                        <span className="text-[10px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md uppercase tracking-widest border border-blue-200">{b.booking_ref || `#${b.id}`}</span>
+                                        <span className="text-[10px] font-black text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/50 px-2 py-0.5 rounded-md uppercase tracking-widest border border-blue-200 dark:border-blue-800/60">{b.booking_ref || `#${b.id}`}</span>
                                         {b.isAlreadyInvoiced && (
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setPopoverData(popoverData?.booking?.id === b.id ? null : { booking: b, x: e.clientX, y: e.clientY });
                                             }}
-                                            className="text-[10px] font-black text-red-600 bg-red-100 border border-red-200 px-2 py-0.5 rounded-md uppercase hover:bg-red-200 transition-colors flex items-center gap-1"
+                                            className="text-[10px] font-black text-red-600 dark:text-rose-400 bg-red-100 dark:bg-rose-950/50 border border-red-200 dark:border-rose-900/60 px-2 py-0.5 rounded-md uppercase hover:bg-red-200 dark:hover:bg-rose-900/70 transition-colors flex items-center gap-1"
                                           >
                                             <CreditCard size={9} /> {b.invoice_no}
                                           </button>
                                         )}
                                       </p>
-                                      <p className="text-xs font-bold text-gray-500 mt-0.5">{b.service_type} · {format(parseISO(b.cleaning_date), "dd MMM yyyy")}</p>
+                                      <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-0.5">{b.service_type} · {format(parseISO(b.cleaning_date), "dd MMM yyyy")}</p>
                                     </div>
-                                    <p className={`font-black text-sm shrink-0 ${b.isAlreadyInvoiced ? 'text-gray-400 line-through' : 'text-gray-800'}`}>AED {Number(b.price).toFixed(2)}</p>
+                                    <p className={`font-black text-sm shrink-0 ${b.isAlreadyInvoiced ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-gray-800 dark:text-slate-200'}`}>AED {Number(b.price).toFixed(2)}</p>
                                   </div>
                                 )}
                                 {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extras?.length > 0 && (
-                                  <div className={`space-y-1 p-3 ${invoiceMode === 'combined' ? 'bg-indigo-50/50 border-t border-gray-100' : ''}`}>
+                                  <div className={`space-y-1 p-3 ${invoiceMode === 'combined' ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-t border-gray-100 dark:border-slate-800' : ''}`}>
                                     {b.extras.map((ex: any, idx: number) => (
                                       <div key={idx} className="flex justify-between items-center pl-3 pr-1">
-                                        <p className={`text-xs font-bold flex items-center gap-1 ${b.isAlreadyInvoiced ? 'text-gray-400' : 'text-indigo-900'}`}>
+                                        <p className={`text-xs font-bold flex items-center gap-1 ${b.isAlreadyInvoiced ? 'text-gray-400 dark:text-slate-500' : 'text-indigo-900 dark:text-indigo-300'}`}>
                                           {invoiceMode === 'combined' && <PackagePlus size={9} className="text-indigo-400" />}
-                                          {ex.quantity}x {ex.item_name}{ex.remarks && <span className="text-gray-400 font-normal">· {ex.remarks}</span>}
+                                          {ex.quantity}x {ex.item_name}{ex.remarks && <span className="text-gray-400 dark:text-slate-500 font-normal">· {ex.remarks}</span>}
                                         </p>
-                                        <p className={`text-xs font-black ${b.isAlreadyInvoiced ? 'text-gray-400 line-through' : 'text-indigo-700'}`}>AED {Number(ex.total_price).toFixed(2)}</p>
+                                        <p className={`text-xs font-black ${b.isAlreadyInvoiced ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-indigo-700 dark:text-indigo-400'}`}>AED {Number(ex.total_price).toFixed(2)}</p>
                                       </div>
                                     ))}
                                   </div>
                                 )}
                                 {(invoiceMode === 'combined' || invoiceMode === 'inventory_only') && b.extraCharges?.length > 0 && (
-                                  <div className="space-y-1 p-3 bg-red-50/40 border-t border-red-100">
+                                  <div className="space-y-1 p-3 bg-red-50/40 dark:bg-rose-950/20 border-t border-red-100 dark:border-rose-900/40">
                                     {b.extraCharges.map((c: any, idx: number) => (
                                       <div key={idx} className="flex justify-between items-center pl-3 pr-1">
-                                        <p className={`text-xs font-bold flex items-center gap-1 ${b.isAlreadyInvoiced ? 'text-gray-400' : 'text-red-800'}`}>
-                                          <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-black uppercase">{c.charge_type === 'damage' ? 'DMG' : 'EXTRA'}</span>
+                                        <p className={`text-xs font-bold flex items-center gap-1 ${b.isAlreadyInvoiced ? 'text-gray-400 dark:text-slate-500' : 'text-red-800 dark:text-rose-300'}`}>
+                                          <span className="text-[9px] bg-red-100 dark:bg-rose-950/50 text-red-600 dark:text-rose-400 px-1.5 py-0.5 rounded font-black uppercase">{c.charge_type === 'damage' ? 'DMG' : 'EXTRA'}</span>
                                           {c.item_name}
                                         </p>
-                                        <p className={`text-xs font-black ${b.isAlreadyInvoiced ? 'text-gray-400 line-through' : 'text-red-700'}`}>AED {Number(c.total_price).toFixed(2)}</p>
+                                        <p className={`text-xs font-black ${b.isAlreadyInvoiced ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-red-700 dark:text-rose-400'}`}>AED {Number(c.total_price).toFixed(2)}</p>
                                       </div>
                                     ))}
                                   </div>
@@ -1035,40 +1088,40 @@ export default function InvoiceManagement() {
                         </div>
 
                         {/* Totals & Generate */}
-                        <div className="mt-6 pt-5 border-t border-gray-100 space-y-4">
+                        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800 space-y-4">
                           <div className="flex justify-between items-center">
-                            <p className="text-gray-500 font-bold">Subtotal</p>
-                            <p className="text-xl font-black text-gray-700">AED {subtotal.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-slate-400 font-bold">Subtotal</p>
+                            <p className="text-xl font-black text-gray-700 dark:text-slate-200">AED {subtotal.toFixed(2)}</p>
                           </div>
-                          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3">
-                            <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-1"><Tag size={11} /> Discount (Optional)</label>
+                          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-2xl p-4 space-y-3">
+                            <label className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1"><Tag size={11} /> Discount (Optional)</label>
                             {/* Mode toggle */}
-                            <div className="flex gap-1 bg-amber-100/60 p-1 rounded-xl">
-                              <button type="button" onClick={() => { setDiscountMode('percent'); setDiscountManual(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'percent' ? 'bg-white text-amber-700 shadow-sm' : 'text-amber-600 hover:text-amber-800'}`}>% Percent</button>
-                              <button type="button" onClick={() => { setDiscountMode('manual'); setDiscountPercent(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'manual' ? 'bg-white text-amber-700 shadow-sm' : 'text-amber-600 hover:text-amber-800'}`}>AED Manual</button>
+                            <div className="flex gap-1 bg-amber-100/60 dark:bg-amber-900/40 p-1 rounded-xl">
+                              <button type="button" onClick={() => { setDiscountMode('percent'); setDiscountManual(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'percent' ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-sm' : 'text-amber-600 dark:text-amber-400 hover:text-amber-800'}`}>% Percent</button>
+                              <button type="button" onClick={() => { setDiscountMode('manual'); setDiscountPercent(""); }} className={`flex-1 text-[10px] font-black py-1.5 rounded-lg transition-all ${discountMode === 'manual' ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-sm' : 'text-amber-600 dark:text-amber-400 hover:text-amber-800'}`}>AED Manual</button>
                             </div>
                             <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2.5 flex-1 focus-within:border-amber-400 transition-colors">
+                              <div className="flex items-center gap-2 bg-white dark:bg-[#070b14] border border-amber-200 dark:border-amber-900/50 rounded-xl px-3 py-2.5 flex-1 focus-within:border-amber-400 transition-colors">
                                 {discountMode === 'percent' ? (
                                   <>
-                                    <input type="number" min="0" max="100" step="0.5" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="0" className="flex-1 outline-none text-lg font-black text-gray-900 bg-transparent w-full" />
-                                    <span className="text-gray-400 font-black text-lg">%</span>
+                                    <input type="number" min="0" max="100" step="0.5" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="0" className="flex-1 outline-none text-lg font-black text-gray-900 dark:text-white bg-transparent w-full" />
+                                    <span className="text-gray-400 dark:text-slate-500 font-black text-lg">%</span>
                                   </>
                                 ) : (
                                   <>
-                                    <span className="text-gray-400 font-black text-sm">AED</span>
-                                    <input type="number" min="0" step="0.01" value={discountManual} onChange={e => setDiscountManual(e.target.value)} placeholder="0.00" className="flex-1 outline-none text-lg font-black text-gray-900 bg-transparent w-full" />
+                                    <span className="text-gray-400 dark:text-slate-500 font-black text-sm">AED</span>
+                                    <input type="number" min="0" step="0.01" value={discountManual} onChange={e => setDiscountManual(e.target.value)} placeholder="0.00" className="flex-1 outline-none text-lg font-black text-gray-900 dark:text-white bg-transparent w-full" />
                                   </>
                                 )}
                               </div>
-                              {discountValue > 0 && <div className="text-right shrink-0"><p className="text-[10px] font-black text-amber-600 uppercase">Saving</p><p className="text-base font-black text-amber-700">- AED {discountValue.toFixed(2)}</p></div>}
+                              {discountValue > 0 && <div className="text-right shrink-0"><p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase">Saving</p><p className="text-base font-black text-amber-700 dark:text-amber-300">- AED {discountValue.toFixed(2)}</p></div>}
                             </div>
                             {/* Remarks */}
-                            <input type="text" value={discountRemarks} onChange={e => setDiscountRemarks(e.target.value)} placeholder="Discount reason / remarks (optional)" className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:border-amber-400 placeholder:text-gray-300 transition-colors" />
+                            <input type="text" value={discountRemarks} onChange={e => setDiscountRemarks(e.target.value)} placeholder="Discount reason / remarks (optional)" className="w-full bg-white dark:bg-[#070b14] border border-amber-200 dark:border-amber-900/50 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 dark:text-slate-200 outline-none focus:border-amber-400 placeholder:text-gray-400 dark:placeholder:text-slate-500 transition-colors" />
                           </div>
-                          <div className="flex justify-between items-center bg-gray-50 rounded-2xl px-5 py-4 border border-gray-100">
-                            <p className="text-gray-600 font-black">Final Invoice Total</p>
-                            <p className="text-3xl font-black text-green-600">AED {finalTotal.toFixed(2)}</p>
+                          <div className="flex justify-between items-center bg-gray-50 dark:bg-[#090d1a] rounded-2xl px-5 py-4 border border-gray-100 dark:border-slate-800">
+                            <p className="text-gray-600 dark:text-slate-300 font-black">Final Invoice Total</p>
+                            <p className="text-3xl font-black text-green-600 dark:text-emerald-400">AED {finalTotal.toFixed(2)}</p>
                           </div>
                           <button onClick={handleGenerateAndSave} disabled={generating} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50">
                             {generating ? <><Loader2 className="animate-spin" /> Processing & Uploading...</> : <><FileText size={18} /> Generate Official PDF Invoice</>}
@@ -1076,7 +1129,7 @@ export default function InvoiceManagement() {
                         </div>
                       </>
                     ) : (
-                      <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4 opacity-50">
+                      <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 gap-4 opacity-50">
                         <FileText size={56} className="mb-2" />
                         <p className="text-lg font-black">No Draft Available</p>
                         <p className="text-sm font-bold">Select settings and fetch data to preview.</p>
@@ -1094,13 +1147,13 @@ export default function InvoiceManagement() {
                 {/* Search & Actions Bar */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
                   <div className="relative flex-1 max-w-xl">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                     <input 
                       type="text" 
                       placeholder="Search by Company or Invoice ID..." 
                       value={searchQuery} 
                       onChange={e => setSearchQuery(e.target.value)} 
-                      className="w-full p-3.5 pl-12 bg-white rounded-2xl border-2 border-gray-100 outline-none focus:border-blue-500 font-bold text-gray-900 shadow-sm text-sm" 
+                      className="w-full p-3.5 pl-12 bg-white dark:bg-[#0c1427] rounded-2xl border-2 border-gray-100 dark:border-slate-800 outline-none focus:border-blue-500 font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm text-sm" 
                     />
                   </div>
 
@@ -1109,8 +1162,8 @@ export default function InvoiceManagement() {
                       onClick={() => setShowAdvancedFilters(prev => !prev)}
                       className={`px-4 py-3.5 rounded-2xl font-black text-xs transition-all border flex items-center gap-2 shadow-sm ${
                         showAdvancedFilters || activeFilterCount > 0
-                          ? 'bg-blue-50 border-blue-200 text-blue-700'
-                          : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300'
+                          : 'bg-white dark:bg-[#0c1427] border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60'
                       }`}
                     >
                       <SlidersHorizontal size={15} />
@@ -1124,7 +1177,7 @@ export default function InvoiceManagement() {
 
                     <button
                       onClick={() => setIsExportModalOpen(true)}
-                      className="px-4 py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
+                      className="px-4 py-3.5 bg-gray-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white rounded-2xl font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
                     >
                       <Download size={15} />
                       <span>Export Data</span>
@@ -1141,15 +1194,15 @@ export default function InvoiceManagement() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden mb-6"
                     >
-                      <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                          <p className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                            <Filter size={14} className="text-blue-600" /> Advanced History Filters
+                      <div className="p-5 bg-white dark:bg-[#0c1427] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
+                          <p className="text-xs font-black text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            <Filter size={14} className="text-blue-600 dark:text-blue-400" /> Advanced History Filters
                           </p>
                           {activeFilterCount > 0 && (
                             <button
                               onClick={handleResetFilters}
-                              className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                              className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 flex items-center gap-1 transition-colors"
                             >
                               <RotateCcw size={12} /> Reset All
                             </button>
@@ -1159,15 +1212,15 @@ export default function InvoiceManagement() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           {/* Payment Status */}
                           <div>
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Payment Status</label>
-                            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
+                            <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Payment Status</label>
+                            <div className="flex bg-gray-50 dark:bg-[#070b14] p-1 rounded-xl border border-gray-200 dark:border-slate-800">
                               {(['all', 'paid', 'unpaid'] as const).map(s => (
                                 <button
                                   key={s}
                                   type="button"
                                   onClick={() => setStatusFilter(s)}
                                   className={`flex-1 py-1.5 rounded-lg text-xs font-black capitalize transition-all ${
-                                    statusFilter === s ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                                    statusFilter === s ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-sm' : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
                                   }`}
                                 >
                                   {s}
@@ -1178,11 +1231,11 @@ export default function InvoiceManagement() {
 
                           {/* Company Dropdown */}
                           <div>
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Company</label>
+                            <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Company</label>
                             <select
                               value={companyFilter}
                               onChange={e => setCompanyFilter(e.target.value)}
-                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                              className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
                             >
                               <option value="all">All Companies</option>
                               {companies.map(c => (
@@ -1193,11 +1246,11 @@ export default function InvoiceManagement() {
 
                           {/* Date Range Preset */}
                           <div>
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Date Range</label>
+                            <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Date Range</label>
                             <select
                               value={dateFilterPreset}
                               onChange={e => setDateFilterPreset(e.target.value as any)}
-                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                              className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
                             >
                               <option value="loaded">Default (2 Months + Scroll)</option>
                               <option value="this_month">This Month</option>
@@ -1209,11 +1262,11 @@ export default function InvoiceManagement() {
 
                           {/* Sorting */}
                           <div>
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Sort By</label>
+                            <label className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Sort By</label>
                             <select
                               value={sortBy}
                               onChange={e => setSortBy(e.target.value as any)}
-                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-blue-500"
+                              className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
                             >
                               <option value="newest">Newest First</option>
                               <option value="oldest">Oldest First</option>
@@ -1227,21 +1280,21 @@ export default function InvoiceManagement() {
                         {dateFilterPreset === 'custom' && (
                           <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
                             <div>
-                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Start Date</label>
+                              <label className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Start Date</label>
                               <input
                                 type="date"
                                 value={customFilterStart}
                                 onChange={e => setCustomFilterStart(e.target.value)}
-                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                                className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white"
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">End Date</label>
+                              <label className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">End Date</label>
                               <input
                                 type="date"
                                 value={customFilterEnd}
                                 onChange={e => setCustomFilterEnd(e.target.value)}
-                                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                                className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white"
                               />
                             </div>
                           </div>
@@ -1253,10 +1306,10 @@ export default function InvoiceManagement() {
 
                 <div className="space-y-8">
                   {groupedHistory.sortedDates.length === 0 ? (
-                    <div className="text-center p-16 bg-white rounded-3xl border border-gray-100 text-gray-400 font-bold">No invoices found.</div>
+                    <div className="text-center p-16 bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 text-gray-400 dark:text-slate-500 font-bold transition-colors">No invoices found.</div>
                   ) : groupedHistory.sortedDates.map(dateStr => (
                     <div key={dateStr} className="space-y-3">
-                      <h3 className="text-xs font-black text-gray-500 tracking-widest uppercase flex items-center gap-2 pl-1">
+                      <h3 className="text-xs font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase flex items-center gap-2 pl-1">
                         <Calendar size={14} /> {format(parseISO(dateStr), "dd MMM yyyy")}
                       </h3>
                       {/* History cards */}
@@ -1267,61 +1320,61 @@ export default function InvoiceManagement() {
                             initial={{ opacity: 0, y: 16, scale: 0.97 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{ duration: 0.22, delay: idx * 0.04 }}
-                            className={`p-5 rounded-2xl border shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${inv.is_paid ? 'bg-white border-gray-100' : 'bg-amber-50/30 border-amber-200'}`}
+                            className={`p-5 rounded-2xl border shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${inv.is_paid ? 'bg-white dark:bg-[#0c1427] border-gray-100 dark:border-slate-800' : 'bg-amber-50/30 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50'}`}
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div>
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <FileText size={15} className="text-blue-600" />
-                                  <span className="font-black text-gray-900">{inv.invoice_no}</span>
-                                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 ${inv.is_paid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
+                                  <FileText size={15} className="text-blue-600 dark:text-blue-400" />
+                                  <span className="font-black text-gray-900 dark:text-white">{inv.invoice_no}</span>
+                                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border flex items-center gap-1 ${inv.is_paid ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/60'}`}>
                                     {inv.is_paid ? <><CheckCircle2 size={11} /> Paid</> : <><AlertCircle size={11} /> Unpaid</>}
                                   </span>
                                 </div>
-                                <p className="text-xs font-bold text-gray-600 flex items-center gap-1.5"><Building2 size={12} className="text-gray-400" /> {inv.company_name}</p>
-                                <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest flex items-center gap-1">
+                                <p className="text-xs font-bold text-gray-600 dark:text-slate-400 flex items-center gap-1.5"><Building2 size={12} className="text-gray-400 dark:text-slate-500" /> {inv.company_name}</p>
+                                <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-1 uppercase tracking-widest flex items-center gap-1">
                                   <Calendar size={11} /> Invoice Date: {format(parseISO(inv.invoice_date || inv.created_at), 'dd MMM yyyy')}
                                 </p>
                                 {inv.created_at && (
-                                  <p className="text-[9px] font-medium text-gray-400 mt-0.5">
+                                  <p className="text-[9px] font-medium text-gray-400 dark:text-slate-500 mt-0.5">
                                     Created: {format(new Date(inv.created_at), 'dd MMM yyyy, hh:mm a')}{inv.created_by && profilesMap[inv.created_by] ? ` by ${profilesMap[inv.created_by]}` : ''}
                                   </p>
                                 )}
                                 {inv.start_date && inv.end_date && (
-                                  <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
+                                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 mt-0.5 uppercase tracking-widest">
                                     Work: {format(parseISO(inv.start_date), 'dd MMM')} – {format(parseISO(inv.end_date), 'dd MMM yyyy')}
                                   </p>
                                 )}
                               </div>
                               <div className="text-right shrink-0 ml-3">
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total</p>
+                                <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Total</p>
                                 {Number(inv.discount || 0) > 0 && (
                                   <p className="text-[9px] font-bold text-rose-400 flex items-center justify-end gap-1 mb-0.5">
-                                    <span className="line-through text-gray-400">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
-                                    <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
+                                    <span className="line-through text-gray-400 dark:text-slate-500">AED {Number(inv.subtotal || inv.total_amount).toFixed(2)}</span>
+                                    <span className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 px-1 rounded font-black text-[8px]">-{Number(inv.discount).toFixed(2)}</span>
                                   </p>
                                 )}
-                                <p className="text-lg font-black text-green-600">AED {Number(inv.total_amount).toFixed(2)}</p>
+                                <p className="text-lg font-black text-green-600 dark:text-emerald-400">AED {Number(inv.total_amount).toFixed(2)}</p>
                                 {inv.discount_remarks && (
-                                  <p className="text-[8px] font-bold text-gray-400 mt-0.5 max-w-[120px] text-right leading-tight">{inv.discount_remarks}</p>
+                                  <p className="text-[8px] font-bold text-gray-400 dark:text-slate-500 mt-0.5 max-w-[120px] text-right leading-tight">{inv.discount_remarks}</p>
                                 )}
                               </div>
                             </div>
                             {/* Merged instant invoices list */}
                             {inv.instant_invoice_ids?.length > 0 && (
-                              <div className="mb-3 bg-indigo-50/60 border border-indigo-100 rounded-xl p-3">
-                                <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-1"><PackagePlus size={10} /> Instant POS Included</p>
+                              <div className="mb-3 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl p-3">
+                                <p className="text-[9px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1"><PackagePlus size={10} /> Instant POS Included</p>
                                 <div className="space-y-1">
                                   {inv.instant_invoice_ids.map((iid: string) => {
                                     const instInv = allInstantInvoices.find((ii: any) => ii.id === iid);
                                     return (
-                                      <div key={iid} className="flex items-center justify-between bg-white border border-indigo-100 rounded-lg px-2 py-1">
-                                        <p className="text-[10px] font-bold text-indigo-700 truncate">{instInv?.invoice_no || iid.slice(0, 13) + '…'}</p>
+                                      <div key={iid} className="flex items-center justify-between bg-white dark:bg-[#0c1427] border border-indigo-100 dark:border-indigo-900/50 rounded-lg px-2 py-1">
+                                        <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 truncate">{instInv?.invoice_no || iid.slice(0, 13) + '…'}</p>
                                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                                           {instInv?.total_amount != null && (
-                                            <span className="text-[10px] font-black text-indigo-900">AED {Number(instInv.total_amount).toFixed(2)}</span>
+                                            <span className="text-[10px] font-black text-indigo-900 dark:text-white">AED {Number(instInv.total_amount).toFixed(2)}</span>
                                           )}
-                                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${inv.is_paid ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${inv.is_paid ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300'}`}>
                                             {inv.is_paid ? 'Paid' : 'Merged'}
                                           </span>
                                         </div>
@@ -1331,17 +1384,17 @@ export default function InvoiceManagement() {
                                 </div>
                               </div>
                             )}
-                            <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                            <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
                               {!inv.is_paid ? (
                                 <button onClick={() => handleMarkMonthlyPaid(inv.id)} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all shadow-sm active:scale-95" title="Mark as Paid"><CheckCircle2 size={17} /></button>
                               ) : (
-                                <button onClick={() => handleMarkMonthlyUnpaid(inv.id)} className="p-2.5 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-colors border border-amber-200" title="Mark as Unpaid"><AlertCircle size={17} /></button>
+                                <button onClick={() => handleMarkMonthlyUnpaid(inv.id)} className="p-2.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-500 text-amber-600 dark:text-amber-400 hover:text-white rounded-xl transition-colors border border-amber-200 dark:border-amber-800/60" title="Mark as Unpaid"><AlertCircle size={17} /></button>
                               )}
                               {!inv.is_paid && (
-                                <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-xl transition-colors" title="Delete"><Trash2 size={17} /></button>
+                                <button onClick={() => setDeleteTarget(inv)} className="p-2.5 bg-red-50 dark:bg-rose-950/40 hover:bg-red-600 text-red-600 dark:text-rose-400 hover:text-white rounded-xl transition-colors border border-transparent dark:border-rose-900/40" title="Delete"><Trash2 size={17} /></button>
                               )}
-                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl transition-colors" title="View"><Eye size={17} /></a>
-                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 hover:bg-black text-white rounded-xl transition-colors" title="Download"><Download size={17} /></a>
+                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}`} target="_blank" rel="noreferrer" className="p-2.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 text-blue-700 dark:text-blue-300 hover:text-white rounded-xl transition-colors border border-transparent dark:border-blue-900/40" title="View"><Eye size={17} /></a>
+                              <a href={`/api/pdf/${encodeURIComponent(inv.invoice_no)}?dl=1`} download className="p-2.5 bg-gray-900 dark:bg-slate-800 hover:bg-black dark:hover:bg-slate-700 text-white rounded-xl transition-colors" title="Download"><Download size={17} /></a>
                             </div>
                           </motion.div>
                         ))}
@@ -1353,19 +1406,19 @@ export default function InvoiceManagement() {
                 {/* Infinite Scroll Sentinel */}
                 <div ref={observerTarget} className="pt-8 pb-4 text-center">
                   {loadingMore ? (
-                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-blue-600 bg-blue-50/60 py-3 px-5 rounded-2xl mx-auto w-fit border border-blue-100 shadow-sm">
-                      <Loader2 size={16} className="animate-spin text-blue-600" />
+                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40 py-3 px-5 rounded-2xl mx-auto w-fit border border-blue-100 dark:border-blue-800/50 shadow-sm">
+                      <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400" />
                       <span>Loading previous 2 months of invoices...</span>
                     </div>
                   ) : hasMoreInvoices && dateFilterPreset === 'loaded' ? (
                     <button
                       onClick={loadMoreInvoices}
-                      className="px-5 py-2.5 bg-white border border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-700 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95"
+                      className="px-5 py-2.5 bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-800 hover:border-blue-400 text-gray-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95"
                     >
                       Load Older Invoices (Previous 2 Months)
                     </button>
                   ) : (
-                    <p className="text-[11px] font-bold text-gray-400">
+                    <p className="text-[11px] font-bold text-gray-400 dark:text-slate-500">
                       {invoices.length > 0 ? "All historical invoices loaded." : ""}
                     </p>
                   )}

@@ -19,6 +19,7 @@ import {
   Receipt, Package,
 } from 'lucide-react';
 import WelcomeHeader from '@/components/admin/dashboard/WelcomeHeader';
+import { useTheme } from '@/context/ThemeContext';
 
 /* ═══════════════════════════════════════════════════════════
    DESIGN TOKENS
@@ -34,9 +35,17 @@ const CHART_COLORS  = ['#7C3AED','#06B6D4','#10B981','#F97316','#F43F5E','#8B5CF
 const fadeUp = { initial:{opacity:0,y:16}, animate:{opacity:1,y:0}, transition:{duration:0.38} };
 
 function Card({ children, bg='#fff', border='rgba(0,0,0,0.07)', className='' }: any) {
+  const isDefaultWhite = bg === '#fff' || bg === '#FFFFFF';
   return (
-    <motion.div {...fadeUp} className={`rounded-3xl overflow-hidden flex flex-col h-full ${className}`}
-      style={{ background: bg, border: `1.5px solid ${border}`, boxShadow: '0 4px 24px 0 rgba(0,0,0,0.07)' }}>
+    <motion.div
+      {...fadeUp}
+      className={`rounded-3xl overflow-hidden flex flex-col h-full transition-colors duration-300 ${
+        isDefaultWhite
+          ? 'bg-white dark:bg-[#0c1427] border border-black/[0.07] dark:border-slate-800/80 shadow-[0_4px_24px_0_rgba(0,0,0,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.45)]'
+          : ''
+      } ${className}`}
+      style={!isDefaultWhite ? { background: bg, border: `1.5px solid ${border}`, boxShadow: '0 4px 24px 0 rgba(0,0,0,0.07)' } : undefined}
+    >
       {children}
     </motion.div>
   );
@@ -50,8 +59,8 @@ function CardHead({ icon: Icon, iconBg, iconColor, title, subtitle, right }: any
           <Icon size={16} style={{ color: iconColor }} />
         </div>
         <div>
-          <h2 className="text-[13px] font-black leading-tight" style={{ color: '#0F172A' }}>{title}</h2>
-          {subtitle && <p className="text-[10px] font-medium mt-0.5" style={{ color: '#94A3B8' }}>{subtitle}</p>}
+          <h2 className="text-[13px] font-black leading-tight text-slate-900 dark:text-slate-100">{title}</h2>
+          {subtitle && <p className="text-[10px] font-medium mt-0.5 text-slate-400 dark:text-slate-400">{subtitle}</p>}
         </div>
       </div>
       {right}
@@ -94,6 +103,7 @@ function getExtraTotal(b: any): number {
    A — TODAY'S OPERATIONS
 ═══════════════════════════════════════════════════════════ */
 function TodayBookingsCard({ bookings }: { bookings: any[] }) {
+  const { isDark } = useTheme();
   const s = useMemo(() => {
     const total     = bookings.length;
     const active    = bookings.filter(b=>['active','in_progress'].includes(b.status)).length;
@@ -120,12 +130,12 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
   return (
     <Card bg="#FFFFFF">
       <div className="p-5 pb-3 flex-shrink-0">
-        <CardHead icon={CalendarDays} iconBg="#DBEAFE" iconColor="#3B82F6"
+        <CardHead icon={CalendarDays} iconBg={isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'} iconColor="#3B82F6"
           title="Today's Operations" subtitle="Live shift progress"
           right={
-            <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ background:'#FEF9C3' }}>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-700/50">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"/>
-              <span className="text-[9px] font-black text-yellow-600 uppercase tracking-widest">Today</span>
+              <span className="text-[9px] font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-widest">Today</span>
             </div>
           }
         />
@@ -160,9 +170,9 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
       <div className="px-4 flex-1 min-h-0" style={{minHeight:80}}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={hoursData} barSize={7} margin={{top:2,right:2,left:-30,bottom:0}}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9"/>
-            <XAxis dataKey="hour" tick={{fontSize:8,fill:'#94A3B8',fontWeight:'bold'}} axisLine={false} tickLine={false} interval={3}/>
-            <YAxis tick={{fontSize:8,fill:'#94A3B8'}} axisLine={false} tickLine={false}/>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'}/>
+            <XAxis dataKey="hour" tick={{fontSize:8,fill:isDark?'#94A3B8':'#64748B',fontWeight:'bold'}} axisLine={false} tickLine={false} interval={3}/>
+            <YAxis tick={{fontSize:8,fill:isDark?'#94A3B8':'#64748B'}} axisLine={false} tickLine={false}/>
             <Tooltip content={<Tip/>}/>
             <Bar dataKey="active"    name="Active"    stackId="a" fill="#3B82F6"/>
             <Bar dataKey="completed" name="Completed" stackId="a" fill="#10B981" radius={[3,3,0,0]}/>
@@ -171,12 +181,12 @@ function TodayBookingsCard({ bookings }: { bookings: any[] }) {
       </div>
 
       <div className="px-5 pb-5 pt-3 flex-shrink-0">
-        <div className="rounded-2xl p-3" style={{ background:'#F8FAFC', border:'1px solid #E2E8F0' }}>
+        <div className="rounded-2xl p-3 bg-slate-50 dark:bg-[#11192e] border border-slate-200 dark:border-slate-800">
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Team Assignment</span>
-            <span className="text-[10px] font-black" style={{color:'#6366F1'}}>{s.assigned} <span className="text-slate-300 font-normal">/</span> <span style={{color:'#F43F5E'}}>{s.unassigned} unset</span></span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest">Team Assignment</span>
+            <span className="text-[10px] font-black" style={{color:'#6366F1'}}>{s.assigned} <span className="text-slate-400 font-normal">/</span> <span style={{color:'#F43F5E'}}>{s.unassigned} unset</span></span>
           </div>
-          <div className="h-2 w-full rounded-full overflow-hidden" style={{ background:'#E2E8F0' }}>
+          <div className="h-2 w-full rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
             <motion.div initial={{width:0}} animate={{width:s.total?`${(s.assigned/s.total)*100}%`:'0%'}} transition={{duration:1.2,ease:'easeOut'}}
               className="h-full rounded-full" style={{ background:'linear-gradient(90deg,#6366F1,#7C3AED)' }}/>
           </div>
@@ -411,6 +421,7 @@ function QCAnalyticsCard({ dateFrom, dateTo }: { dateFrom:string; dateTo:string 
    FIX: use booking_extra_added_charges.amount (not booking_extra_inventory.total_price)
 ═══════════════════════════════════════════════════════════ */
 function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFrom:string; dateTo:string }) {
+  const { isDark } = useTheme();
   const supabase = createClient();
   const [posMap, setPosMap] = useState<Record<string,number>>({});
 
@@ -467,21 +478,21 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
     <Card bg="#FFFFFF">
       <div className="p-5 pb-2 flex-shrink-0">
         <div className="flex items-start justify-between mb-3">
-          <CardHead icon={TrendingUp} iconBg="#DBEAFE" iconColor="#3B82F6"
+          <CardHead icon={TrendingUp} iconBg={isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'} iconColor="#3B82F6"
             title="Financial Performance" subtitle="Finalized bookings + POS revenue"/>
           <div className="text-right flex-shrink-0 ml-2">
             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Combined</p>
-            <p className="text-xl font-black text-slate-900">AED {totals.combined.toLocaleString()}</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white">AED {totals.combined.toLocaleString()}</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 mb-3">
           {[
-            {l:'Cleaning',  v:totals.cleaning,  c:FIN_CLEANING,  bg:'#FFF7ED'},
-            {l:'Inventory', v:totals.inventory, c:FIN_INVENTORY, bg:'#E0F2FE'},
-            {l:'POS Sales', v:totals.pos,       c:FIN_POS,       bg:'#ECFDF5'},
+            {l:'Cleaning',  v:totals.cleaning,  c:FIN_CLEANING,  cls:'bg-orange-50 dark:bg-orange-950/30 border-orange-200/60 dark:border-orange-500/25'},
+            {l:'Inventory', v:totals.inventory, c:FIN_INVENTORY, cls:'bg-sky-50 dark:bg-sky-950/30 border-sky-200/60 dark:border-sky-500/25'},
+            {l:'POS Sales', v:totals.pos,       c:FIN_POS,       cls:'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-500/25'},
           ].map(x=>(
-            <div key={x.l} className="rounded-2xl p-2.5 text-center" style={{background:x.bg}}>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{x.l}</p>
+            <div key={x.l} className={`rounded-2xl p-2.5 text-center border ${x.cls}`}>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400">{x.l}</p>
               <p className="text-sm font-black" style={{color:x.c}}>AED {x.v.toLocaleString()}</p>
             </div>
           ))}
@@ -489,7 +500,7 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
       </div>
       <div className="flex-1 px-3 pb-4 min-h-0" style={{minHeight:100}}>
         {chartData.length===0?(
-          <div className="flex flex-col items-center justify-center h-full text-slate-300">
+          <div className="flex flex-col items-center justify-center h-full text-slate-300 dark:text-slate-600">
             <CircleDollarSign size={30} className="mb-2 opacity-40"/><span className="text-sm">No data</span>
           </div>
         ):(
@@ -503,9 +514,9 @@ function FinancialCard({ bookings, dateFrom, dateTo }: { bookings:any[]; dateFro
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9"/>
-              <XAxis dataKey="date" tick={{fontSize:9,fill:'#94A3B8',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false}/>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'}/>
+              <XAxis dataKey="date" tick={{fontSize:9,fill:isDark?'#94A3B8':'#64748B',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fontSize:9,fill:isDark?'#94A3B8':'#64748B'}} axisLine={false} tickLine={false}/>
               <Tooltip content={<Tip/>}/>
               <Area type="monotone" dataKey="cleaning"  name="Cleaning"  stroke={FIN_CLEANING}  strokeWidth={2.5} fill="url(#fg-cleaning)"/>
               <Area type="monotone" dataKey="inventory" name="Inventory" stroke={FIN_INVENTORY} strokeWidth={2.5} fill="url(#fg-inventory)"/>
@@ -654,6 +665,7 @@ function LiveFeedCard() {
    FIX: use booking_extra_added_charges.amount
 ═══════════════════════════════════════════════════════════ */
 function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:any[]; rangeBookings:any[] }) {
+  const { isDark } = useTheme();
   const calc=(bookings:any[])=>{
     const aud=bookings.filter(b=>['active','in_progress','completed','finalized'].includes(b.status));
     const audited=aud.filter(b=>b.status==='finalized').length;
@@ -674,12 +686,15 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
   },[rangeBookings]);
 
   return (
-    <Card bg="linear-gradient(145deg,#FFFBEB,#FEF3C7 60%,#FFFBEB)" border="rgba(245,158,11,0.25)">
+    <Card
+      bg={isDark ? 'linear-gradient(145deg,#0c1324 0%,#151c33 50%,#0e1529 100%)' : 'linear-gradient(145deg,#FFFBEB,#FEF3C7 60%,#FFFBEB)'}
+      border={isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.25)'}
+    >
       <div className="p-5 pb-2 flex-shrink-0">
-        <CardHead icon={ShieldCheck} iconBg="#FEF3C7" iconColor="#F59E0B"
+        <CardHead icon={ShieldCheck} iconBg={isDark ? 'rgba(245,158,11,0.2)' : '#FEF3C7'} iconColor="#F59E0B"
           title="Financial Audit" subtitle="Approval & finalization tracking"/>
         <div className="grid grid-cols-2 gap-3 mb-2">
-          <div className="bg-white rounded-2xl p-3 shadow-sm" style={{border:'1px solid rgba(245,158,11,0.2)'}}>
+          <div className="bg-white dark:bg-[#0c1427] rounded-2xl p-3 shadow-sm border border-amber-500/20 dark:border-amber-500/30">
             <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1 text-center">Today</p>
             <div className="relative" style={{height:76}}>
               <ResponsiveContainer width="100%" height="100%">
@@ -690,38 +705,38 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-1">
-                <span className="text-lg font-black text-slate-800">{todayPct}%</span>
+                <span className="text-lg font-black text-slate-800 dark:text-white">{todayPct}%</span>
               </div>
             </div>
             <div className="flex justify-around mt-1 mb-2">
-              <div className="text-center"><p className="text-[9px] text-emerald-500 font-bold uppercase">Done</p><p className="text-sm font-black text-emerald-600">{today.audited}</p></div>
-              <div className="text-center"><p className="text-[9px] text-amber-500 font-bold uppercase">Left</p><p className="text-sm font-black text-amber-600">{today.pending}</p></div>
+              <div className="text-center"><p className="text-[9px] text-emerald-500 font-bold uppercase">Done</p><p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{today.audited}</p></div>
+              <div className="text-center"><p className="text-[9px] text-amber-500 font-bold uppercase">Left</p><p className="text-sm font-black text-amber-600 dark:text-amber-400">{today.pending}</p></div>
             </div>
-            <div className="border-t pt-2 text-center" style={{borderColor:'rgba(245,158,11,0.2)'}}>
+            <div className="border-t pt-2 text-center" style={{borderColor: isDark ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.2)'}}>
               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Today Revenue</p>
-              <p className="text-sm font-black text-emerald-600">AED {today.revenue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</p>
+              <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">AED {today.revenue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-3 shadow-sm" style={{border:'1px solid rgba(245,158,11,0.2)'}}>
+          <div className="bg-white dark:bg-[#0c1427] rounded-2xl p-3 shadow-sm border border-amber-500/20 dark:border-amber-500/30">
             <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Range Total</p>
             <div className="space-y-2">
-              <div className="flex justify-between"><span className="text-[11px] text-slate-500">Audited</span><span className="text-sm font-black text-emerald-600">{range.audited}</span></div>
-              <div className="flex justify-between"><span className="text-[11px] text-slate-500">Pending</span><span className="text-sm font-black text-amber-500">{range.pending}</span></div>
-              <div className="border-t pt-2" style={{borderColor:'#F3F4F6'}}>
+              <div className="flex justify-between"><span className="text-[11px] text-slate-500 dark:text-slate-400">Audited</span><span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{range.audited}</span></div>
+              <div className="flex justify-between"><span className="text-[11px] text-slate-500 dark:text-slate-400">Pending</span><span className="text-sm font-black text-amber-500 dark:text-amber-400">{range.pending}</span></div>
+              <div className="border-t pt-2" style={{borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6'}}>
                 <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Approved Rev.</p>
-                <p className="text-base font-black text-emerald-600">AED {range.revenue.toLocaleString()}</p>
+                <p className="text-base font-black text-emerald-600 dark:text-emerald-400">AED {range.revenue.toLocaleString()}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
       <div className="flex-1 px-4 pb-4 min-h-0" style={{minHeight:80}}>
-        <p className="text-[9px] font-bold uppercase tracking-widest text-amber-600 mb-1">Approved Revenue Trend</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1">Approved Revenue Trend</p>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trendData} margin={{top:4,right:6,left:-24,bottom:0}}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#FDE68A"/>
-            <XAxis dataKey="date" tick={{fontSize:9,fill:'#D97706',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
-            <YAxis tick={{fontSize:9,fill:'#D97706'}} axisLine={false} tickLine={false}/>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'rgba(245,158,11,0.2)' : '#FDE68A'}/>
+            <XAxis dataKey="date" tick={{fontSize:9,fill:isDark?'#F59E0B':'#D97706',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fontSize:9,fill:isDark?'#F59E0B':'#D97706'}} axisLine={false} tickLine={false}/>
             <Tooltip content={<Tip/>}/>
             <Line type="monotone" dataKey="revenue" name="Revenue" stroke="#F59E0B" strokeWidth={2.5} dot={{r:3,fill:'#F59E0B'}} activeDot={{r:5}}/>
           </LineChart>
@@ -736,6 +751,7 @@ function FinancialAuditCard({ todayBookings, rangeBookings }: { todayBookings:an
    FIX: getTeam helper (teams returned as object not array)
 ═══════════════════════════════════════════════════════════ */
 function TeamProgressCard({ bookings, profilesMap }: { bookings:any[]; profilesMap:Record<string,any> }) {
+  const { isDark } = useTheme();
   const teams=useMemo(()=>{
     const map: Record<string,any>={};
     bookings.forEach(b=>{
@@ -754,19 +770,20 @@ function TeamProgressCard({ bookings, profilesMap }: { bookings:any[]; profilesM
     <Card bg="#FFFFFF">
       <div className="p-5 pb-2 flex-shrink-0">
         <div className="flex items-start justify-between mb-3">
-          <CardHead icon={Users} iconBg="#E0E7FF" iconColor="#6366F1"
+          <CardHead icon={Users} iconBg={isDark ? 'rgba(99,102,241,0.2)' : '#E0E7FF'} iconColor="#6366F1"
             title="Team Progress" subtitle="Today's active teams"/>
-          <div className="px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest flex-shrink-0"
-            style={{background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE'}}>{teams.length} Teams</div>
+          <div className="px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest flex-shrink-0 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+            {teams.length} Teams
+          </div>
         </div>
         <div style={{height:110}}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barData} barGap={3} barCategoryGap="28%" margin={{top:0,right:0,left:-24,bottom:0}}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EEF2FF"/>
-              <XAxis dataKey="name" tick={{fontSize:9,fill:'#6366F1',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fontSize:9,fill:'#94A3B8'}} axisLine={false} tickLine={false}/>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'rgba(255,255,255,0.06)' : '#EEF2FF'}/>
+              <XAxis dataKey="name" tick={{fontSize:9,fill:isDark?'#A5B4FC':'#6366F1',fontWeight:'bold'}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fontSize:9,fill:isDark?'#94A3B8':'#64748B'}} axisLine={false} tickLine={false}/>
               <Tooltip content={<Tip/>}/>
-              <Bar dataKey="target"    name="Assigned"  fill="#C7D2FE" radius={[3,3,0,0]}/>
+              <Bar dataKey="target"    name="Assigned"  fill={isDark ? '#4338CA' : '#C7D2FE'} radius={[3,3,0,0]}/>
               <Bar dataKey="completed" name="Completed" fill="#6366F1" radius={[3,3,0,0]}/>
             </BarChart>
           </ResponsiveContainer>
@@ -779,33 +796,36 @@ function TeamProgressCard({ bookings, profilesMap }: { bookings:any[]; profilesM
             const done=team.completed===team.target&&team.target>0;
             return (
               <motion.div key={team.id} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:idx*0.05}}
-                className="rounded-2xl p-3 border transition-all"
-                style={{background:done?'#ECFDF5':'#F8FAFC',borderColor:done?'#A7F3D0':'#E2E8F0'}}>
+                className={`rounded-2xl p-3 border transition-all ${
+                  done
+                    ? 'bg-emerald-50/80 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-500/30'
+                    : 'bg-slate-50 dark:bg-[#11192e] border-slate-200 dark:border-slate-800'
+                }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[11px] font-black text-slate-800 flex items-center gap-1">
+                  <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 flex items-center gap-1">
                     {team.name}{done&&<CheckCircle2 size={11} className="text-emerald-500"/>}
                   </p>
                   <div className="flex -space-x-1.5">
                     {team.members.slice(0,3).map((id:string)=>{
                       const p=profilesMap[id];
-                      return (<div key={id} title={p?.full_name||'Member'} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
+                      return (<div key={id} title={p?.full_name||'Member'} className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 overflow-hidden shadow-sm">
                         {p?.avatar_url?<img src={p.avatar_url} className="w-full h-full object-cover" alt={p.full_name}/>:<UserCircle size={22} className="text-slate-400 -ml-0.5 -mt-0.5"/>}
                       </div>);
                     })}
-                    {team.members.length>3&&<div className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-500">+{team.members.length-3}</div>}
+                    {team.members.length>3&&<div className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[8px] font-black text-slate-500 dark:text-slate-400">+{team.members.length-3}</div>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{background:'#E2E8F0'}}>
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
                     <motion.div initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:0.9,delay:idx*0.07}}
                       className="h-full rounded-full" style={{background:done?'#10B981':'#6366F1'}}/>
                   </div>
-                  <span className="text-[10px] font-black text-slate-600">{team.completed}/{team.target}</span>
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{team.completed}/{team.target}</span>
                 </div>
               </motion.div>
             );
           })}
-          {teams.length===0&&<div className="col-span-3 flex flex-col items-center justify-center h-16 text-slate-300"><Users size={22} className="mb-1 opacity-40"/><span className="text-xs">No teams today</span></div>}
+          {teams.length===0&&<div className="col-span-3 flex flex-col items-center justify-center h-16 text-slate-300 dark:text-slate-600"><Users size={22} className="mb-1 opacity-40"/><span className="text-xs">No teams today</span></div>}
         </div>
       </div>
     </Card>
@@ -1192,7 +1212,7 @@ export default function AdminDashboard() {
 
   if(loading){
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-[#070b14] transition-colors duration-300">
         <div className="relative w-14 h-14 mb-4">
           <div className="absolute inset-0 rounded-full border-t-4 border-violet-500 animate-spin"/>
           <div className="absolute inset-2 rounded-full border-r-4 border-blue-400 animate-spin" style={{animationDirection:'reverse',animationDuration:'1.5s'}}/>
@@ -1207,7 +1227,7 @@ export default function AdminDashboard() {
   const rangeBookings = data.bookings.filter(b => b.cleaning_date >= dateFrom && b.cleaning_date <= dateTo);
 
   return (
-    <div className="min-h-screen bg-white pb-24 font-sans">
+    <div className="min-h-screen bg-transparent pb-24 font-sans">
       <div className="w-full px-4 md:px-6 xl:px-8 2xl:px-10 pt-6 space-y-5">
 
         <WelcomeHeader

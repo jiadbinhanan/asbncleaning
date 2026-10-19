@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle, Zap, Building2, Calendar, Loader2, 
-  Clock, CheckCircle2, ShieldAlert, Sparkles, Lock, RotateCcw
+  Clock, CheckCircle2, ShieldAlert, Lock, RotateCcw
 } from "lucide-react";
 import { format, parseISO, isToday } from "date-fns";
 
@@ -140,7 +140,7 @@ export default function ActivationsPage() {
         {/* --- SECTION 1: TODAY'S HIGHLIGHTED MISSIONS --- */}
         <div>
           <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2 pl-2">
-            <Sparkles className="text-blue-600" size={24}/> Today's Schedule
+            <Calendar className="text-blue-600" size={24}/> Today's Schedule
           </h2>
           
           {todayBookings.length === 0 ? (

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { Sparkles, CheckCircle, Shield, Droplets, Clock, Home, Award } from "lucide-react";
+import { CheckCircle, Shield, Droplets, Clock, Home, Award } from "lucide-react";
 
 export default function AboutAndFeatures() {
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -41,7 +41,7 @@ export default function AboutAndFeatures() {
             className="lg:w-1/2 space-y-6"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-50 text-cyan-600 text-sm font-bold tracking-widest uppercase">
-              <Sparkles size={16} /> The BTM Difference
+              <Award size={16} /> The BTM Difference
             </div>
             {/* ফন্ট-সেরিফ ব্যবহার করে লাক্সারি হেডলাইন (Luxury Headline using font-serif) */}
             <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">

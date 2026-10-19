@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Plus, Clock, Building2, CheckCircle2, 
-  Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Sparkles, Users, Zap, RotateCcw,
+  Loader2, X, Trash2, Edit2, ClipboardList, MapPin, Layers, Users, Zap, RotateCcw,
   Search, Hash, Filter
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
@@ -418,7 +418,7 @@ export default function SupervisorBookings() {
                     <p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mb-4"><MapPin size={14}/> Unit {booking.units?.unit_number} - {booking.units?.building_name}</p>
 
                     <div className="space-y-2 mb-6 flex-1">
-                      <p className="text-xs text-gray-600 font-medium flex items-center gap-2"><Sparkles size={14} className="text-orange-400"/> {booking.service_type}</p>
+                      <p className="text-xs text-gray-600 font-medium flex items-center gap-2"><Layers size={14} className="text-orange-400"/> {booking.service_type}</p>
                       {booking.checklist_templates?.title && (
                         <p className="text-xs text-gray-600 font-medium flex items-center gap-2"><ClipboardList size={14} className="text-teal-500"/> {booking.checklist_templates.title}</p>
                       )}

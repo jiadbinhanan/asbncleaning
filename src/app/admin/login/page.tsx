@@ -27,9 +27,9 @@ function AdminLoginContent() {
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 bg-white flex flex-col items-center justify-center p-6 sm:p-12 relative">
+      <div className="w-full lg:w-1/2 bg-white dark:bg-[#070b14] flex flex-col items-center justify-center p-6 sm:p-12 relative">
 
-        <Link href="/" className="absolute top-8 left-8 p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+        <Link href="/" className="absolute top-8 left-8 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors">
           <ArrowLeft size={24} />
         </Link>
 
@@ -37,7 +37,7 @@ function AdminLoginContent() {
           <AdminLoginHeader />
           <AdminLoginForm />
 
-          <p className="text-center text-xs text-gray-400 mt-10">
+          <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-10">
             Protected by 256-bit encrypted Auth & Cloud Security. <br />
             Problem logging in? Contact System Admin.
           </p>

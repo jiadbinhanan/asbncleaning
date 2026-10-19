@@ -110,7 +110,7 @@ function CollapsedItem({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 rounded-[14px] bg-gradient-to-br from-blue-50 to-cyan-50/80 border border-blue-200/80 shadow-sm"
+            className="absolute inset-0 rounded-[14px] bg-gradient-to-br from-blue-50 to-cyan-50/80 dark:from-blue-950/80 dark:to-cyan-950/50 border border-blue-200/80 dark:border-blue-600/50 shadow-sm"
           />
         )}
 
@@ -129,7 +129,7 @@ function CollapsedItem({
           whileHover={{ scale: 1.15, rotate: -4 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className={`relative z-10 flex items-center justify-center transition-colors duration-200
-            ${isActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-cyan-600'}
+            ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-300'}
           `}
         >
           <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -148,7 +148,7 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
         whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer group
-          ${isActive ? 'text-blue-600 font-semibold' : 'text-slate-600 font-medium'}
+          ${isActive ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-slate-600 dark:text-slate-300 font-medium'}
         `}
       >
         {/* Active background */}
@@ -157,7 +157,7 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-gradient-to-r from-blue-50/90 to-cyan-50/40 rounded-xl border border-blue-200/60 shadow-sm"
+            className="absolute inset-0 bg-gradient-to-r from-blue-50/90 to-cyan-50/40 dark:from-blue-950/70 dark:to-cyan-950/40 rounded-xl border border-blue-200/60 dark:border-blue-700/50 shadow-sm"
           />
         )}
 
@@ -167,9 +167,9 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
             absolute inset-0 rounded-xl
             opacity-0 group-hover:opacity-100
             transition-all duration-300 ease-out
-            bg-white
-            border border-slate-200
-            shadow-[0_10px_25px_-5px_rgba(100,116,133,0.25)]
+            bg-white dark:bg-[#131c31]
+            border border-slate-200 dark:border-slate-700/80
+            shadow-[0_10px_25px_-5px_rgba(100,116,133,0.25)] dark:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.5)]
           " />
         )}
 
@@ -196,14 +196,14 @@ function ExpandedItem({ item, isActive, onClick }: { item: MenuItem; isActive: b
           whileHover={{ scale: 1.15, rotate: -6 }}
           transition={{ type: 'spring', stiffness: 500, damping: 22 }}
           className={`relative z-10 flex-shrink-0 transition-colors duration-150
-            ${isActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-cyan-600'}
+            ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-300'}
           `}
         >
           <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
         </motion.div>
 
         {/* Label */}
-        <span className="relative z-10 text-[13.5px] whitespace-nowrap tracking-wide group-hover:text-slate-800 transition-colors duration-150">
+        <span className="relative z-10 text-[13.5px] whitespace-nowrap tracking-wide group-hover:text-slate-800 dark:group-hover:text-white transition-colors duration-150">
           {item.name}
         </span>
 
@@ -245,7 +245,7 @@ function CategoryLabel({ label, collapsed }: { label: string; collapsed: boolean
         <div className="relative w-1.5 h-1.5 bg-cyan-400 rounded-full" />
       </div>
 
-      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] relative z-10">
+      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] relative z-10">
         {label}
       </p>
 
@@ -260,6 +260,57 @@ export default function Sidebar({
   isDesktopCollapsed, setIsDesktopCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
+
+  // Page-specific subtle theme adaptation
+  const themeStyling = (() => {
+    if (pathname.startsWith('/admin/revenue')) {
+      return {
+        topLine: 'from-emerald-500 via-teal-400 to-emerald-200',
+        bgDark: 'dark:bg-[#06141a]/95',
+        borderDark: 'dark:border-emerald-950/60'
+      };
+    }
+    if (pathname.startsWith('/admin/quotations')) {
+      return {
+        topLine: 'from-purple-500 via-fuchsia-400 to-indigo-400',
+        bgDark: 'dark:bg-[#0d091b]/95',
+        borderDark: 'dark:border-purple-950/60'
+      };
+    }
+    if (pathname.startsWith('/admin/work-records')) {
+      return {
+        topLine: 'from-rose-500 via-amber-400 to-purple-400',
+        bgDark: 'dark:bg-[#120816]/95',
+        borderDark: 'dark:border-rose-950/60'
+      };
+    }
+    if (pathname.startsWith('/admin/bookings')) {
+      return {
+        topLine: 'from-blue-500 via-cyan-400 to-sky-300',
+        bgDark: 'dark:bg-[#07101e]/95',
+        borderDark: 'dark:border-blue-950/60'
+      };
+    }
+    if (pathname.startsWith('/admin/teams')) {
+      return {
+        topLine: 'from-cyan-500 via-blue-500 to-teal-400',
+        bgDark: 'dark:bg-[#050f1d]/95',
+        borderDark: 'dark:border-cyan-950/60'
+      };
+    }
+    if (pathname.startsWith('/admin/companies')) {
+      return {
+        topLine: 'from-blue-600 via-indigo-500 to-amber-400',
+        bgDark: 'dark:bg-[#080d1e]/95',
+        borderDark: 'dark:border-indigo-950/60'
+      };
+    }
+    return {
+      topLine: 'from-blue-500 via-cyan-400 to-blue-200',
+      bgDark: 'dark:bg-[#090e1a]/95',
+      borderDark: 'dark:border-slate-800/80'
+    };
+  })();
 
   const [tooltip, setTooltip] = useState({ show: false, text: '', top: 0, left: 0 });
 
@@ -309,27 +360,28 @@ export default function Sidebar({
         transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         className={`
           fixed top-0 left-0 h-screen z-50 flex flex-col
-          bg-white/96 backdrop-blur-sm
-          border-r border-slate-200/80
-          shadow-[4px_0_28px_-4px_rgba(148,163,184,0.15)]
+          bg-white/96 ${themeStyling.bgDark} backdrop-blur-sm
+          border-r border-slate-200/80 ${themeStyling.borderDark}
+          shadow-[4px_0_28px_-4px_rgba(148,163,184,0.15)] dark:shadow-[4px_0_28px_-4px_rgba(0,0,0,0.6)]
           cursor-pointer
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
           w-[210px] md:w-auto
+          transition-colors duration-300
         `}
       >
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-200" />
+        <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${themeStyling.topLine} transition-all duration-300`} />
 
         {/* ── Header ── */}
         <div
-          className="h-[68px] flex items-center justify-between px-3 border-b border-slate-100/80 shrink-0 relative"
+          className="h-[68px] flex items-center justify-between px-3 border-b border-slate-100/80 dark:border-slate-800/80 shrink-0 relative"
           onClick={(e) => e.stopPropagation()}
         >
           <div className={`flex items-center gap-3 min-w-0 ${isDesktopCollapsed ? 'mx-auto' : ''}`}>
             <motion.div
               whileHover={{ scale: 1.06 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden border border-blue-100/80 shadow-sm bg-white"
+              className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden border border-blue-100/80 dark:border-slate-700 shadow-sm bg-white dark:bg-[#131c31]"
             >
               <Image
                 src="/logo_btm_invoice.png"
@@ -348,20 +400,20 @@ export default function Sidebar({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.18, ease: 'easeOut' }}
-                  className="hidden md:block text-[15px] font-bold text-slate-800 tracking-tight whitespace-nowrap"
+                  className="hidden md:block text-[15px] font-bold text-slate-800 dark:text-white tracking-tight whitespace-nowrap"
                 >
                   BTM Admin
                 </motion.p>
               )}
             </AnimatePresence>
 
-            <p className="md:hidden text-[15px] font-bold text-slate-800 tracking-tight">BTM Admin</p>
+            <p className="md:hidden text-[15px] font-bold text-slate-800 dark:text-white tracking-tight">BTM Admin</p>
           </div>
 
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={() => setIsMobileOpen(false)}
-            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
           >
             <X size={19} />
           </motion.button>
@@ -375,9 +427,9 @@ export default function Sidebar({
               setIsDesktopCollapsed(!isDesktopCollapsed);
             }}
             className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2
-              w-6 h-6 bg-white border border-slate-200 rounded-full
-              items-center justify-center text-slate-500
-              hover:text-blue-600 hover:border-blue-300
+              w-6 h-6 bg-white dark:bg-[#10192e] border border-slate-200 dark:border-slate-700 rounded-full
+              items-center justify-center text-slate-500 dark:text-slate-400
+              hover:text-blue-600 dark:hover:text-cyan-400 hover:border-blue-300 dark:hover:border-cyan-600
               shadow-sm transition-colors z-10"
           >
             <motion.div
@@ -400,7 +452,7 @@ export default function Sidebar({
                       <div className="absolute w-3 h-3 bg-cyan-400/40 rounded-full blur-[3px]" />
                       <div className="relative w-1.5 h-1.5 bg-cyan-400 rounded-full" />
                     </div>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] drop-shadow-sm">
+                    <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] drop-shadow-sm">
                       {category.label}
                     </p>
                     <div className="h-[2px] flex-1 bg-gradient-to-r from-blue-400/50 via-cyan-300/30 to-transparent shadow-[0_0_8px_rgba(56,189,248,0.3)] rounded-full" />
@@ -463,7 +515,7 @@ export default function Sidebar({
 
         {/* ── Logout Section (Always Red) ── */}
         <div
-          className="px-2 pb-4 pt-3 border-t border-slate-100 shrink-0"
+          className="px-2 pb-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 shrink-0"
           onClick={(e) => e.stopPropagation()} 
         >
           <motion.button
@@ -477,8 +529,8 @@ export default function Sidebar({
             }}
             className={`
               group relative flex items-center gap-3 w-full rounded-xl
-              text-red-600 bg-red-50/80 hover:bg-red-500 hover:text-white
-              border border-red-100 hover:border-red-500
+              text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-950/30 hover:bg-red-500 hover:text-white
+              border border-red-100 dark:border-red-900/40 hover:border-red-500
               transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:shadow-red-500/30
               overflow-hidden
               ${isDesktopCollapsed ? 'justify-center h-[42px] w-[42px] mx-auto px-0 rounded-[14px]' : 'px-3 py-2.5'}

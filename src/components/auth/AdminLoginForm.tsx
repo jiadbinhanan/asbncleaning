@@ -71,7 +71,7 @@ export default function AdminLoginForm() {
         <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg flex items-center gap-2"
+            className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2"
         >
             <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
             {error}
@@ -79,9 +79,9 @@ export default function AdminLoginForm() {
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-gray-700 ml-1">Admin User ID</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 ml-1">Admin User ID</label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors">
             <UserIcon size={18} />
           </div>
           <input
@@ -89,16 +89,16 @@ export default function AdminLoginForm() {
             placeholder="e.g. admin"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
+            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-[#0c1427] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
             required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-slate-300 ml-1">Password</label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors">
             <Lock size={18} />
           </div>
           <input
@@ -106,7 +106,7 @@ export default function AdminLoginForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder:text-gray-400"
+            className="w-full pl-11 pr-12 py-3.5 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-[#0c1427] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
             required
           />
           <AnimatePresence mode="wait">
@@ -118,7 +118,7 @@ export default function AdminLoginForm() {
               transition={{ duration: 0.2 }}
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 cursor-pointer"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-slate-500 hover:text-blue-500 cursor-pointer"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </motion.button>
@@ -131,7 +131,7 @@ export default function AdminLoginForm() {
         whileTap={{ scale: 0.98 }}
         disabled={loading}
         type="submit"
-        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 hover:shadow-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 dark:shadow-none hover:shadow-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? (
           <Loader2 className="animate-spin" size={20} />

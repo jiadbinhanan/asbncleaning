@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, CheckCircle2, Loader2, AlertCircle, X, 
-  MapPin, Sparkles, Building2, ImageIcon, FileCheck, Info, 
+  MapPin, Activity, Building2, ImageIcon, FileCheck, Info, 
   ShieldCheck, Camera, Layers, Clock, Filter, Receipt,
   AlertTriangle, LayoutList, CalendarDays, CircleDashed
 } from "lucide-react";
@@ -278,7 +278,7 @@ export default function ClientPortal() {
           )}
 
           <div className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold mb-4">
-            <Sparkles size={12} className="text-blue-500"/> {booking.service_type}
+            <Layers size={12} className="text-blue-500"/> {booking.service_type}
           </div>
         </div>
 
@@ -338,7 +338,7 @@ export default function ClientPortal() {
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
-               <Sparkles size={14} /> Service Dashboard
+               <Activity size={14} /> Service Dashboard
              </div>
              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
                Welcome back, <br className="hidden md:block"/>

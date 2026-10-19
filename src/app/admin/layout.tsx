@@ -70,17 +70,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#070b14] flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying access...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-slate-400 font-medium text-sm">Verifying access...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] flex relative">
+    <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex relative transition-colors duration-300">
+
+      {/* Static GPU-friendly ambient background glows (Dark mode only) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 hidden dark:block opacity-35">
+        <div className="absolute -top-32 right-1/4 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-indigo-950/15 rounded-full blur-[150px]" />
+        <div className="absolute bottom-10 right-10 w-[550px] h-[550px] bg-cyan-950/10 rounded-full blur-[130px]" />
+      </div>
 
       {/* Sidebar Component */}
       <Sidebar 

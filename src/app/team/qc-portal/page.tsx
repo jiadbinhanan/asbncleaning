@@ -249,28 +249,28 @@ function QCPortalContent() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>;
+  if (loading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>;
 
   // ======================= WORKSPACE VIEW =======================
   const WorkspaceView = () => (
-    <div className="flex-1 flex flex-col h-full bg-[#F4F7FA] relative">
-      <div className="bg-white p-4 md:p-6 shadow-sm border-b border-gray-100 shrink-0 flex items-start md:items-center gap-4">
+    <div className="flex-1 flex flex-col h-full bg-[#F4F7FA] dark:bg-[#070b14] relative">
+      <div className="bg-white dark:bg-[#0c1427] p-4 md:p-6 shadow-sm border-b border-gray-100 dark:border-slate-800 shrink-0 flex items-start md:items-center gap-4">
 
-        <button onClick={closeWorkspace} className="md:hidden mt-1 p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700 shrink-0 transition-colors">
+        <button onClick={closeWorkspace} className="md:hidden mt-1 p-2.5 bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 shrink-0 transition-colors">
           <ArrowLeft size={20}/>
         </button>
 
         <div className="flex-1 flex flex-col md:flex-row md:items-end justify-between gap-2">
           <div>
-            <span className={`font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg border mb-2 inline-block ${activeTab === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+            <span className={`font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg border mb-2 inline-block ${activeTab === 'completed' ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50' : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50'}`}>
               Ref: {selectedBooking.booking_ref || selectedBooking.id} • {activeTab}
             </span>
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">Unit {selectedBooking.units?.unit_number}</h2>
-            <p className="text-xs md:text-sm font-bold text-gray-500 mt-1 flex items-center gap-2"><Building2 size={14}/> {selectedBooking.units?.building_name} • {selectedBooking.units?.companies?.name}</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">Unit {selectedBooking.units?.unit_number}</h2>
+            <p className="text-xs md:text-sm font-bold text-gray-500 dark:text-slate-400 mt-1 flex items-center gap-2"><Building2 size={14}/> {selectedBooking.units?.building_name} • {selectedBooking.units?.companies?.name}</p>
           </div>
-          <div className="bg-orange-50 px-4 py-2 rounded-xl border border-orange-100 w-fit">
+          <div className="bg-orange-50 dark:bg-orange-950/40 px-4 py-2 rounded-xl border border-orange-100 dark:border-orange-900/40 w-fit">
               <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest block">Collected Items</span>
-              <span className="text-xl font-black text-orange-600">{qcItems.length}</span>
+              <span className="text-xl font-black text-orange-600 dark:text-orange-400">{qcItems.length}</span>
           </div>
         </div>
       </div>
@@ -280,7 +280,7 @@ function QCPortalContent() {
 
           {/* Instruction Note */}
           {activeTab === 'pending' && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3.5 rounded-2xl text-xs font-bold shadow-sm leading-relaxed mb-4">
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-blue-800 dark:text-blue-300 p-3.5 rounded-2xl text-xs font-bold shadow-sm leading-relaxed mb-4">
               Enter any two values. The third one will be calculated automatically based on the total collected quantity.
             </div>
           )}
@@ -290,13 +290,13 @@ function QCPortalContent() {
             const isReady = !item.error && total === item.collected_qty;
 
             return (
-              <div key={item.id} className={`bg-white p-5 rounded-2xl shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${activeTab === 'completed' ? 'border-emerald-100 opacity-90' : 'border-gray-100 hover:border-indigo-200'}`}>
+              <div key={item.id} className={`bg-white dark:bg-[#0c1427] p-5 rounded-2xl shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${activeTab === 'completed' ? 'border-emerald-100 dark:border-emerald-900/50 opacity-90' : 'border-gray-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800'}`}>
                 <div className="flex-1">
-                  <h3 className="font-black text-lg text-gray-800 mb-1">{item.equipment_master?.item_name}</h3>
-                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-100 w-fit px-2 py-1 rounded">Collected: {item.collected_qty}</p>
+                  <h3 className="font-black text-lg text-gray-800 dark:text-white mb-1">{item.equipment_master?.item_name}</h3>
+                  <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest bg-gray-100 dark:bg-slate-800 w-fit px-2 py-1 rounded">Collected: {item.collected_qty}</p>
 
                   {activeTab === 'completed' && item.qc_completed_by && (
-                    <p className="text-[10px] font-bold text-gray-400 mt-3 flex items-center gap-1">
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 mt-3 flex items-center gap-1">
                       <User size={12}/> Checked by {profiles[item.qc_completed_by]?.full_name || profiles[item.qc_completed_by]?.username || 'Staff'} • {format(new Date(item.qc_completed_at), 'dd MMM, hh:mm a')}
                     </p>
                   )}
@@ -306,39 +306,39 @@ function QCPortalContent() {
                   {/* ✅ 3-Column Grid setup */}
                   <div className="flex gap-2 w-full">
                     <div className="flex-1 md:w-20">
-                      <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1.5 block">✅ Good</label>
+                      <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1.5 block">✅ Good</label>
                       <input 
                         type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
                         value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.good} 
                         onChange={(e) => handleInput(item.id, 'good', e.target.value)}
-                        className="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-black text-emerald-900 text-center disabled:opacity-70 disabled:bg-emerald-100/30"
+                        className="w-full p-2.5 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-black text-emerald-900 dark:text-emerald-300 text-center disabled:opacity-70 disabled:bg-emerald-100/30 dark:disabled:bg-emerald-950/20"
                         placeholder="0"
                       />
                     </div>
                     <div className="flex-1 md:w-20">
-                      <label className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1.5 block">🧺 Dirty</label>
+                      <label className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-1.5 block">🧺 Dirty</label>
                       <input 
                         type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
                         value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.bad} 
                         onChange={(e) => handleInput(item.id, 'bad', e.target.value)}
-                        className="w-full p-2.5 bg-red-50/50 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 font-black text-red-900 text-center disabled:opacity-70 disabled:bg-red-100/30"
+                        className="w-full p-2.5 bg-red-50/50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl outline-none focus:ring-2 focus:ring-red-500 font-black text-red-900 dark:text-red-300 text-center disabled:opacity-70 disabled:bg-red-100/30 dark:disabled:bg-red-950/20"
                         placeholder="0"
                       />
                     </div>
                     <div className="flex-1 md:w-20">
-                      <label className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Flame size={10}/> Damage</label>
+                      <label className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Flame size={10}/> Damage</label>
                       <input 
                         type="number" min="0" max={item.collected_qty} disabled={activeTab === 'completed'}
                         value={item.good === 0 && item.bad === 0 && item.damage === 0 && activeTab === 'pending' ? '' : item.damage} 
                         onChange={(e) => handleInput(item.id, 'damage', e.target.value)}
-                        className="w-full p-2.5 bg-orange-50/50 border border-orange-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 font-black text-orange-900 text-center disabled:opacity-70 disabled:bg-orange-100/30"
+                        className="w-full p-2.5 bg-orange-50/50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 font-black text-orange-900 dark:text-orange-300 text-center disabled:opacity-70 disabled:bg-orange-100/30 dark:disabled:bg-orange-950/20"
                         placeholder="0"
                       />
                     </div>
                   </div>
 
                   {/* ✅ Progress bar indicator */}
-                  <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden flex w-full">
+                  <div className="mt-2 h-1 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden flex w-full">
                     <div className="bg-emerald-400 transition-all duration-300" style={{width: `${(item.good/item.collected_qty)*100}%`}}/>
                     <div className="bg-red-400 transition-all duration-300" style={{width: `${(item.bad/item.collected_qty)*100}%`}}/>
                     <div className="bg-orange-400 transition-all duration-300" style={{width: `${(item.damage/item.collected_qty)*100}%`}}/>
@@ -349,11 +349,11 @@ function QCPortalContent() {
                 {activeTab === 'pending' && (
                   <div className="w-full md:w-24 flex flex-col justify-center shrink-0 mt-2 md:mt-0">
                     {item.error ? (
-                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> {item.error}</p>
+                      <p className="text-[10px] text-red-500 dark:text-red-400 font-bold flex items-center gap-1"><AlertTriangle size={12}/> {item.error}</p>
                     ) : !isReady ? (
-                      <p className="text-[10px] text-orange-500 font-bold flex items-center gap-1"><AlertTriangle size={12}/> Match Total</p>
+                      <p className="text-[10px] text-orange-500 dark:text-orange-400 font-bold flex items-center gap-1"><AlertTriangle size={12}/> Match Total</p>
                     ) : (
-                      <p className="text-[10px] text-emerald-500 font-bold flex items-center justify-center gap-1 bg-emerald-50 py-1.5 rounded"><CheckCircle2 size={14}/> Ready</p>
+                      <p className="text-[10px] text-emerald-500 dark:text-emerald-400 font-bold flex items-center justify-center gap-1 bg-emerald-50 dark:bg-emerald-950/50 py-1.5 rounded"><CheckCircle2 size={14}/> Ready</p>
                     )}
                   </div>
                 )}
@@ -364,14 +364,14 @@ function QCPortalContent() {
       </div>
 
       {activeTab === 'pending' && (
-        <div className="bg-white p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] border-t border-gray-100 shrink-0">
+        <div className="bg-white dark:bg-[#0c1427] p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] border-t border-gray-100 dark:border-slate-800 shrink-0">
           <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs font-bold text-gray-500 hidden md:flex items-center gap-2">
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 hidden md:flex items-center gap-2">
               <ShieldCheck className="text-indigo-400" size={18}/> Verify carefully. Data is read-only after submission.
             </p>
             <button 
               onClick={handleSubmit} disabled={submitting}
-              className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {submitting ? <><Loader2 className="animate-spin" size={20}/> Processing...</> : <>Submit & Lock QC <ArrowRight size={18}/></>}
             </button>
@@ -382,13 +382,13 @@ function QCPortalContent() {
   );
 
   return (
-    <div className="h-screen bg-[#F4F7FA] font-sans flex overflow-hidden">
+    <div className="h-screen bg-[#F4F7FA] dark:bg-[#070b14] font-sans flex overflow-hidden">
 
       {/* ======================= LEFT SIDEBAR (LIST VIEW) ======================= */}
-      <div className={`w-full md:w-[350px] lg:w-[400px] bg-white border-r border-gray-200 flex flex-col h-full shadow-2xl z-20 shrink-0 ${isMobileModalOpen ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[350px] lg:w-[400px] bg-white dark:bg-[#0c1427] border-r border-gray-200 dark:border-slate-800/80 flex flex-col h-full shadow-2xl z-20 shrink-0 ${isMobileModalOpen ? 'hidden md:flex' : 'flex'}`}>
 
         {/* Header & Navigation */}
-        <div className="bg-gray-900 text-white p-5 shadow-md shrink-0">
+        <div className="bg-gray-900 dark:bg-[#090d1a] text-white p-5 shadow-md shrink-0 border-b dark:border-slate-800/60">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-lg font-black flex items-center gap-2"><ClipboardCheck className="text-indigo-400"/> QC Portal</h1>
             <button onClick={handleNavigationBack} className="text-xs font-bold text-gray-300 hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-1">
@@ -415,34 +415,34 @@ function QCPortalContent() {
         </div>
 
         {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-gray-50/50 dark:bg-[#070b14]/50">
           {Object.keys(groupedBookings).length === 0 ? (
             <div className="text-center p-8 mt-10">
-              {activeTab === 'pending' ? <CheckCircle2 size={40} className="mx-auto text-gray-300 mb-3"/> : <History size={40} className="mx-auto text-gray-300 mb-3"/>}
-              <p className="font-black text-gray-500">{activeTab === 'pending' ? 'All Caught Up!' : 'No Records Found'}</p>
+              {activeTab === 'pending' ? <CheckCircle2 size={40} className="mx-auto text-gray-300 dark:text-slate-600 mb-3"/> : <History size={40} className="mx-auto text-gray-300 dark:text-slate-600 mb-3"/>}
+              <p className="font-black text-gray-500 dark:text-slate-400">{activeTab === 'pending' ? 'All Caught Up!' : 'No Records Found'}</p>
             </div>
           ) : (
             sortedDates.map((dateStr) => (
               <div key={dateStr} className="mb-6">
-                <h3 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-1.5 bg-indigo-50 p-2.5 rounded-lg border border-indigo-100">
+                <h3 className="text-[11px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
                   <Calendar size={14}/> {format(new Date(dateStr), 'EEEE, dd MMM yyyy')}
                 </h3>
                 <div className="space-y-3">
                   {groupedBookings[dateStr].map((b: any) => (
                     <div 
                       key={b.id} onClick={() => handleSelectBooking(b)}
-                      className={`p-4 rounded-2xl cursor-pointer transition-all border ${selectedBooking?.id === b.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 border-indigo-600' : 'bg-white hover:bg-indigo-50 border-gray-200 shadow-sm'}`}
+                      className={`p-4 rounded-2xl cursor-pointer transition-all border ${selectedBooking?.id === b.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 border-indigo-600' : 'bg-white dark:bg-[#0c1427] hover:bg-indigo-50/80 dark:hover:bg-slate-800/60 border-gray-200 dark:border-slate-800 shadow-sm'}`}
                     >
                       <div className="flex justify-between items-start mb-1.5">
-                        <h4 className={`font-black text-base leading-none ${selectedBooking?.id === b.id ? 'text-white' : 'text-gray-900'}`}>Unit {b.units?.unit_number}</h4>
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-white/20 text-white' : activeTab === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                        <h4 className={`font-black text-base leading-none ${selectedBooking?.id === b.id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Unit {b.units?.unit_number}</h4>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-white/20 text-white' : activeTab === 'completed' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400' : 'bg-orange-100 dark:bg-amber-950/50 text-orange-700 dark:text-amber-400'}`}>
                           {b.logs.length} Items
                         </span>
                       </div>
-                      <p className={`text-[11px] font-bold flex items-center gap-1.5 ${selectedBooking?.id === b.id ? 'text-indigo-200' : 'text-gray-500'}`}>
+                      <p className={`text-[11px] font-bold flex items-center gap-1.5 ${selectedBooking?.id === b.id ? 'text-indigo-200' : 'text-gray-500 dark:text-slate-400'}`}>
                         <Building2 size={12}/> {b.units?.companies?.name}
                       </p>
-                      <p className={`text-[10px] font-bold mt-1.5 px-2 py-1 rounded w-fit ${selectedBooking?.id === b.id ? 'bg-white/10 text-indigo-100' : 'bg-gray-100 text-gray-500'}`}>
+                      <p className={`text-[10px] font-bold mt-1.5 px-2 py-1 rounded w-fit ${selectedBooking?.id === b.id ? 'bg-white/10 text-indigo-100' : 'bg-gray-100 dark:bg-slate-800/70 text-gray-500 dark:text-slate-400'}`}>
                         Ref: {b.booking_ref || b.id}
                       </p>
 
@@ -454,12 +454,12 @@ function QCPortalContent() {
                         const qcSubmitter = qcSubmitterId ? profiles[qcSubmitterId] : null;
 
                         return (
-                          <div className={`mt-3 pt-3 border-t flex flex-col gap-2.5 ${selectedBooking?.id === b.id ? 'border-indigo-400/30' : 'border-gray-100'}`}>
+                          <div className={`mt-3 pt-3 border-t flex flex-col gap-2.5 ${selectedBooking?.id === b.id ? 'border-indigo-400/30' : 'border-gray-100 dark:border-slate-800/60'}`}>
 
                             {/* --- Shift Info --- */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-white/10 text-indigo-200' : 'bg-gray-100 text-gray-500'}`}>
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-white/10 text-indigo-200' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'}`}>
                                   Shift
                                 </span>
                                 {shiftSubmitter ? (
@@ -467,20 +467,20 @@ function QCPortalContent() {
                                     {shiftSubmitter.avatar_url ? (
                                       <img src={shiftSubmitter.avatar_url} alt="DP" className="w-4 h-4 rounded-full object-cover border border-white/50 shadow-sm" />
                                     ) : (
-                                      <div className="w-4 h-4 rounded-full bg-indigo-100 flex items-center justify-center text-[8px] font-black text-indigo-700 shadow-sm">
+                                      <div className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-950/70 flex items-center justify-center text-[8px] font-black text-indigo-700 dark:text-indigo-300 shadow-sm">
                                         {(shiftSubmitter.full_name || shiftSubmitter.username || 'S')[0].toUpperCase()}
                                       </div>
                                     )}
-                                    <span className={`text-[10px] font-bold line-clamp-1 max-w-[80px] ${selectedBooking?.id === b.id ? 'text-indigo-100' : 'text-gray-600'}`}>
+                                    <span className={`text-[10px] font-bold line-clamp-1 max-w-[80px] ${selectedBooking?.id === b.id ? 'text-indigo-100' : 'text-gray-600 dark:text-slate-300'}`}>
                                       {shiftSubmitter.full_name || shiftSubmitter.username}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className={`text-[10px] font-bold ${selectedBooking?.id === b.id ? 'text-indigo-200/50' : 'text-gray-400'}`}>No Shift Data</span>
+                                  <span className={`text-[10px] font-bold ${selectedBooking?.id === b.id ? 'text-indigo-200/50' : 'text-gray-400 dark:text-slate-500'}`}>No Shift Data</span>
                                 )}
                               </div>
                               {workLog?.end_time && (
-                                <span className={`text-[9px] font-bold flex items-center gap-1 ${selectedBooking?.id === b.id ? 'text-indigo-200' : 'text-gray-400'}`}>
+                                <span className={`text-[9px] font-bold flex items-center gap-1 ${selectedBooking?.id === b.id ? 'text-indigo-200' : 'text-gray-400 dark:text-slate-500'}`}>
                                   <CheckCircle2 size={10}/> {format(new Date(workLog.end_time), 'hh:mm a')}
                                 </span>
                               )}
@@ -490,24 +490,24 @@ function QCPortalContent() {
                             {activeTab === 'completed' && qcSubmitter && (
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-emerald-500/20 text-emerald-200' : 'bg-emerald-50 text-emerald-600'}`}>
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${selectedBooking?.id === b.id ? 'bg-emerald-500/20 text-emerald-200' : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'}`}>
                                     QC By
                                   </span>
                                   <div className="flex items-center gap-1.5">
                                     {qcSubmitter.avatar_url ? (
                                       <img src={qcSubmitter.avatar_url} alt="DP" className="w-4 h-4 rounded-full object-cover border border-white/50 shadow-sm" />
                                     ) : (
-                                      <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center text-[8px] font-black text-emerald-700 shadow-sm">
+                                      <div className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-950/70 flex items-center justify-center text-[8px] font-black text-emerald-700 dark:text-emerald-300 shadow-sm">
                                         {(qcSubmitter.full_name || qcSubmitter.username || 'Q')[0].toUpperCase()}
                                       </div>
                                     )}
-                                    <span className={`text-[10px] font-bold line-clamp-1 max-w-[80px] ${selectedBooking?.id === b.id ? 'text-indigo-100' : 'text-gray-600'}`}>
+                                    <span className={`text-[10px] font-bold line-clamp-1 max-w-[80px] ${selectedBooking?.id === b.id ? 'text-indigo-100' : 'text-gray-600 dark:text-slate-300'}`}>
                                       {qcSubmitter.full_name || qcSubmitter.username}
                                     </span>
                                   </div>
                                 </div>
                                 {b.logs?.[0]?.qc_completed_at && (
-                                  <span className={`text-[9px] font-bold flex items-center gap-1 ${selectedBooking?.id === b.id ? 'text-emerald-200' : 'text-emerald-500'}`}>
+                                  <span className={`text-[9px] font-bold flex items-center gap-1 ${selectedBooking?.id === b.id ? 'text-emerald-200' : 'text-emerald-500 dark:text-emerald-400'}`}>
                                     <ShieldCheck size={10}/> {format(new Date(b.logs[0].qc_completed_at), 'hh:mm a')}
                                   </span>
                                 )}
@@ -532,11 +532,11 @@ function QCPortalContent() {
       <div className="hidden md:flex flex-1 relative h-full">
         {!selectedBooking ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 relative z-10">
-            <div className="w-24 h-24 bg-white rounded-full shadow-xl flex items-center justify-center mx-auto mb-6 border-4 border-dashed border-gray-200">
-              <Package size={40} className="text-gray-300"/>
+            <div className="w-24 h-24 bg-white dark:bg-[#0c1427] rounded-full shadow-xl flex items-center justify-center mx-auto mb-6 border-4 border-dashed border-gray-200 dark:border-slate-800">
+              <Package size={40} className="text-gray-300 dark:text-slate-600"/>
             </div>
-            <h2 className="text-2xl font-black text-gray-800 tracking-tight">Select a Booking</h2>
-            <p className="text-gray-500 text-sm font-bold mt-2 max-w-sm mx-auto">Choose a unit from the list to view or process quality control.</p>
+            <h2 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">Select a Booking</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-sm font-bold mt-2 max-w-sm mx-auto">Choose a unit from the list to view or process quality control.</p>
           </div>
         ) : (
           <WorkspaceView />
@@ -548,7 +548,7 @@ function QCPortalContent() {
         {isMobileModalOpen && (
           <motion.div 
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="fixed inset-0 z-50 md:hidden bg-white flex flex-col shadow-2xl"
+            className="fixed inset-0 z-50 md:hidden bg-white dark:bg-[#070b14] flex flex-col shadow-2xl"
           >
             <WorkspaceView />
           </motion.div>
@@ -561,7 +561,7 @@ function QCPortalContent() {
 
 export default function GlobalQCPortal() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600 size-12"/></div>}>
       <QCPortalContent />
     </Suspense>
   );

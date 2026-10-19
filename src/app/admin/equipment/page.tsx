@@ -261,23 +261,76 @@ export default function EquipmentSetup() {
   // --- Helper Components ---
   const TypeBadge = ({ type }: { type: string }) => {
     switch (type) {
-      case 'returnable': return <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-[10px] font-black uppercase">Linens (Return)</span>;
-      case 'refillable': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-black uppercase">Dispensers</span>;
-      case 'consumable': return <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-black uppercase">Amenities</span>;
+      case 'returnable': return <span className="bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-2 py-1 rounded text-[10px] font-black uppercase">Linens (Return)</span>;
+      case 'refillable': return <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 px-2 py-1 rounded text-[10px] font-black uppercase">Dispensers</span>;
+      case 'consumable': return <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[10px] font-black uppercase">Amenities</span>;
       default: return null;
     }
   };
 
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden">
       
-      {/* 1. PREMIUM HEADER */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative">
+      {/* 1. PREMIUM HEADER — Titanium Teal & Aqua Prism Waves (dark) */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-20 px-4 md:px-8 shadow-2xl relative overflow-hidden dark:border-b dark:border-teal-500/20 dark:shadow-[0_12px_40px_rgba(20,184,166,0.15)]">
+        {/* Light mode gradient */}
+        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
+
+        {/* Dark mode multi-color teal prism gradient */}
+        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #020f12 0%, #052126 20%, #0a3338 42%, #082936 68%, #020d14 100%)' }} />
+
+        {/* Dark mode glowing teal orbs */}
+        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-teal-500/22 rounded-full blur-[100px] pointer-events-none' />
+        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-cyan-500/18 rounded-full blur-[90px] pointer-events-none' />
+
+        {/* Dark mode SVG Titanium Teal Waves */}
+        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="equip-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#0D9488" stopOpacity="0.32" />
+                <stop offset="35%" stopColor="#10B981" stopOpacity="0.25" />
+                <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.20" />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.08" />
+              </linearGradient>
+              <linearGradient id="equip-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.28" />
+                <stop offset="40%" stopColor="#2DD4BF" stopOpacity="0.22" />
+                <stop offset="75%" stopColor="#059669" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#0284C7" stopOpacity="0.05" />
+              </linearGradient>
+              <linearGradient id="equip-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#34D399" stopOpacity="0.95" />
+                <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.4" />
+              </linearGradient>
+              <linearGradient id="equip-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#67E8F9" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#2DD4BF" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="equip-glow-teal" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50 L1440,240 L0,240 Z" fill="url(#equip-grad-wave1)" />
+            <path d="M0,80 C300,20 540,130 840,60 C1140,-10 1320,110 1440,50" stroke="url(#equip-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#equip-glow-teal)" />
+            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110 L1440,240 L0,240 Z" fill="url(#equip-grad-wave2)" />
+            <path d="M0,130 C240,170 480,70 760,120 C1040,170 1260,80 1440,110" stroke="url(#equip-crest-2)" strokeWidth="2" strokeLinecap="round" />
+            <path d="M0,190 C340,220 660,150 980,190 C1200,220 1360,170 1440,180" stroke="url(#equip-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+          </svg>
+        </div>
+
+        {/* Light mode decorative orbs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden" />
+
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
            <div>
-              <p className="text-blue-300 font-bold uppercase tracking-widest text-xs mb-1">Inventory Management</p>
-              <h1 className="text-3xl font-black tracking-tight flex items-center gap-3"><Package className="text-blue-500" size={32}/> Equipment Setup</h1>
+              <p className="text-blue-300 dark:text-teal-200/80 font-bold uppercase tracking-widest text-xs mb-1">Inventory Management</p>
+              <h1 className="text-3xl font-black tracking-tight flex items-center gap-3"><Package className="text-blue-500 dark:text-teal-400" size={32}/> Equipment Setup</h1>
            </div>
            
            {/* Navigation Tabs */}
@@ -297,7 +350,7 @@ export default function EquipmentSetup() {
 
       <div className="px-4 md:px-8 -mt-10 relative z-20">
         {loading ? (
-          <div className="bg-white p-20 rounded-[3rem] shadow-xl flex justify-center items-center gap-4"><Loader2 className="animate-spin text-blue-600" size={32}/><span className="font-bold text-gray-400">Loading data...</span></div>
+          <div className="bg-white dark:bg-[#0c1427] p-20 rounded-[3rem] shadow-xl border border-transparent dark:border-slate-800 flex justify-center items-center gap-4"><Loader2 className="animate-spin text-blue-600" size={32}/><span className="font-bold text-gray-400 dark:text-slate-400">Loading data...</span></div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
              
@@ -305,26 +358,26 @@ export default function EquipmentSetup() {
             {activeView === 'master' && (
               <>
                 <div className="lg:col-span-4 space-y-6">
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2"><Plus className="text-blue-600"/> Add New Item</h2>
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2"><Plus className="text-blue-600 dark:text-blue-400"/> Add New Item</h2>
                     <div className="space-y-4">
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Item Category</label>
-                        <select value={newItemType} onChange={e => setNewItemType(e.target.value)} className="w-full p-3.5 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-bold text-gray-900 focus:border-blue-500">
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Item Category</label>
+                        <select value={newItemType} onChange={e => setNewItemType(e.target.value)} className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-bold text-gray-900 dark:text-white focus:border-blue-500">
                           <option value="returnable">Linens & Towels (Returnable)</option>
                           <option value="refillable">Dispensers & Jars (Refillable)</option>
                           <option value="consumable">Amenities (Consumable)</option>
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Item Name</label>
-                        <input value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder="e.g. Bath Towel" className="w-full p-3.5 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-bold text-gray-900 focus:border-blue-500"/>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Item Name</label>
+                        <input value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder="e.g. Bath Towel" className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500"/>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Base Price (AED)</label>
-                        <input type="number" value={newBasePrice} onChange={e => setNewBasePrice(e.target.value)} placeholder="0.00" className="w-full p-3.5 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-bold text-gray-900 focus:border-blue-500"/>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Base Price (AED)</label>
+                        <input type="number" value={newBasePrice} onChange={e => setNewBasePrice(e.target.value)} placeholder="0.00" className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500"/>
                       </div>
-                      <button onClick={addMasterItem} disabled={isSaving} className="w-full py-4 bg-gray-900 text-white font-black rounded-xl hover:bg-black transition-all shadow-md active:scale-95 disabled:opacity-50">
+                      <button onClick={addMasterItem} disabled={isSaving} className="w-full py-4 bg-gray-900 dark:bg-blue-600 text-white font-black rounded-xl hover:bg-black dark:hover:bg-blue-500 transition-all shadow-md active:scale-95 disabled:opacity-50">
                         {isSaving ? <Loader2 className="animate-spin mx-auto"/> : "Add to Master List"}
                       </button>
                     </div>
@@ -332,17 +385,17 @@ export default function EquipmentSetup() {
                 </div>
 
                 <div className="lg:col-span-8">
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 bg-gray-50 flex justify-between items-center border-b border-gray-100">
-                       <h3 className="font-black text-gray-900 flex items-center gap-2"><Search size={18}/> Master Inventory</h3>
-                       <span className="text-xs font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{masterItems.length} Items</span>
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white dark:bg-[#0c1427] rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                    <div className="p-6 bg-gray-50 dark:bg-[#090d1a] flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
+                       <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2"><Search size={18}/> Master Inventory</h3>
+                       <span className="text-xs font-black bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 px-3 py-1 rounded-full">{masterItems.length} Items</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left">
-                        <thead className="bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                        <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
                           <tr><th className="p-5">Category</th><th className="p-5">Equipment Name</th><th className="p-5 text-center">Base Price</th><th className="p-5 text-right">Actions</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                           {Object.entries(masterItems.reduce((acc: any, item: any) => {
                             if (!acc[item.item_type]) acc[item.item_type] = [];
                             acc[item.item_type].push(item);
@@ -350,32 +403,32 @@ export default function EquipmentSetup() {
                           }, {})).map(([category, items]: any) => (
                             <React.Fragment key={category}>
                               {/* Group Header */}
-                              <tr className="bg-blue-50/50">
-                                <td colSpan={4} className="p-3 text-[11px] font-black text-blue-800 uppercase tracking-widest border-b border-blue-100 flex items-center gap-2">
+                              <tr className="bg-blue-50/50 dark:bg-blue-950/30">
+                                <td colSpan={4} className="p-3 text-[11px] font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest border-b border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
                                   <TypeBadge type={category}/> {category} Items
                                 </td>
                               </tr>
                               {/* Items */}
                               {items.map((item: any) => (
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors group">
+                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors group">
                                   {editingItem === item.id ? (
                                     <>
-                                      <td className="p-3"><select value={editData.type} onChange={e => setEditData({...editData, type: e.target.value})} className="p-2 border rounded-lg text-xs font-black text-gray-900 w-full"><option value="returnable">Returnable</option><option value="refillable">Refillable</option><option value="consumable">Consumable</option></select></td>
-                                      <td className="p-3"><input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} className="p-2 border rounded-lg text-sm font-black text-gray-900 w-full"/></td>
-                                      <td className="p-3"><input type="number" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} className="p-2 border rounded-lg text-sm font-black text-gray-900 w-full text-center"/></td>
+                                      <td className="p-3"><select value={editData.type} onChange={e => setEditData({...editData, type: e.target.value})} className="p-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#070b14] rounded-lg text-xs font-black text-gray-900 dark:text-white w-full"><option value="returnable">Returnable</option><option value="refillable">Refillable</option><option value="consumable">Consumable</option></select></td>
+                                      <td className="p-3"><input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} className="p-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#070b14] rounded-lg text-sm font-black text-gray-900 dark:text-white w-full"/></td>
+                                      <td className="p-3"><input type="number" value={editData.price} onChange={e => setEditData({...editData, price: e.target.value})} className="p-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#070b14] rounded-lg text-sm font-black text-gray-900 dark:text-white w-full text-center"/></td>
                                       <td className="p-3 text-right">
-                                        <button onClick={() => saveEditMaster(item.id)} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg mr-2"><Save size={16}/></button>
-                                        <button onClick={() => setEditingItem(null)} className="p-2 bg-gray-100 text-gray-600 rounded-lg"><X size={16}/></button>
+                                        <button onClick={() => saveEditMaster(item.id)} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg mr-2"><Save size={16}/></button>
+                                        <button onClick={() => setEditingItem(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
                                       </td>
                                     </>
                                   ) : (
                                     <>
-                                      <td className="p-5 font-bold text-gray-500 capitalize">{item.item_type}</td>
-                                      <td className="p-5 font-black text-gray-900">{item.item_name}</td>
-                                      <td className="p-5 text-center font-black text-gray-700">{item.base_price} AED</td>
+                                      <td className="p-5 font-bold text-gray-500 dark:text-slate-400 capitalize">{item.item_type}</td>
+                                      <td className="p-5 font-black text-gray-900 dark:text-white">{item.item_name}</td>
+                                      <td className="p-5 text-center font-black text-gray-700 dark:text-slate-300">{item.base_price} AED</td>
                                       <td className="p-5 text-right space-x-2">
-                                        <button onClick={() => { setEditingItem(item.id); setEditData({ name: item.item_name, price: item.base_price, type: item.item_type }); }} className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                        <button onClick={() => deleteMasterItem(item.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                        <button onClick={() => { setEditingItem(item.id); setEditData({ name: item.item_name, price: item.base_price, type: item.item_type }); }} className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors"><Edit2 size={16}/></button>
+                                        <button onClick={() => deleteMasterItem(item.id)} className="p-2 bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-lg transition-colors"><Trash2 size={16}/></button>
                                       </td>
                                     </>
                                   )}
@@ -396,45 +449,45 @@ export default function EquipmentSetup() {
               <>
                 <div className="lg:col-span-4 space-y-6">
                   {/* Create Template Box */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2"><FileText className="text-emerald-600"/> Create Layout Template</h2>
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2"><FileText className="text-emerald-600 dark:text-emerald-400"/> Create Layout Template</h2>
                     <div className="flex gap-2">
                       <input 
                         value={newTemplateName} 
                         onChange={e => setNewTemplateName(e.target.value)} 
                         placeholder="e.g. 2BHK Premium" 
-                        className="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-black text-emerald-900 text-sm focus:border-emerald-500 placeholder:font-bold placeholder:text-gray-400"
+                        className="flex-1 p-3 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-black text-emerald-900 dark:text-emerald-300 text-sm focus:border-emerald-500 placeholder:font-bold placeholder:text-gray-400 dark:placeholder:text-slate-500"
                       />
                       <button onClick={createTemplate} disabled={isSaving} className="px-4 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-colors"><Plus size={20}/></button>
                     </div>
                   </motion.div>
 
                   {/* Select Template & Add Items */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Select Template to Edit</label>
-                    <select value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)} className="w-full p-3 bg-emerald-50 border-2 border-emerald-100 rounded-xl outline-none font-black text-emerald-900 mb-6">
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Select Template to Edit</label>
+                    <select value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)} className="w-full p-3 bg-emerald-50 dark:bg-[#070b14] border-2 border-emerald-100 dark:border-slate-700 rounded-xl outline-none font-black text-emerald-900 dark:text-emerald-300 mb-6">
                       <option value="">Choose Template...</option>
                       {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
 
                     {selectedTemplate && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <button onClick={() => setShowBulkSelect(!showBulkSelect)} className="w-full py-3 bg-emerald-50 text-emerald-700 font-black rounded-xl hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 border border-emerald-200">
+                      <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
+                        <button onClick={() => setShowBulkSelect(!showBulkSelect)} className="w-full py-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-black rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800/50">
                           {showBulkSelect ? <X size={18}/> : <Plus size={18}/>} {showBulkSelect ? "Cancel Selection" : "Select Multiple Items"}
                         </button>
 
                         {showBulkSelect && (
-                          <div className="mt-4 space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 max-h-80 overflow-y-auto custom-scrollbar">
+                          <div className="mt-4 space-y-3 bg-gray-50 dark:bg-[#070b14] p-4 rounded-xl border border-gray-200 dark:border-slate-800 max-h-80 overflow-y-auto custom-scrollbar">
                             {masterItems.map(m => (
-                              <div key={m.id} className="flex flex-col gap-2 bg-white p-3 rounded-lg border border-gray-100">
+                              <div key={m.id} className="flex flex-col gap-2 bg-white dark:bg-[#0c1427] p-3 rounded-lg border border-gray-100 dark:border-slate-800">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                   <input type="checkbox" checked={bulkSelectedIds.includes(m.id)} onChange={() => toggleBulkSelect(m.id)} className="w-5 h-5 accent-emerald-600 cursor-pointer"/>
-                                  <span className="font-black text-gray-900 text-sm">{m.item_name}</span>
+                                  <span className="font-black text-gray-900 dark:text-white text-sm">{m.item_name}</span>
                                 </label>
                                 {bulkSelectedIds.includes(m.id) && (
                                   <div className="flex gap-2 ml-8">
-                                    <input type="number" placeholder="Qty" value={bulkInputs[m.id]?.qty} onChange={e => handleBulkInput(m.id, 'qty', e.target.value)} className="w-1/2 p-2 bg-emerald-50 border border-emerald-200 rounded-md outline-none font-black text-emerald-900 text-sm" />
-                                    <input type="number" placeholder="Price" value={bulkInputs[m.id]?.price} onChange={e => handleBulkInput(m.id, 'price', e.target.value)} className="w-1/2 p-2 bg-emerald-50 border border-emerald-200 rounded-md outline-none font-black text-emerald-900 text-sm" />
+                                    <input type="number" placeholder="Qty" value={bulkInputs[m.id]?.qty} onChange={e => handleBulkInput(m.id, 'qty', e.target.value)} className="w-1/2 p-2 bg-emerald-50 dark:bg-[#070b14] border border-emerald-200 dark:border-slate-700 rounded-md outline-none font-black text-emerald-900 dark:text-white text-sm" />
+                                    <input type="number" placeholder="Price" value={bulkInputs[m.id]?.price} onChange={e => handleBulkInput(m.id, 'price', e.target.value)} className="w-1/2 p-2 bg-emerald-50 dark:bg-[#070b14] border border-emerald-200 dark:border-slate-700 rounded-md outline-none font-black text-emerald-900 dark:text-white text-sm" />
                                   </div>
                                 )}
                               </div>
@@ -451,9 +504,9 @@ export default function EquipmentSetup() {
 
                 <div className="lg:col-span-8">
                   {selectedTemplate ? (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                      <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-  <h3 className="font-black text-emerald-900">Template Items: {templates.find(t=>t.id.toString()===selectedTemplate)?.name}</h3>
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white dark:bg-[#0c1427] rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                      <div className="p-6 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-900/40 flex justify-between items-center">
+  <h3 className="font-black text-emerald-900 dark:text-emerald-300">Template Items: {templates.find(t=>t.id.toString()===selectedTemplate)?.name}</h3>
   <button
     onClick={async () => {
       if (!confirm("এই template টা ডিলিট করবেন?")) return;
@@ -464,23 +517,23 @@ export default function EquipmentSetup() {
         setTemplateConfigs([]);
       } else alert(error.message);
     }}
-    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-black border border-red-100 transition-colors"
+    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-xl text-xs font-black border border-red-100 dark:border-red-900/40 transition-colors"
   >
     <Trash2 size={14}/> Delete Template
   </button>
 </div>
                       <table className="w-full text-left">
-                        <thead className="bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                        <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
                           <tr><th className="p-4">Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Price</th><th className="p-4 text-right">Action</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                         {templateConfigs.map((c: any) => (
-  <tr key={c.equipment_id} className="hover:bg-gray-50 transition-colors group">
+  <tr key={c.equipment_id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors group">
     {editingTemplateItem === c.equipment_id ? (
       <>
-        <td className="p-4 font-bold text-gray-900">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
-        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.qty} onChange={e => setEditTemplateItemData({...editTemplateItemData, qty: e.target.value})} className="w-20 p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-center outline-none"/></td>
-        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.price} onChange={e => setEditTemplateItemData({...editTemplateItemData, price: e.target.value})} className="w-24 p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-center outline-none"/></td>
+        <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.qty} onChange={e => setEditTemplateItemData({...editTemplateItemData, qty: e.target.value})} className="w-20 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+        <td className="p-4 text-center"><input type="number" value={editTemplateItemData.price} onChange={e => setEditTemplateItemData({...editTemplateItemData, price: e.target.value})} className="w-24 p-2 border-2 border-emerald-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
         <td className="p-4 text-right flex justify-end gap-2">
           <button onClick={async () => {
             const template = templates.find(t => t.id.toString() === selectedTemplate);
@@ -495,18 +548,18 @@ export default function EquipmentSetup() {
               setTemplates(templates.map(t => t.id.toString() === selectedTemplate ? data[0] : t));
               setEditingTemplateItem(null);
             } else alert(error?.message);
-          }} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><Save size={16}/></button>
-          <button onClick={() => setEditingTemplateItem(null)} className="p-2 bg-gray-100 text-gray-600 rounded-lg"><X size={16}/></button>
+          }} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
+          <button onClick={() => setEditingTemplateItem(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
         </td>
       </>
     ) : (
       <>
-        <td className="p-4 font-bold text-gray-900">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
-        <td className="p-4 text-center font-black text-gray-600">{c.standard_qty}</td>
-        <td className="p-4 text-center font-black text-gray-600">{c.extra_unit_price}</td>
+        <td className="p-4 font-bold text-gray-900 dark:text-white">{c.equipment_master?.item_name}<br/><TypeBadge type={c.equipment_master?.item_type}/></td>
+        <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.standard_qty}</td>
+        <td className="p-4 text-center font-black text-gray-600 dark:text-slate-300">{c.extra_unit_price}</td>
         <td className="p-4 text-right space-x-2">
-          <button onClick={() => { setEditingTemplateItem(c.equipment_id); setEditTemplateItemData({ qty: c.standard_qty.toString(), price: c.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={16}/></button>
-          <button onClick={() => deleteTemplateItem(c.equipment_id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
+          <button onClick={() => { setEditingTemplateItem(c.equipment_id); setEditTemplateItemData({ qty: c.standard_qty.toString(), price: c.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={16}/></button>
+          <button onClick={() => deleteTemplateItem(c.equipment_id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
         </td>
       </>
     )}
@@ -516,7 +569,7 @@ export default function EquipmentSetup() {
                       </table>
                     </motion.div>
                   ) : (
-                    <div className="h-full bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-4 min-h-[400px]">
+                    <div className="h-full bg-gray-50 dark:bg-[#0c1427] rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 gap-4 min-h-[400px]">
                       <FileText size={60} className="opacity-20"/>
                       <p className="font-bold">Select a template to view or edit its items.</p>
                     </div>
@@ -529,15 +582,15 @@ export default function EquipmentSetup() {
             {activeView === 'config' && (
               <>
                 <div className="lg:col-span-4 space-y-6">
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2 tracking-tight"><Building2 className="text-indigo-600"/> Setup Property Unit</h2>
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2 tracking-tight"><Building2 className="text-indigo-600 dark:text-indigo-400"/> Setup Property Unit</h2>
                     <div className="space-y-4">
                       <select 
                         value={selectedCompany} 
                         onChange={e => { setSelectedCompany(e.target.value); setSelectedUnit(""); }} 
-                        className="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-black text-indigo-900 text-sm focus:border-indigo-500"
+                        className="w-full p-3 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-black text-indigo-900 dark:text-indigo-300 text-sm focus:border-indigo-500"
                       >
-                        <option value="" className="font-bold text-gray-500">Choose Company...</option>
+                        <option value="" className="font-bold text-gray-500 dark:text-slate-400">Choose Company...</option>
                         {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                       
@@ -545,9 +598,9 @@ export default function EquipmentSetup() {
                         value={selectedUnit} 
                         onChange={e => setSelectedUnit(e.target.value)} 
                         disabled={!selectedCompany} 
-                        className="w-full p-3 bg-gray-50 border-2 border-gray-100 rounded-xl outline-none font-black text-indigo-900 text-sm focus:border-indigo-500 disabled:opacity-50"
+                        className="w-full p-3 bg-gray-50 dark:bg-[#070b14] border-2 border-gray-100 dark:border-slate-700 rounded-xl outline-none font-black text-indigo-900 dark:text-indigo-300 text-sm focus:border-indigo-500 disabled:opacity-50"
                       >
-                        <option value="" className="font-bold text-gray-500">Choose Unit...</option>
+                        <option value="" className="font-bold text-gray-500 dark:text-slate-400">Choose Unit...</option>
                         {units.filter(u => u.company_id.toString() === selectedCompany).map(u => (
                           <option key={u.id} value={u.id}>{u.unit_number} {u.layout ? `(${formatLayout(u.layout)})` : ''} - {u.building_name}</option>
                         ))}
@@ -558,14 +611,14 @@ export default function EquipmentSetup() {
                   {selectedUnit && (
                     <>
                       {/* Apply Template Block */}
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-indigo-50 p-6 rounded-3xl shadow-sm border border-indigo-100">
-  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-widest block mb-2"><Copy size={12} className="inline mr-1"/> Apply a Template</label>
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-indigo-50 dark:bg-indigo-950/30 p-6 rounded-3xl shadow-sm border border-indigo-100 dark:border-indigo-900/40">
+  <label className="text-[10px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest block mb-2"><Copy size={12} className="inline mr-1"/> Apply a Template</label>
   <select 
     value={templateToApply} 
     onChange={e => setTemplateToApply(e.target.value)} 
-    className="w-full p-3 bg-white border border-indigo-200 rounded-xl outline-none font-black text-indigo-900 text-sm mb-3"
+    className="w-full p-3 bg-white dark:bg-[#070b14] border border-indigo-200 dark:border-slate-700 rounded-xl outline-none font-black text-indigo-900 dark:text-indigo-300 text-sm mb-3"
   >
-    <option value="" className="font-bold text-gray-500">Select Template...</option>
+    <option value="" className="font-bold text-gray-500 dark:text-slate-400">Select Template...</option>
     {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
   </select>
 
@@ -574,19 +627,19 @@ export default function EquipmentSetup() {
     const tpl = templates.find(t => t.id.toString() === templateToApply);
     const items: any[] = tpl?.items || [];
     return items.length > 0 ? (
-      <div className="mb-3 bg-white rounded-xl border border-indigo-100 overflow-hidden">
-        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest px-3 py-2 bg-indigo-50 border-b border-indigo-100">
+      <div className="mb-3 bg-white dark:bg-[#0c1427] rounded-xl border border-indigo-100 dark:border-indigo-900/50 overflow-hidden">
+        <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest px-3 py-2 bg-indigo-50 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/40">
           Template Contents ({items.length} items)
         </p>
-        <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+        <div className="divide-y divide-gray-50 dark:divide-slate-800 max-h-48 overflow-y-auto">
           {items.map((item: any) => {
             const master = masterItems.find(m => m.id === item.equipment_id);
             return (
               <div key={item.equipment_id} className="flex justify-between items-center px-3 py-2">
-                <span className="text-xs font-black text-gray-800">{master?.item_name || "Unknown"}</span>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
-                  <span className="bg-gray-100 px-2 py-0.5 rounded">Qty: {item.standard_qty}</span>
-                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">+{item.extra_unit_price} AED</span>
+                <span className="text-xs font-black text-gray-800 dark:text-white">{master?.item_name || "Unknown"}</span>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-slate-400">
+                  <span className="bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded text-gray-700 dark:text-slate-300">Qty: {item.standard_qty}</span>
+                  <span className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded">+{item.extra_unit_price} AED</span>
                 </div>
               </div>
             );
@@ -594,7 +647,7 @@ export default function EquipmentSetup() {
         </div>
       </div>
     ) : (
-      <p className="text-xs text-amber-600 font-bold mb-3 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">This template is empty.</p>
+      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-3 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 rounded-lg border border-amber-100 dark:border-amber-900/40">This template is empty.</p>
     );
   })()}
 
@@ -606,24 +659,24 @@ export default function EquipmentSetup() {
     {isSaving ? <Loader2 className="animate-spin" size={18}/> : <CheckCircle2 size={18}/>} Apply to Unit
   </button>
 </motion.div>
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-3"><Plus size={12} className="inline mr-1"/> Add Items Manually</label>
-                        <button onClick={() => setShowBulkSelect(!showBulkSelect)} className="w-full py-3 bg-gray-50 text-gray-700 font-black rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+                        <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest block mb-3"><Plus size={12} className="inline mr-1"/> Add Items Manually</label>
+                        <button onClick={() => setShowBulkSelect(!showBulkSelect)} className="w-full py-3 bg-gray-50 dark:bg-[#070b14] text-gray-700 dark:text-slate-300 font-black rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 border border-gray-200 dark:border-slate-700">
                           {showBulkSelect ? <X size={18}/> : <Plus size={18}/>} {showBulkSelect ? "Cancel Add" : "Select Equipment from Master"}
                         </button>
 
                         {showBulkSelect && (
-                          <div className="mt-4 space-y-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 max-h-80 overflow-y-auto custom-scrollbar">
+                          <div className="mt-4 space-y-3 bg-indigo-50/50 dark:bg-[#070b14] p-4 rounded-xl border border-indigo-100 dark:border-slate-800 max-h-80 overflow-y-auto custom-scrollbar">
                             {masterItems.map(m => (
-                              <div key={m.id} className="flex flex-col gap-2 bg-white p-3 rounded-lg border border-indigo-50">
+                              <div key={m.id} className="flex flex-col gap-2 bg-white dark:bg-[#090d1a] p-3 rounded-lg border border-indigo-50 dark:border-slate-800">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                   <input type="checkbox" checked={bulkSelectedIds.includes(m.id)} onChange={() => toggleBulkSelect(m.id)} className="w-5 h-5 accent-indigo-600 cursor-pointer"/>
-                                  <span className="font-black text-gray-900 text-sm">{m.item_name}</span>
+                                  <span className="font-black text-gray-900 dark:text-white text-sm">{m.item_name}</span>
                                 </label>
                                 {bulkSelectedIds.includes(m.id) && (
                                   <div className="flex gap-2 ml-8">
-                                    <input type="number" placeholder="Std Qty" value={bulkInputs[m.id]?.qty} onChange={e => handleBulkInput(m.id, 'qty', e.target.value)} className="w-1/2 p-2 bg-indigo-50 border border-indigo-200 rounded-md outline-none font-black text-indigo-900 text-sm focus:border-indigo-500" />
-                                    <input type="number" placeholder="Extra Price" value={bulkInputs[m.id]?.price} onChange={e => handleBulkInput(m.id, 'price', e.target.value)} className="w-1/2 p-2 bg-indigo-50 border border-indigo-200 rounded-md outline-none font-black text-indigo-900 text-sm focus:border-indigo-500" />
+                                    <input type="number" placeholder="Std Qty" value={bulkInputs[m.id]?.qty} onChange={e => handleBulkInput(m.id, 'qty', e.target.value)} className="w-1/2 p-2 bg-indigo-50 dark:bg-[#070b14] border border-indigo-200 dark:border-slate-700 rounded-md outline-none font-black text-indigo-900 dark:text-white text-sm focus:border-indigo-500" />
+                                    <input type="number" placeholder="Extra Price" value={bulkInputs[m.id]?.price} onChange={e => handleBulkInput(m.id, 'price', e.target.value)} className="w-1/2 p-2 bg-indigo-50 dark:bg-[#070b14] border border-indigo-200 dark:border-slate-700 rounded-md outline-none font-black text-indigo-900 dark:text-white text-sm focus:border-indigo-500" />
                                   </div>
                                 )}
                               </div>
@@ -640,8 +693,8 @@ export default function EquipmentSetup() {
 
                 <div className="lg:col-span-8">
                   {selectedUnit ? (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                      <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white dark:bg-[#0c1427] rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                      <div className="p-6 bg-gray-900 dark:bg-[#090d1a] text-white flex justify-between items-center border-b border-transparent dark:border-slate-800">
                         <div>
                            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Active Setup for:</p>
                            <h3 className="text-xl font-black flex items-center gap-2">
@@ -649,50 +702,50 @@ export default function EquipmentSetup() {
                              <span className="bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded text-xs">{formatLayout(units.find(u => u.id.toString() === selectedUnit)?.layout)}</span>
                            </h3>
                            <p className="text-xs text-gray-400 font-bold mt-1">
-                             <Building2 size={12} className="inline mr-1 text-gray-500"/>
+                             <Building2 size={12} className="inline mr-1 text-gray-500 dark:text-slate-400"/>
                              {companies.find(c => c.id.toString() === selectedCompany)?.name} • {units.find(u => u.id.toString() === selectedUnit)?.building_name}
                            </p>
                         </div>
                         <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-black border border-white/20 shadow-inner">{unitConfigs.length} Items</span>
                       </div>
                       <table className="w-full text-left">
-                        <thead className="bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                        <thead className="bg-gray-100 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
                           <tr><th className="p-4">Equipment Item</th><th className="p-4 text-center">Std Qty</th><th className="p-4 text-center">Extra Charge</th><th className="p-4 text-right">Action</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                           {unitConfigs.map(config => (
-                            <tr key={config.id} className="hover:bg-indigo-50/40 transition-colors group">
+                            <tr key={config.id} className="hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 transition-colors group">
                               {editingConfigId === config.id ? (
                                 <>
-                                  <td className="p-4 font-bold text-gray-900">{config.equipment_master?.item_name}</td>
-                                  <td className="p-4 text-center"><input type="number" value={editConfigData.qty} onChange={e => setEditConfigData({...editConfigData, qty: e.target.value})} className="w-20 p-2 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-900 text-center outline-none"/></td>
-                                  <td className="p-4 text-center"><input type="number" value={editConfigData.price} onChange={e => setEditConfigData({...editConfigData, price: e.target.value})} className="w-24 p-2 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-900 text-center outline-none"/></td>
+                                  <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name}</td>
+                                  <td className="p-4 text-center"><input type="number" value={editConfigData.qty} onChange={e => setEditConfigData({...editConfigData, qty: e.target.value})} className="w-20 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
+                                  <td className="p-4 text-center"><input type="number" value={editConfigData.price} onChange={e => setEditConfigData({...editConfigData, price: e.target.value})} className="w-24 p-2 border-2 border-indigo-200 dark:border-slate-700 bg-white dark:bg-[#070b14] text-gray-900 dark:text-white rounded-lg text-sm font-black text-center outline-none"/></td>
                                   <td className="p-4 text-right flex justify-end gap-2">
-                                    <button onClick={() => saveEditUnitConfig(config.id)} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><Save size={16}/></button>
-                                    <button onClick={() => setEditingConfigId(null)} className="p-2 bg-gray-100 text-gray-600 rounded-lg"><X size={16}/></button>
+                                    <button onClick={() => saveEditUnitConfig(config.id)} className="p-2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-lg"><Save size={16}/></button>
+                                    <button onClick={() => setEditingConfigId(null)} className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg"><X size={16}/></button>
                                   </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="p-4 font-bold text-gray-900">{config.equipment_master?.item_name} <br/><TypeBadge type={config.equipment_master?.item_type}/></td>
-                                  <td className="p-4 text-center"><span className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-md font-black text-xs border border-gray-200">{config.standard_qty} Qty</span></td>
-                                  <td className="p-4 text-center font-black text-gray-900">{config.extra_unit_price} AED</td>
+                                  <td className="p-4 font-bold text-gray-900 dark:text-white">{config.equipment_master?.item_name} <br/><TypeBadge type={config.equipment_master?.item_type}/></td>
+                                  <td className="p-4 text-center"><span className="bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 px-3 py-1.5 rounded-md font-black text-xs border border-gray-200 dark:border-slate-700">{config.standard_qty} Qty</span></td>
+                                  <td className="p-4 text-center font-black text-gray-900 dark:text-white">{config.extra_unit_price} AED</td>
                                   <td className="p-4 text-right space-x-2">
-                                    <button onClick={() => { setEditingConfigId(config.id); setEditConfigData({ qty: config.standard_qty.toString(), price: config.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Edit2 size={18}/></button>
-                                    <button onClick={() => deleteConfig(config.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
+                                    <button onClick={() => { setEditingConfigId(config.id); setEditConfigData({ qty: config.standard_qty.toString(), price: config.extra_unit_price.toString() }); }} className="p-2 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Edit2 size={18}/></button>
+                                    <button onClick={() => deleteConfig(config.id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
                                   </td>
                                 </>
                               )}
                             </tr>
                           ))}
                           {unitConfigs.length === 0 && (
-                            <tr><td colSpan={4} className="p-16 text-center text-gray-400 font-bold"><Info size={40} className="mx-auto mb-2 opacity-20"/> No items configured. Apply a template or add manually.</td></tr>
+                            <tr><td colSpan={4} className="p-16 text-center text-gray-400 dark:text-slate-500 font-bold"><Info size={40} className="mx-auto mb-2 opacity-20"/> No items configured. Apply a template or add manually.</td></tr>
                           )}
                         </tbody>
                       </table>
                     </motion.div>
                   ) : (
-                    <div className="h-full bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-4 min-h-[500px]">
+                    <div className="h-full bg-gray-50 dark:bg-[#0c1427] rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 gap-4 min-h-[500px]">
                       <Info size={60} className="opacity-20"/>
                       <p className="font-bold text-center">Select a unit from the left panel<br/>to start configuring its inventory requirements</p>
                     </div>

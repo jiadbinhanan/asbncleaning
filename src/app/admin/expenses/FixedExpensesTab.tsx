@@ -642,23 +642,23 @@ export default function FixedExpensesTab({
       
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><CalendarDays size={14} className="text-blue-500"/> Active Schedules</p>
-          <h3 className="text-2xl font-black text-gray-900 tracking-tight">{stats.totalSchedules}</h3>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between transition-colors">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><CalendarDays size={14} className="text-blue-500"/> Active Schedules</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{stats.totalSchedules}</h3>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Clock size={14} className="text-orange-500"/> Pending / Due Soon</p>
-          <h3 className="text-2xl font-black text-orange-600 tracking-tight">{stats.dueCount}</h3>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between transition-colors">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Clock size={14} className="text-orange-500"/> Pending / Due Soon</p>
+          <h3 className="text-2xl font-black text-orange-600 dark:text-orange-400 tracking-tight">{stats.dueCount}</h3>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between md:col-span-2">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><TrendingUp size={14} className="text-green-500"/> Est. Monthly Target vs Spent (This Month)</p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between md:col-span-2 transition-colors">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><TrendingUp size={14} className="text-green-500"/> Est. Monthly Target vs Spent (This Month)</p>
           <div className="flex justify-between items-end mb-2">
-            <h3 className="text-2xl font-black text-gray-900 tracking-tight">AED {stats.totalSpentThisMonth.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
-            <span className="text-xs font-bold text-gray-500">Target: AED {stats.targetMonthlySpend.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">AED {stats.totalSpentThisMonth.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">Target: AED {stats.targetMonthlySpend.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
           </div>
-          <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
             <div 
               className={`h-full rounded-full transition-all duration-1000 ${stats.totalSpentThisMonth > stats.targetMonthlySpend ? 'bg-red-500' : 'bg-green-500'}`} 
               style={{ width: `${Math.min((stats.totalSpentThisMonth / (stats.targetMonthlySpend || 1)) * 100, 100)}%` }}
@@ -668,14 +668,14 @@ export default function FixedExpensesTab({
       </div>
 
       {/* ── Toolbar & Info ── */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-4 transition-colors">
         <div className="flex items-center gap-3 relative">
-          <h2 className="text-lg font-black text-gray-900">Fixed Planner</h2>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white">Fixed Planner</h2>
           <button 
             onMouseEnter={() => setShowInfo(true)} 
             onMouseLeave={() => setShowInfo(false)}
             onClick={() => setShowInfo(!showInfo)}
-            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors cursor-help"
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-help border border-blue-100 dark:border-blue-800/50"
           >
             <Info size={14}/> Add New Duty / Guide
           </button>
@@ -684,7 +684,7 @@ export default function FixedExpensesTab({
             {showInfo && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full left-0 mt-2 w-80 bg-gray-900 text-white p-4 rounded-xl shadow-2xl z-50 text-xs font-medium space-y-2"
+                className="absolute top-full left-0 mt-2 w-80 bg-gray-900 text-white p-4 rounded-xl shadow-2xl z-50 text-xs font-medium space-y-2 border border-slate-700"
               >
                 <p className="font-bold text-blue-300">How Rotation Works:</p>
                 <p><span className="text-white font-bold">Days Mode:</span> Rotates exactly X days after the last payment. Best for generic intervals (e.g., 45 days, 65 days).</p>
@@ -696,7 +696,7 @@ export default function FixedExpensesTab({
 
         <button 
           onClick={() => setShowSettings(!showSettings)} 
-          className={`flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all ${showSettings ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+          className={`flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all ${showSettings ? 'bg-gray-900 dark:bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700'}`}
         >
           <Settings size={16} /> {showSettings ? 'Close Setup' : 'Setup Schedules'}
         </button>
@@ -711,92 +711,92 @@ export default function FixedExpensesTab({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-6 space-y-6">
+            <div className="bg-slate-50 dark:bg-[#090d1a] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 space-y-6 transition-colors">
               
               {/* Add Form */}
-              <form onSubmit={handleAddSchedule} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2"><Plus size={16} className="text-blue-600"/> Create New Schedule</h3>
+              <form onSubmit={handleAddSchedule} className="bg-white dark:bg-[#0c1427] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Plus size={16} className="text-blue-600 dark:text-blue-400"/> Create New Schedule</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Category Name</label>
-                    <input type="text" value={newSchedule.category_name} onChange={e => setNewSchedule({...newSchedule, category_name: e.target.value})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" required />
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Category Name</label>
+                    <input type="text" value={newSchedule.category_name} onChange={e => setNewSchedule({...newSchedule, category_name: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" required />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Default Amount (AED)</label>
-                    <input type="number" value={newSchedule.default_amount} onChange={e => setNewSchedule({...newSchedule, default_amount: e.target.value})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" required />
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Default Amount (AED)</label>
+                    <input type="number" value={newSchedule.default_amount} onChange={e => setNewSchedule({...newSchedule, default_amount: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" required />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Rotation Type</label>
-                    <select value={newSchedule.frequency_type} onChange={e => setNewSchedule({...newSchedule, frequency_type: e.target.value})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500">
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Rotation Type</label>
+                    <select value={newSchedule.frequency_type} onChange={e => setNewSchedule({...newSchedule, frequency_type: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500">
                       <option value="months">Calendar Months</option>
                       <option value="days">Exact Days</option>
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Interval ({newSchedule.frequency_type})</label>
-                      <input type="number" min="1" value={newSchedule.frequency_interval} onChange={e => setNewSchedule({...newSchedule, frequency_interval: Number(e.target.value)})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" required />
+                      <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Interval ({newSchedule.frequency_type})</label>
+                      <input type="number" min="1" value={newSchedule.frequency_interval} onChange={e => setNewSchedule({...newSchedule, frequency_interval: Number(e.target.value)})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" required />
                     </div>
                     {newSchedule.frequency_type === 'months' && (
                       <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Strict Day</label>
-                        <input type="number" min="1" max="31" value={newSchedule.schedule_date} onChange={e => setNewSchedule({...newSchedule, schedule_date: Number(e.target.value)})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" title="Day of the month (1-31)" required />
+                        <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Strict Day</label>
+                        <input type="number" min="1" max="31" value={newSchedule.schedule_date} onChange={e => setNewSchedule({...newSchedule, schedule_date: Number(e.target.value)})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" title="Day of the month (1-31)" required />
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Base Start Date</label>
-                    <input type="date" value={newSchedule.base_start_date} onChange={e => setNewSchedule({...newSchedule, base_start_date: e.target.value})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" required />
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Base Start Date</label>
+                    <input type="date" value={newSchedule.base_start_date} onChange={e => setNewSchedule({...newSchedule, base_start_date: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" required />
                   </div>
                   <div className="xl:col-span-2">
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Default Pre-fill Description</label>
-                    <input type="text" value={newSchedule.default_description} onChange={e => setNewSchedule({...newSchedule, default_description: e.target.value})} placeholder="Optional default notes..." className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500" />
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Default Pre-fill Description</label>
+                    <input type="text" value={newSchedule.default_description} onChange={e => setNewSchedule({...newSchedule, default_description: e.target.value})} placeholder="Optional default notes..." className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Default Pay Method</label>
-                    <select value={newSchedule.default_payment_method} onChange={e => setNewSchedule({...newSchedule, default_payment_method: e.target.value})} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-blue-500">
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-1">Default Pay Method</label>
+                    <select value={newSchedule.default_payment_method} onChange={e => setNewSchedule({...newSchedule, default_payment_method: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500">
                       <option value="">(None)</option>
                       {paymentMethods.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-gray-900 text-white rounded-xl font-black text-sm hover:bg-black transition-colors shadow-md flex items-center gap-2">
+                  <button type="submit" disabled={submitting} className="px-6 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-black dark:hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2">
                     {submitting ? <Loader2 className="animate-spin" size={16}/> : <CheckCircle2 size={16}/>} Save Schedule
                   </button>
                 </div>
               </form>
 
               {/* Schedules Table */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-white dark:bg-[#0c1427] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="bg-gray-50 dark:bg-[#090d1a] border-b border-gray-100 dark:border-slate-800">
                     <tr>
-                      <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Category</th>
-                      <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Logic</th>
-                      <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Defaults</th>
-                      <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Action</th>
+                      <th className="p-4 text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Category</th>
+                      <th className="p-4 text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Logic</th>
+                      <th className="p-4 text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Defaults</th>
+                      <th className="p-4 text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800/80">
                     {schedules.map((item: any) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50">
+                      <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                         <td className="p-4">
-                          <div className="font-black text-gray-900 text-sm">{item.category_name}</div>
-                          <div className="text-xs font-bold text-green-600">AED {item.default_amount}</div>
+                          <div className="font-black text-gray-900 dark:text-white text-sm">{item.category_name}</div>
+                          <div className="text-xs font-bold text-green-600 dark:text-emerald-400">AED {item.default_amount}</div>
                         </td>
-                        <td className="p-4 text-xs font-bold text-gray-600">
+                        <td className="p-4 text-xs font-bold text-gray-600 dark:text-slate-300">
                           {item.frequency_type === 'months' 
                             ? `Every ${item.frequency_interval} month(s) on day ${item.schedule_date}` 
                             : `Every ${item.frequency_interval} days`}
-                          <div className="text-[10px] text-gray-400 mt-1">Since {item.base_start_date}</div>
+                          <div className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">Since {item.base_start_date}</div>
                         </td>
-                        <td className="p-4 text-xs font-bold text-gray-600 max-w-[200px] truncate" title={item.default_description}>
-                          {item.default_payment_method && <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded mr-2">{item.default_payment_method}</span>}
+                        <td className="p-4 text-xs font-bold text-gray-600 dark:text-slate-300 max-w-[200px] truncate" title={item.default_description}>
+                          {item.default_payment_method && <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded mr-2">{item.default_payment_method}</span>}
                           {item.default_description || '-'}
                         </td>
                         <td className="p-4 text-right">
-                          <button onClick={() => handleDeleteSchedule(item.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                          <button onClick={() => handleDeleteSchedule(item.id)} className="text-red-500 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 p-2 rounded-lg transition-colors"><Trash2 size={16}/></button>
                         </td>
                       </tr>
                     ))}
@@ -811,12 +811,12 @@ export default function FixedExpensesTab({
 
       {/* ── Checklist View (Upcoming & Due Grid) ── */}
       <div>
-        <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2"><Clock size={16} className="text-blue-600"/> Upcoming & Due</h3>
+        <h3 className="text-sm font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Clock size={16} className="text-blue-600 dark:text-blue-400"/> Upcoming & Due</h3>
         
         {loading ? (
           <div className="p-12 flex justify-center text-blue-500"><Loader2 className="animate-spin" size={32} /></div>
         ) : checklist.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 font-bold bg-white rounded-2xl border border-gray-100 shadow-sm">No fixed schedules found. Setup schedules to see them here.</div>
+          <div className="p-12 text-center text-gray-500 dark:text-slate-400 font-bold bg-white dark:bg-[#0c1427] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">No fixed schedules found. Setup schedules to see them here.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             <AnimatePresence>
@@ -826,29 +826,29 @@ export default function FixedExpensesTab({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
                   key={item.id} 
-                  className={`p-5 rounded-2xl border shadow-sm flex flex-col justify-between gap-4 transition-colors relative overflow-hidden bg-white hover:shadow-md ${item.isOverdue ? 'border-red-200' : item.isDue ? 'border-orange-200' : 'border-slate-100'}`}
+                  className={`p-5 rounded-2xl border shadow-sm flex flex-col justify-between gap-4 transition-colors relative overflow-hidden bg-white dark:bg-[#0c1427] hover:shadow-md ${item.isOverdue ? 'border-red-200 dark:border-rose-900/60' : item.isDue ? 'border-orange-200 dark:border-orange-900/60' : 'border-slate-100 dark:border-slate-800'}`}
                 >
                   {item.isOverdue && <div className="absolute top-0 left-0 w-full h-1 bg-red-500" />}
                   {!item.isOverdue && item.isDue && <div className="absolute top-0 left-0 w-full h-1 bg-orange-400" />}
 
                   <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white ${item.isOverdue ? 'bg-red-500' : item.isDue ? 'bg-orange-400' : 'bg-slate-300'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white ${item.isOverdue ? 'bg-red-500' : item.isDue ? 'bg-orange-400' : 'bg-slate-300 dark:bg-slate-700'}`}>
                       <CalendarDays size={20}/>
                     </div>
                     <div>
-                      <h3 className="text-base font-black text-gray-900 leading-tight">{item.category_name}</h3>
-                      <div className="text-sm font-bold text-gray-600 mt-0.5">AED {Number(item.default_amount).toLocaleString()}</div>
+                      <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">{item.category_name}</h3>
+                      <div className="text-sm font-bold text-gray-600 dark:text-slate-300 mt-0.5">AED {Number(item.default_amount).toLocaleString()}</div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-600 mb-1">
+                  <div className="bg-slate-50 dark:bg-[#090d1a] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-center text-xs font-bold text-gray-600 dark:text-slate-300 mb-1">
                       <span>Next Due:</span>
-                      <span className={item.isOverdue ? 'text-red-600' : item.isDue ? 'text-orange-600' : 'text-gray-900'}>
+                      <span className={item.isOverdue ? 'text-red-600 dark:text-rose-400' : item.isDue ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}>
                         {format(item.nextDueDate, 'dd MMM yyyy')}
                       </span>
                     </div>
-                    <div className="text-[10px] text-gray-400 flex justify-between">
+                    <div className="text-[10px] text-gray-400 dark:text-slate-500 flex justify-between">
                       <span>Last Paid: {item.lastPaid ? format(parseISO(item.lastPaid.expense_date), 'dd MMM yyyy') : 'Never'}</span>
                       <span className="uppercase tracking-widest">{item.frequency_type === 'months' ? `${item.frequency_interval}M/D${item.schedule_date}` : `${item.frequency_interval}D`}</span>
                     </div>
@@ -865,7 +865,7 @@ export default function FixedExpensesTab({
                       });
                       setIsPayModalOpen(true);
                     }}
-                    className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-colors ${item.isDue || item.isOverdue ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    className={`w-full py-2.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-colors ${item.isDue || item.isOverdue ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                   >
                     <PlayCircle size={16}/> Pay & Record
                   </button>
@@ -880,23 +880,23 @@ export default function FixedExpensesTab({
       <div className="mt-12 space-y-6">
         
         {/* Ledger Header & Search/Export Toolbar */}
-        <div className="bg-white p-4 rounded-[1.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col gap-4">
+        <div className="bg-white dark:bg-[#0c1427] p-4 rounded-[1.5rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col gap-4 transition-colors">
           
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
             {/* Search Input & Advanced Filter Toggle */}
             <div className="flex items-center gap-3 w-full md:w-auto flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search fixed expenses by notes, category, amount..." 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-900 placeholder:text-gray-400 shadow-inner"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-inner"
                 />
                 {searchTerm && (
-                  <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
                     <X size={16}/>
                   </button>
                 )}
@@ -907,8 +907,8 @@ export default function FixedExpensesTab({
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} 
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm border transition-all shrink-0 ${
                   showAdvancedFilters || activeAdvancedFilterCount > 0 
-                    ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 shadow-sm' 
+                    : 'bg-white dark:bg-[#0c1427] border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60'
                 }`}
               >
                 <SlidersHorizontal size={16} />
@@ -923,10 +923,10 @@ export default function FixedExpensesTab({
             
             {/* Action Buttons: Excel & PDF */}
             <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto justify-end">
-              <button onClick={exportExcel} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors font-bold text-sm shadow-sm">
+              <button onClick={exportExcel} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-sm shadow-sm">
                 <FileText size={16} /> Excel
               </button>
-              <button onClick={exportPDF} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl hover:bg-rose-100 transition-colors font-bold text-sm shadow-sm">
+              <button onClick={exportPDF} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors font-bold text-sm shadow-sm">
                 <FileText size={16} /> PDF Report
               </button>
             </div>
@@ -939,15 +939,15 @@ export default function FixedExpensesTab({
                 initial={{ opacity: 0, height: 0 }} 
                 animate={{ opacity: 1, height: 'auto' }} 
                 exit={{ opacity: 0, height: 0 }} 
-                className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3"
+                className="pt-4 border-t border-gray-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3"
               >
                 {/* Category Filter */}
                 <div>
-                  <label className="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-1">Category</label>
+                  <label className="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Category</label>
                   <select 
                     value={categoryFilter} 
                     onChange={e => setCategoryFilter(e.target.value)} 
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-200 outline-none focus:border-blue-500"
                   >
                     <option value="">All Categories</option>
                     {activeCategoriesList.map((cat, i) => (
@@ -958,11 +958,11 @@ export default function FixedExpensesTab({
 
                 {/* Payment Method Filter */}
                 <div>
-                  <label className="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-1">Payment Method</label>
+                  <label className="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Payment Method</label>
                   <select 
                     value={paymentMethodFilter} 
                     onChange={e => setPaymentMethodFilter(e.target.value)} 
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-200 outline-none focus:border-blue-500"
                   >
                     <option value="">All Methods</option>
                     {paymentMethods?.map((m: string, i: number) => (
@@ -973,36 +973,36 @@ export default function FixedExpensesTab({
 
                 {/* Min Amount */}
                 <div>
-                  <label className="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-1">Min Amount (AED)</label>
+                  <label className="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Min Amount (AED)</label>
                   <input 
                     type="number" 
                     placeholder="0.00" 
                     value={minAmountFilter} 
                     onChange={e => setMinAmountFilter(e.target.value)} 
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-200 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 {/* Max Amount */}
                 <div>
-                  <label className="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-1">Max Amount (AED)</label>
+                  <label className="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Max Amount (AED)</label>
                   <input 
                     type="number" 
                     placeholder="Any" 
                     value={maxAmountFilter} 
                     onChange={e => setMaxAmountFilter(e.target.value)} 
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-200 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 {/* Receipt Filter & Reset */}
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <label className="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-1">Receipt</label>
+                    <label className="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Receipt</label>
                     <select 
                       value={receiptFilter} 
                       onChange={e => setReceiptFilter(e.target.value)} 
-                      className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-blue-500"
+                      className="w-full p-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-800 dark:text-slate-200 outline-none focus:border-blue-500"
                     >
                       <option value="">All</option>
                       <option value="with">With Receipt</option>
@@ -1012,7 +1012,7 @@ export default function FixedExpensesTab({
                   {activeAdvancedFilterCount > 0 && (
                     <button 
                       onClick={resetAdvancedFilters} 
-                      className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition-colors"
+                      className="p-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
                       title="Reset filters"
                     >
                       <RotateCcw size={16} />
@@ -1027,24 +1027,24 @@ export default function FixedExpensesTab({
         {/* ── Fixed Expenses Ledger List Grouped by Week (Accordion Style) ── */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
-              <History size={16} className="text-indigo-600"/> Fixed Expenses Ledger
+            <h3 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <History size={16} className="text-indigo-600 dark:text-indigo-400"/> Fixed Expenses Ledger
             </h3>
-            <span className="text-xs font-bold text-gray-500">
-              Showing {filteredFixedExpenses.length} entries • Total: <strong className="text-red-600">AED {filteredStats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">
+              Showing {filteredFixedExpenses.length} entries • Total: <strong className="text-red-600 dark:text-rose-400">AED {filteredStats.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
             </span>
           </div>
 
           {loading ? (
             <div className="py-20 text-center flex flex-col items-center">
               <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
-              <p className="text-gray-500 font-bold">Loading fixed ledger...</p>
+              <p className="text-gray-500 dark:text-slate-400 font-bold">Loading fixed ledger...</p>
             </div>
           ) : groupedArray.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center shadow-xl shadow-slate-200/40 border border-slate-100">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400"><Search size={32}/></div>
-              <h3 className="text-xl font-black text-gray-800">No fixed expenses found</h3>
-              <p className="text-gray-500 font-medium mt-2">Adjust your search or filter parameters to view records.</p>
+            <div className="bg-white dark:bg-[#0c1427] rounded-3xl p-12 text-center shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
+              <div className="w-20 h-20 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 dark:text-slate-500"><Search size={32}/></div>
+              <h3 className="text-xl font-black text-gray-800 dark:text-white">No fixed expenses found</h3>
+              <p className="text-gray-500 dark:text-slate-400 font-medium mt-2">Adjust your search or filter parameters to view records.</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -1054,27 +1054,27 @@ export default function FixedExpensesTab({
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ duration: 0.25 }}
-                  className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden"
+                  className="bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors"
                 >
                   {/* Group Header */}
-                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
-                    <h3 className="text-sm font-black text-indigo-900 uppercase tracking-widest flex items-center gap-2">
-                      <CalendarDays size={16} className="text-indigo-500"/> Week: {group.week}
+                  <div className="px-6 py-4 bg-slate-50 dark:bg-[#090d1a] border-b border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-4">
+                    <h3 className="text-sm font-black text-indigo-900 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                      <CalendarDays size={16} className="text-indigo-500 dark:text-indigo-400"/> Week: {group.week}
                     </h3>
-                    <div className="text-sm font-black text-gray-900 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">
-                      Week Total: <span className="text-red-600 font-black">AED {group.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <div className="text-sm font-black text-gray-900 dark:text-white bg-white dark:bg-[#0c1427] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
+                      Week Total: <span className="text-red-600 dark:text-rose-400 font-black">AED {group.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
 
                   {/* Group Items */}
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-100 dark:divide-slate-800/80">
                     {group.items.map((expense: any) => {
                       const isExpanded = expandedId === expense.id;
 
                       return (
                         <div 
                           key={expense.id} 
-                          className="transition-colors hover:bg-slate-50/70"
+                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30"
                         >
                           {/* Main Row Header (Click to toggle expand) */}
                           <div 
@@ -1084,23 +1084,23 @@ export default function FixedExpensesTab({
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
                                 {/* Date */}
-                                <span className="text-xs font-black bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg border border-gray-200">
+                                <span className="text-xs font-black bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700">
                                   {format(parseISO(expense.expense_date), 'dd MMM yyyy')}
                                 </span>
                                 
                                 {/* Type Badge */}
-                                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border bg-indigo-50 text-indigo-700 border-indigo-200">
+                                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50">
                                   Fixed Expense
                                 </span>
 
                                 {/* Payment Method */}
-                                <span className="text-xs font-bold text-gray-600 flex items-center gap-1 bg-gray-50 px-2.5 py-0.5 rounded-md border border-gray-200">
+                                <span className="text-xs font-bold text-gray-600 dark:text-slate-300 flex items-center gap-1 bg-gray-50 dark:bg-slate-800/60 px-2.5 py-0.5 rounded-md border border-gray-200 dark:border-slate-700">
                                   <CreditCard size={12}/> {expense.payment_method || 'Cash'}
                                 </span>
 
                                 {/* Receipt Indicator */}
                                 {expense.receipt_url && (
-                                  <span className="text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
+                                  <span className="text-[10px] font-black uppercase tracking-wider bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800/50 flex items-center gap-1">
                                     <Receipt size={11}/> Receipt
                                   </span>
                                 )}
@@ -1108,9 +1108,9 @@ export default function FixedExpensesTab({
 
                               {/* Category & Truncated Description */}
                               <div className="flex items-center gap-3">
-                                <h4 className="text-base font-black text-gray-900 shrink-0">{expense.category_name}</h4>
+                                <h4 className="text-base font-black text-gray-900 dark:text-white shrink-0">{expense.category_name}</h4>
                                 {expense.description && (
-                                  <p className="text-xs font-medium text-gray-500 truncate max-w-md hidden sm:block">
+                                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 truncate max-w-md hidden sm:block">
                                     — {expense.description}
                                   </p>
                                 )}
@@ -1119,13 +1119,13 @@ export default function FixedExpensesTab({
 
                             {/* Right Side: Amount & Expand Chevron */}
                             <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                              <span className="text-xl font-black text-red-600">
+                              <span className="text-xl font-black text-red-600 dark:text-rose-400">
                                 AED {Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </span>
                               
                               <button 
                                 type="button" 
-                                className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                                className="p-1.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
                               >
                                 {isExpanded ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
                               </button>
@@ -1139,24 +1139,24 @@ export default function FixedExpensesTab({
                                 initial={{ opacity: 0, height: 0 }} 
                                 animate={{ opacity: 1, height: 'auto' }} 
                                 exit={{ opacity: 0, height: 0 }} 
-                                className="px-6 pb-6 pt-2 bg-slate-50/50 border-t border-slate-100"
+                                className="px-6 pb-6 pt-2 bg-slate-50/50 dark:bg-[#070b14]/50 border-t border-slate-100 dark:border-slate-800"
                               >
-                                <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                                <div className="bg-white dark:bg-[#090d1a] p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
                                   
                                   {/* Full Description */}
                                   <div>
-                                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1">Full Description / Notes</p>
-                                    <p className="text-sm font-medium text-gray-800 whitespace-pre-wrap">
+                                    <p className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Full Description / Notes</p>
+                                    <p className="text-sm font-medium text-gray-800 dark:text-slate-200 whitespace-pre-wrap">
                                       {expense.description || "No specific notes provided for this transaction."}
                                     </p>
                                   </div>
 
                                   {/* Metadata & Action Buttons */}
-                                  <div className="flex flex-wrap justify-between items-center gap-4 pt-3 border-t border-gray-100">
-                                    <div className="text-xs font-bold text-gray-400 flex flex-wrap items-center gap-3">
+                                  <div className="flex flex-wrap justify-between items-center gap-4 pt-3 border-t border-gray-100 dark:border-slate-800">
+                                    <div className="text-xs font-bold text-gray-400 dark:text-slate-500 flex flex-wrap items-center gap-3">
                                       <span>Recorded on {format(parseISO(expense.expense_date), 'dd MMMM yyyy')}</span>
                                       {expense.updated_at && (
-                                        <span className="text-blue-600 flex items-center gap-1">
+                                        <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
                                           <History size={13}/> Last edited {formatDistanceToNow(new Date(expense.updated_at))} ago
                                         </span>
                                       )}
@@ -1166,7 +1166,7 @@ export default function FixedExpensesTab({
                                       {expense.receipt_url && (
                                         <button 
                                           onClick={() => setLightboxUrl(`/api/pdf/${expense.id}?dl=0`)} 
-                                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-black transition-colors border border-blue-200"
+                                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-black transition-colors border border-blue-200 dark:border-blue-800/50"
                                         >
                                           <Eye size={14}/> View Receipt
                                         </button>
@@ -1195,7 +1195,7 @@ export default function FixedExpensesTab({
                                           }); 
                                           setIsEditModalOpen(true); 
                                         }} 
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-black transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-xl text-xs font-black transition-colors"
                                       >
                                         <Edit2 size={14}/> Edit
                                       </button>
@@ -1207,7 +1207,7 @@ export default function FixedExpensesTab({
                                           setSelectedExpense(expense); 
                                           setIsDeleteModalOpen(true); 
                                         }} 
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-black transition-colors border border-red-200"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-rose-950/40 hover:bg-red-100 dark:hover:bg-rose-900/50 text-red-700 dark:text-rose-300 rounded-xl text-xs font-black transition-colors border border-red-200 dark:border-rose-800/50"
                                       >
                                         <Trash2 size={14}/> Delete
                                       </button>
@@ -1236,24 +1236,24 @@ export default function FixedExpensesTab({
           {isPayModalOpen && selectedSchedule && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPayModalOpen(false)} className="absolute inset-0 bg-black/75" />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-[#090d1a] shrink-0">
                   <div>
-                    <h2 className="text-xl font-black text-gray-900">{selectedSchedule.category_name}</h2>
-                    <p className="text-xs font-bold text-gray-500 mt-1">Record fixed payment</p>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white">{selectedSchedule.category_name}</h2>
+                    <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1">Record fixed payment</p>
                   </div>
-                  <button onClick={() => setIsPayModalOpen(false)} className="p-2 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors shadow-sm"><X size={20} /></button>
+                  <button onClick={() => setIsPayModalOpen(false)} className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm"><X size={20} /></button>
                 </div>
                 <form onSubmit={handlePaySubmit} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Date Paid</label>
-                      <input type="date" value={payFormData.expense_date} onChange={e => setPayFormData({...payFormData, expense_date: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:bg-white" required />
+                      <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Date Paid</label>
+                      <input type="date" value={payFormData.expense_date} onChange={e => setPayFormData({...payFormData, expense_date: e.target.value})} className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#090d1a]" required />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Payment Method</label>
-                      <select value={payFormData.payment_method} onChange={e => setPayFormData({...payFormData, payment_method: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:bg-white" required>
+                      <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Payment Method</label>
+                      <select value={payFormData.payment_method} onChange={e => setPayFormData({...payFormData, payment_method: e.target.value})} className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#090d1a]" required>
                         <option value="">Select Method...</option>
                         {paymentMethods?.map((m: string, i: number) => <option key={i} value={m}>{m}</option>)}
                         {!paymentMethods?.includes(payFormData.payment_method) && payFormData.payment_method && <option value={payFormData.payment_method}>{payFormData.payment_method}</option>}
@@ -1262,25 +1262,25 @@ export default function FixedExpensesTab({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Final Amount (AED)</label>
-                    <input type="number" step="0.01" value={payFormData.amount} onChange={e => setPayFormData({...payFormData, amount: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-black text-red-600 outline-none focus:border-blue-500 focus:bg-white text-lg" required />
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Final Amount (AED)</label>
+                    <input type="number" step="0.01" value={payFormData.amount} onChange={e => setPayFormData({...payFormData, amount: e.target.value})} className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl font-black text-red-600 dark:text-rose-400 outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#090d1a] text-lg" required />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Description / Notes</label>
-                    <textarea value={payFormData.description} onChange={e => setPayFormData({...payFormData, description: e.target.value})} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:bg-white min-h-[80px]" />
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Description / Notes</label>
+                    <textarea value={payFormData.description} onChange={e => setPayFormData({...payFormData, description: e.target.value})} className="w-full p-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-[#090d1a] min-h-[80px]" />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5 flex justify-between items-center">
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5 flex justify-between items-center">
                       <span>Receipt (Optional)</span>
-                      <span className="text-[9px] text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 font-bold">Max size: 1 MB</span>
+                      <span className="text-[9px] text-orange-500 bg-orange-50 dark:bg-orange-950/40 px-2 py-0.5 rounded-full border border-orange-100 dark:border-orange-800/50 font-bold">Max size: 1 MB</span>
                     </label>
-                    <input type="file" accept="image/*,application/pdf" onChange={handlePayFileChange} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 cursor-pointer shadow-sm" />
+                    <input type="file" accept="image/*,application/pdf" onChange={handlePayFileChange} className="w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 dark:file:bg-blue-950/50 file:text-blue-700 dark:file:text-blue-300 cursor-pointer shadow-sm" />
                   </div>
                   
                   <div className="pt-2">
-                    <button type="submit" disabled={submitting} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-70 mt-2">
+                    <button type="submit" disabled={submitting} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 mt-2">
                       {submitting ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Complete Entry
                     </button>
                   </div>
@@ -1293,36 +1293,36 @@ export default function FixedExpensesTab({
           {isEditModalOpen && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModals} className="absolute inset-0 bg-black/75" />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-                  <h2 className="text-xl font-black text-gray-900">Edit Fixed Expense</h2>
-                  <button onClick={closeModals} className="p-2 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors shadow-sm"><X size={20} /></button>
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-[#090d1a] shrink-0">
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white">Edit Fixed Expense</h2>
+                  <button onClick={closeModals} className="p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm"><X size={20} /></button>
                 </div>
                 <form onSubmit={handleEditSubmit} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
                   
                   {selectedExpense?.updated_at && (
-                    <div className="bg-indigo-50 text-indigo-700 p-3 rounded-xl flex items-center gap-2 text-xs font-bold border border-indigo-100 mb-2">
+                    <div className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-3 rounded-xl flex items-center gap-2 text-xs font-bold border border-indigo-100 dark:border-indigo-800/50 mb-2">
                       <History size={16}/> Last edited on {format(new Date(selectedExpense.updated_at), 'dd MMM yyyy, hh:mm a')}
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Date</label>
+                      <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Date</label>
                       <input 
                         type="date" 
                         value={editFormData.expense_date} 
                         onChange={e => setEditFormData({...editFormData, expense_date: e.target.value})} 
-                        className="w-full p-3.5 bg-white border border-gray-300 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm" 
+                        className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 shadow-sm" 
                         required 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Payment Method</label>
+                      <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Payment Method</label>
                       <select 
                         value={editFormData.payment_method} 
                         onChange={e => setEditFormData({...editFormData, payment_method: e.target.value})} 
-                        className="w-full p-3.5 bg-white border border-gray-300 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm" 
+                        className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 shadow-sm" 
                         required
                       >
                         <option value="">Select Method...</option>
@@ -1335,7 +1335,7 @@ export default function FixedExpensesTab({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Category</label>
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Category</label>
                     <select 
                       value={isCustomCategory ? "__OTHER__" : editFormData.category_name} 
                       onChange={(e) => {
@@ -1347,7 +1347,7 @@ export default function FixedExpensesTab({
                           setEditFormData(prev => ({ ...prev, category_name: val }));
                         }
                       }} 
-                      className="w-full p-3.5 bg-white border border-gray-300 rounded-xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm" 
+                      className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 shadow-sm" 
                       required
                     >
                       <option value="">Select Category...</option>
@@ -1363,9 +1363,9 @@ export default function FixedExpensesTab({
                   </div>
 
                   {isCustomCategory && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-4 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-3">
-                      <label className="block text-xs font-black text-blue-900 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                        <Tag size={14} className="text-blue-600"/> Enter Custom Category Name
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-4 bg-blue-50/70 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/60 space-y-3">
+                      <label className="block text-xs font-black text-blue-900 dark:text-blue-300 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <Tag size={14} className="text-blue-600 dark:text-blue-400"/> Enter Custom Category Name
                       </label>
                       <input 
                         type="text" 
@@ -1375,7 +1375,7 @@ export default function FixedExpensesTab({
                           setCustomCategoryName(e.target.value);
                           setEditFormData(prev => ({ ...prev, category_name: e.target.value }));
                         }} 
-                        className="w-full p-3 bg-white border border-blue-300 rounded-xl text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                        className="w-full p-3 bg-white dark:bg-[#070b14] border border-blue-300 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40" 
                         required 
                         autoFocus
                       />
@@ -1383,56 +1383,56 @@ export default function FixedExpensesTab({
                   )}
 
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Amount (AED)</label>
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Amount (AED)</label>
                     <input 
                       type="number" 
                       step="0.01" 
                       value={editFormData.amount} 
                       onChange={e => setEditFormData({...editFormData, amount: e.target.value})} 
-                      className="w-full p-3.5 bg-white border border-gray-300 rounded-xl font-black text-red-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm text-lg" 
+                      className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-black text-red-600 dark:text-rose-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 shadow-sm text-lg" 
                       required 
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Additional Notes (Optional)</label>
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-1.5">Additional Notes (Optional)</label>
                     <textarea 
                       value={editFormData.description} 
                       onChange={e => setEditFormData({...editFormData, description: e.target.value})} 
-                      className="w-full p-3.5 bg-white border border-gray-300 rounded-xl font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-h-[80px] shadow-sm" 
+                      className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 min-h-[80px] shadow-sm" 
                     />
                   </div>
                   
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mt-2">
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-widest mb-3 flex justify-between items-center">
+                  <div className="bg-slate-50 dark:bg-[#070b14] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mt-2">
+                    <label className="block text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-3 flex justify-between items-center">
                       <span>Receipt File</span>
-                      <span className="text-[9px] text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 font-bold">Max size: 1 MB</span>
+                      <span className="text-[9px] text-orange-500 bg-orange-50 dark:bg-orange-950/40 px-2 py-0.5 rounded-full border border-orange-100 dark:border-orange-800/50 font-bold">Max size: 1 MB</span>
                     </label>
                     {selectedExpense?.receipt_url && !editFileDataUrl && (
-                      <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 mb-3 shadow-sm">
-                        <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5"><ImageIcon size={14}/> Existing Receipt attached</span>
-                        <button onClick={(e) => { e.preventDefault(); setLightboxUrl(`/api/pdf/${selectedExpense.id}?dl=0`); }} className="text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                      <div className="flex justify-between items-center bg-white dark:bg-[#0c1427] p-3 rounded-xl border border-gray-200 dark:border-slate-800 mb-3 shadow-sm">
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><ImageIcon size={14}/> Existing Receipt attached</span>
+                        <button onClick={(e) => { e.preventDefault(); setLightboxUrl(`/api/pdf/${selectedExpense.id}?dl=0`); }} className="text-[10px] font-black uppercase tracking-widest bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 px-2 py-1 rounded">View</button>
                       </div>
                     )}
-                    <p className="text-[10px] font-bold text-gray-600 mb-1">{selectedExpense?.receipt_url ? "Upload a new file to replace the existing one:" : "Upload a file:"}</p>
-                    <input type="file" accept="image/*,application/pdf" onChange={handleEditFileChange} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer shadow-sm" />
+                    <p className="text-[10px] font-bold text-gray-600 dark:text-slate-400 mb-1">{selectedExpense?.receipt_url ? "Upload a new file to replace the existing one:" : "Upload a file:"}</p>
+                    <input type="file" accept="image/*,application/pdf" onChange={handleEditFileChange} className="w-full p-2.5 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:font-black file:bg-blue-50 dark:file:bg-blue-950/50 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50 cursor-pointer shadow-sm" />
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100 mt-4">
-                    <label className="block text-xs font-black text-red-600 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                  <div className="pt-4 border-t border-gray-100 dark:border-slate-800 mt-4">
+                    <label className="block text-xs font-black text-red-600 dark:text-rose-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                       <Lock size={14}/> Action Password Required
                     </label>
                     <input 
                       type="password" 
                       value={actionPassword} 
                       onChange={e => setActionPassword(e.target.value)} 
-                      className="w-full p-3.5 bg-white border border-red-300 rounded-xl font-black text-gray-900 placeholder:text-red-300 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 shadow-sm" 
+                      className="w-full p-3.5 bg-white dark:bg-[#070b14] border border-red-300 dark:border-red-800/60 rounded-xl font-black text-gray-900 dark:text-white placeholder:text-red-300 dark:placeholder:text-red-900/40 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/40 shadow-sm" 
                       placeholder="Enter action password" 
                       required 
                     />
                   </div>
                   
-                  <button type="submit" disabled={submitting || verifying} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-70 mt-4">
+                  <button type="submit" disabled={submitting || verifying} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-70 mt-4">
                     {(submitting || verifying) ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} Save Changes
                   </button>
                 </form>
@@ -1444,24 +1444,24 @@ export default function FixedExpensesTab({
           {isDeleteModalOpen && selectedExpense && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModals} className="absolute inset-0 bg-black/75" />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden relative z-10 text-center">
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden relative z-10 text-center">
                 <div className="p-8">
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 text-red-600"><Trash2 size={32} /></div>
-                  <h2 className="text-xl font-black text-gray-900 mb-2">Delete Fixed Expense?</h2>
-                  <p className="text-gray-500 text-sm font-medium mb-6">This action cannot be undone. Please enter the action password to confirm.</p>
+                  <div className="w-16 h-16 bg-red-100 dark:bg-rose-950/40 rounded-full flex items-center justify-center mx-auto mb-5 text-red-600 dark:text-rose-400"><Trash2 size={32} /></div>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Delete Fixed Expense?</h2>
+                  <p className="text-gray-500 dark:text-slate-400 text-sm font-medium mb-6">This action cannot be undone. Please enter the action password to confirm.</p>
                   <form onSubmit={handleDeleteSubmit} className="space-y-4">
                     <input 
                       type="password" 
                       value={actionPassword} 
                       onChange={e => setActionPassword(e.target.value)} 
-                      className="w-full p-4 bg-white border border-gray-300 rounded-xl font-black text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 text-center tracking-widest shadow-sm" 
+                      className="w-full p-4 bg-white dark:bg-[#070b14] border border-gray-300 dark:border-slate-700 rounded-xl font-black text-gray-900 dark:text-white outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/40 text-center tracking-widest shadow-sm" 
                       placeholder="Password" 
                       required 
                       autoFocus 
                     />
                     <div className="flex gap-3 pt-2">
-                      <button type="button" onClick={closeModals} className="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="submit" disabled={submitting || verifying} className="flex-1 py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200 flex items-center justify-center gap-2">
+                      <button type="button" onClick={closeModals} className="flex-1 py-3.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                      <button type="submit" disabled={submitting || verifying} className="flex-1 py-3.5 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 flex items-center justify-center gap-2">
                         {(submitting || verifying) ? <Loader2 className="animate-spin" size={18} /> : 'Delete'}
                       </button>
                     </div>
@@ -1485,7 +1485,7 @@ export default function FixedExpensesTab({
                 initial={{ scale: 0.9, opacity: 0 }} 
                 animate={{ scale: 1, opacity: 1 }} 
                 exit={{ scale: 0.9, opacity: 0 }} 
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-10 flex flex-col"
+                className="bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-10 flex flex-col"
               >
                 <div className="p-4 bg-gray-900 text-white flex justify-between items-center shrink-0">
                   <span className="font-bold text-sm flex items-center gap-2">
@@ -1508,7 +1508,7 @@ export default function FixedExpensesTab({
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 p-2 bg-gray-100 flex items-center justify-center overflow-auto min-h-[300px] max-h-[calc(90vh-60px)]">
+                <div className="flex-1 p-2 bg-gray-100 dark:bg-slate-900 flex items-center justify-center overflow-auto min-h-[300px] max-h-[calc(90vh-60px)]">
                   <iframe 
                     src={lightboxUrl} 
                     className="w-full h-full min-h-[500px] rounded-lg border-0 bg-white" 

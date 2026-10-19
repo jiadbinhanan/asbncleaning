@@ -7,7 +7,7 @@ import {
   Plus, Trash2, Save, Copy, Star, StarOff, Edit3, Check,
   X, ChevronDown, ChevronUp, GripVertical, AlertCircle,
   Loader2, LayoutTemplate, TableProperties, RowsIcon,
-  Columns3, ArrowUpDown, Sparkles, RefreshCw, Info,
+  Columns3, ArrowUpDown, Layers, RefreshCw, Info,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -439,10 +439,10 @@ export default function TemplateBuilder() {
         {/* Header row */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-              <LayoutTemplate size={22} className="text-blue-600" /> All Templates
+            <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <LayoutTemplate size={22} className="text-blue-600 dark:text-blue-400" /> All Templates
             </h2>
-            <p className="text-sm text-gray-400 mt-0.5">Manage quotation templates used to generate PDFs.</p>
+            <p className="text-sm text-gray-400 dark:text-slate-400 mt-0.5">Manage quotation templates used to generate PDFs.</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.04 }}
@@ -456,7 +456,7 @@ export default function TemplateBuilder() {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 font-bold">
+          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-rose-950/30 border border-red-200 dark:border-rose-900/40 rounded-2xl text-red-700 dark:text-rose-400 font-bold">
             <AlertCircle size={18} /> {error}
             <button onClick={fetchTemplates} className="ml-auto text-xs underline">Retry</button>
           </div>
@@ -464,8 +464,8 @@ export default function TemplateBuilder() {
 
         {/* Loading */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Loader2 size={40} className="animate-spin text-blue-600 mb-4" />
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-500">
+            <Loader2 size={40} className="animate-spin text-blue-600 dark:text-blue-400 mb-4" />
             <p className="font-medium animate-pulse">Loading templates…</p>
           </div>
         ) : templates.length === 0 ? (
@@ -480,7 +480,7 @@ export default function TemplateBuilder() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: idx * 0.06, duration: 0.3 }}
-                  className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden"
+                  className="group bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden"
                 >
                   {/* Top accent bar */}
                   <div className={`h-1 w-full ${tpl.is_default ? "bg-gradient-to-r from-amber-400 to-yellow-300" : "bg-gradient-to-r from-blue-500 to-blue-400"}`} />
@@ -489,8 +489,8 @@ export default function TemplateBuilder() {
                     {/* Name + badges */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
-                        <h3 className="font-black text-gray-900 text-base leading-tight">{tpl.name}</h3>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <h3 className="font-black text-gray-900 dark:text-white text-base leading-tight">{tpl.name}</h3>
+                        <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
                           {tpl.sections.length} section{tpl.sections.length !== 1 ? "s" : ""} •{" "}
                           {tpl.sections.reduce((s, sec) => s + sec.rows.length, 0)} total rows
                         </p>
@@ -503,19 +503,19 @@ export default function TemplateBuilder() {
                     {/* Section pills */}
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {tpl.sections.slice(0, 4).map((sec) => (
-                        <span key={sec.id} className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-bold rounded-md truncate max-w-[140px]">
+                        <span key={sec.id} className="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-300 text-xs font-bold rounded-md truncate max-w-[140px]">
                           {sec.title || "Untitled"}
                         </span>
                       ))}
                       {tpl.sections.length > 4 && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-xs font-bold rounded-md">
+                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 text-xs font-bold rounded-md">
                           +{tpl.sections.length - 4} more
                         </span>
                       )}
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
                       {/* Edit */}
                       <motion.button
                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -529,7 +529,7 @@ export default function TemplateBuilder() {
                       <motion.button
                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                         onClick={() => handleClone(tpl)}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold border border-blue-100 dark:border-blue-900/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all"
                         title="Clone"
                       >
                         <Copy size={13} /> Clone
@@ -541,7 +541,7 @@ export default function TemplateBuilder() {
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                           onClick={() => handleSetDefault(tpl.id)}
                           disabled={settingDefaultId === tpl.id}
-                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold border border-amber-100 hover:bg-amber-100 transition-all disabled:opacity-60"
+                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold border border-amber-100 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all disabled:opacity-60"
                           title="Set as default"
                         >
                           {settingDefaultId === tpl.id
@@ -555,7 +555,7 @@ export default function TemplateBuilder() {
                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                         onClick={() => handleDelete(tpl.id)}
                         disabled={deletingId === tpl.id}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 hover:bg-red-100 transition-all disabled:opacity-60"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-50 dark:bg-rose-950/40 text-red-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-red-100 dark:border-rose-900/50 hover:bg-red-100 dark:hover:bg-rose-900/60 transition-all disabled:opacity-60"
                         title="Delete"
                       >
                         {deletingId === tpl.id
@@ -588,7 +588,7 @@ export default function TemplateBuilder() {
     >
 
       {/* ── Editor top bar ── */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+      <div className="bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm p-5">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
 
           {/* Back + title */}
@@ -596,14 +596,14 @@ export default function TemplateBuilder() {
             <motion.button
               whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
               onClick={() => setEditing(null)}
-              className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all shrink-0"
+              className="p-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 transition-all shrink-0"
               title="Back to list"
             >
               <X size={18} />
             </motion.button>
 
             <div className="flex-1 min-w-0">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+              <label className="block text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-1">
                 Template Name
               </label>
               <input
@@ -611,7 +611,7 @@ export default function TemplateBuilder() {
                 value={editing.name}
                 onChange={(e) => setEditing((p) => p ? { ...p, name: e.target.value } : p)}
                 placeholder="e.g. BTM Standard Quotation 2025"
-                className="w-full text-lg font-black text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-blue-600 pb-1 transition-colors placeholder:text-gray-300"
+                className="w-full text-lg font-black text-gray-900 dark:text-white bg-transparent outline-none border-b-2 border-gray-200 dark:border-slate-700 focus:border-blue-600 pb-1 transition-colors placeholder:text-gray-300 dark:placeholder:text-slate-600"
               />
             </div>
           </div>
@@ -623,8 +623,8 @@ export default function TemplateBuilder() {
               onClick={() => setEditing((p) => p ? { ...p, is_default: !p.is_default } : p)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-all ${
                 editing.is_default
-                  ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                  : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60"
+                  : "bg-gray-50 dark:bg-[#090d1a] text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800"
               }`}
             >
               {editing.is_default ? <Star size={15} className="fill-amber-500 text-amber-500" /> : <StarOff size={15} />}
@@ -636,7 +636,7 @@ export default function TemplateBuilder() {
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-md shadow-blue-200 transition-all disabled:opacity-70"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-md shadow-blue-200 dark:shadow-blue-900/40 transition-all disabled:opacity-70"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               {saving ? "Saving…" : isNew ? "Create Template" : "Save Changes"}
@@ -651,7 +651,7 @@ export default function TemplateBuilder() {
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: "auto", marginTop: 12 }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-bold overflow-hidden"
+              className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-rose-950/30 border border-red-200 dark:border-rose-900/40 rounded-xl text-red-700 dark:text-rose-400 text-sm font-bold overflow-hidden"
             >
               <AlertCircle size={15} /> {saveError}
               <button onClick={() => setSaveError("")} className="ml-auto"><X size={14} /></button>
@@ -671,23 +671,23 @@ export default function TemplateBuilder() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
+              className="bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden"
             >
               {/* Section header bar */}
               <div
-                className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors select-none"
                 onClick={() => toggleSection(section.id)}
               >
-                <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600 shrink-0">
+                <div className="p-1.5 bg-blue-50 dark:bg-blue-950/50 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
                   <TableProperties size={16} />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">
                     Section {sIdx + 1}
                   </span>
-                  <p className="font-black text-gray-900 text-sm truncate">
-                    {section.title || <span className="text-gray-400 font-normal italic">Untitled section</span>}
+                  <p className="font-black text-gray-900 dark:text-white text-sm truncate">
+                    {section.title || <span className="text-gray-400 dark:text-slate-500 font-normal italic">Untitled section</span>}
                   </p>
                 </div>
 
@@ -703,14 +703,14 @@ export default function TemplateBuilder() {
                   <motion.button
                     whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); deleteSection(section.id); }}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
                     title="Delete section"
                   >
                     <Trash2 size={15} />
                   </motion.button>
 
                   <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <ChevronDown size={18} className="text-gray-400" />
+                    <ChevronDown size={18} className="text-gray-400 dark:text-slate-500" />
                   </motion.div>
                 </div>
               </div>
@@ -725,30 +725,30 @@ export default function TemplateBuilder() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-5 pb-6 pt-1 space-y-5 border-t border-gray-100">
+                    <div className="px-5 pb-6 pt-1 space-y-5 border-t border-gray-100 dark:border-slate-800">
 
                       {/* Section title input */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                        <label className="block text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-2">
                           Section Title
                         </label>
                         <input
                           value={section.title}
                           onChange={(e) => updateSectionTitle(section.id, e.target.value)}
                           placeholder="e.g. CHECK OUT CLEANING WITH LINEN + LAUNDRY"
-                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+                          className="w-full p-3 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-600 transition-all"
                         />
                       </div>
 
                       {/* Column editor */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <label className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                             <Columns3 size={13} /> Columns
                           </label>
                           <button
                             onClick={() => addColumn(section.id)}
-                            className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                            className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                           >
                             <Plus size={13} /> Add Column
                           </button>
@@ -760,17 +760,17 @@ export default function TemplateBuilder() {
                               key={ci}
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                              className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-[#090d1a] rounded-xl border border-gray-100 dark:border-slate-800"
                             >
                               {/* Col number */}
-                              <span className="text-xs font-black text-gray-400 w-5 shrink-0 text-center">{ci + 1}</span>
+                              <span className="text-xs font-black text-gray-400 dark:text-slate-500 w-5 shrink-0 text-center">{ci + 1}</span>
 
                               {/* Label */}
                               <input
                                 value={col.label}
                                 onChange={(e) => updateColumn(section.id, ci, { label: e.target.value })}
                                 placeholder="Column header"
-                                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-xs font-bold outline-none border transition-all bg-white border-gray-200 focus:ring-2 focus:ring-blue-600 text-gray-800"
+                                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-xs font-bold outline-none border transition-all bg-white dark:bg-[#070b14] border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 text-gray-800 dark:text-white"
                               />
 
                               {/* Width */}
@@ -781,16 +781,16 @@ export default function TemplateBuilder() {
                                   max={100}
                                   value={col.width}
                                   onChange={(e) => updateColumn(section.id, ci, { width: Number(e.target.value) })}
-                                  className="w-14 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600 text-right"
+                                  className="w-14 px-2 py-2 bg-white dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-extrabold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-600 text-right"
                                 />
-                                <span className="text-xs text-gray-400 font-bold">%</span>
+                                <span className="text-xs text-gray-400 dark:text-slate-500 font-bold">%</span>
                               </div>
 
                               {/* Align */}
                               <select
                                 value={col.align}
                                 onChange={(e) => updateColumn(section.id, ci, { align: e.target.value as any })}
-                                className="w-20 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                                className="w-20 px-2 py-2 bg-white dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-bold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
                               >
                                 <option value="left">Left</option>
                                 <option value="center">Center</option>
@@ -802,7 +802,7 @@ export default function TemplateBuilder() {
                                 <motion.button
                                   whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
                                   onClick={() => deleteColumn(section.id, ci)}
-                                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
                                 >
                                   <X size={13} />
                                 </motion.button>
@@ -818,12 +818,12 @@ export default function TemplateBuilder() {
                       {/* Row editor */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <label className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                             <RowsIcon size={13} /> Rows
                           </label>
                           <button
                             onClick={() => addRow(section.id)}
-                            className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                            className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                           >
                             <Plus size={13} /> Add Row
                           </button>
@@ -864,7 +864,7 @@ export default function TemplateBuilder() {
                                     type="text"
                                     value={row[ci] ?? ""}
                                     onChange={(e) => updateCell(section.id, ri, ci, e.target.value)}
-                                    className="py-2 px-2.5 rounded-lg text-xs font-bold outline-none border transition-all bg-white border-gray-200 text-gray-800 focus:ring-2 focus:ring-blue-600 min-w-0"
+                                    className="py-2 px-2.5 rounded-lg text-xs font-bold outline-none border transition-all bg-white dark:bg-[#070b14] border-gray-200 dark:border-slate-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-600 min-w-0"
                                     style={{
                                       width: `${col.width}%`,
                                       flexShrink: 0,
@@ -877,7 +877,7 @@ export default function TemplateBuilder() {
                                 <motion.button
                                   whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
                                   onClick={() => deleteRow(section.id, ri)}
-                                  className="w-7 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover/row:opacity-100 shrink-0"
+                                  className="w-7 p-1.5 text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-rose-950/30 rounded-lg transition-all opacity-0 group-hover/row:opacity-100 shrink-0"
                                 >
                                   <X size={12} />
                                 </motion.button>
@@ -907,7 +907,7 @@ export default function TemplateBuilder() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setAddingSectionTo("pending")}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/30 text-gray-400 hover:text-blue-600 rounded-2xl font-bold transition-all group"
+            className="w-full flex items-center justify-center gap-2 py-4 bg-white dark:bg-[#0c1427] border-2 border-dashed border-gray-300 dark:border-slate-800 hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-2xl font-bold transition-all group"
           >
             <motion.div
               animate={{ rotate: [0, 90, 0] }}
@@ -923,52 +923,52 @@ export default function TemplateBuilder() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-3xl p-6"
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-[#09152b] dark:to-[#0c1427] border-2 border-blue-200 dark:border-blue-900/50 rounded-3xl p-6"
           >
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-blue-600" />
-              <h3 className="font-black text-blue-900">Configure New Section</h3>
+              <Layers size={18} className="text-blue-600 dark:text-blue-400" />
+              <h3 className="font-black text-blue-900 dark:text-blue-200">Configure New Section</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
               {/* Title */}
               <div className="md:col-span-3">
-                <label className="block text-xs font-bold text-blue-700 uppercase tracking-widest mb-2">Section Title</label>
+                <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-2">Section Title</label>
                 <input
                   autoFocus
                   value={newSectionTitle}
                   onChange={(e) => setNewSectionTitle(e.target.value)}
                   placeholder="e.g. DEEP CLEANING WITH AMENITIES"
-                  className="w-full p-3 bg-white border border-blue-200 rounded-xl text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-3 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
 
               {/* Cols */}
               <div>
-                <label className="block text-xs font-bold text-blue-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <Columns3 size={12} /> Number of Columns
                 </label>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setNewSectionCols((c) => Math.max(1, c - 1))} className="p-2 bg-white border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 font-bold transition-all">−</button>
-                  <span className="text-2xl font-black text-blue-800 w-8 text-center">{newSectionCols}</span>
-                  <button onClick={() => setNewSectionCols((c) => Math.min(10, c + 1))} className="p-2 bg-white border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 font-bold transition-all">+</button>
+                  <button onClick={() => setNewSectionCols((c) => Math.max(1, c - 1))} className="p-2 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-800 font-bold transition-all">−</button>
+                  <span className="text-2xl font-black text-blue-800 dark:text-blue-200 w-8 text-center">{newSectionCols}</span>
+                  <button onClick={() => setNewSectionCols((c) => Math.min(10, c + 1))} className="p-2 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-800 font-bold transition-all">+</button>
                 </div>
               </div>
 
               {/* Rows */}
               <div>
-                <label className="block text-xs font-bold text-blue-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <RowsIcon size={12} /> Number of Rows
                 </label>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setNewSectionRows((r) => Math.max(1, r - 1))} className="p-2 bg-white border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 font-bold transition-all">−</button>
-                  <span className="text-2xl font-black text-blue-800 w-8 text-center">{newSectionRows}</span>
-                  <button onClick={() => setNewSectionRows((r) => Math.min(50, r + 1))} className="p-2 bg-white border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 font-bold transition-all">+</button>
+                  <button onClick={() => setNewSectionRows((r) => Math.max(1, r - 1))} className="p-2 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-800 font-bold transition-all">−</button>
+                  <span className="text-2xl font-black text-blue-800 dark:text-blue-200 w-8 text-center">{newSectionRows}</span>
+                  <button onClick={() => setNewSectionRows((r) => Math.min(50, r + 1))} className="p-2 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-800 font-bold transition-all">+</button>
                 </div>
               </div>
 
               {/* Info note */}
-              <div className="flex items-start gap-2 text-xs text-blue-600 bg-blue-100/60 rounded-xl p-3">
+              <div className="flex items-start gap-2 text-xs text-blue-600 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-950/50 rounded-xl p-3">
                 <Info size={14} className="shrink-0 mt-0.5" />
                 <span>First column is auto-numbered (serial). You can add or remove rows &amp; columns after creation.</span>
               </div>
@@ -984,7 +984,7 @@ export default function TemplateBuilder() {
               </motion.button>
               <button
                 onClick={() => { setAddingSectionTo(null); setNewSectionTitle(""); }}
-                className="px-5 py-3 bg-white border border-blue-200 text-blue-700 rounded-xl font-bold hover:bg-blue-50 transition-all"
+                className="px-5 py-3 bg-white dark:bg-[#070b14] border border-blue-200 dark:border-slate-700 text-blue-700 dark:text-blue-300 rounded-xl font-bold hover:bg-blue-50 dark:hover:bg-slate-800 transition-all"
               >
                 Cancel
               </button>

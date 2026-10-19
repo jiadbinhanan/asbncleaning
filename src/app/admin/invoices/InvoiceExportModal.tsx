@@ -436,7 +436,7 @@ export default function InvoiceExportModal({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden z-10 border border-gray-100"
+        className="relative bg-white dark:bg-[#0c1427] rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden z-10 border border-gray-100 dark:border-slate-800"
       >
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-gray-900 to-[#0A192F] text-white p-6 flex justify-between items-center">
@@ -457,23 +457,23 @@ export default function InvoiceExportModal({
 
           {/* 1. Format Selection */}
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Export Format</label>
+            <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-2">Export Format</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setExportFormat('excel')}
                 className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all font-black text-xs ${
                   exportFormat === 'excel'
-                    ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 shadow-sm'
+                    : 'border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 text-gray-600 dark:text-slate-300'
                 }`}
               >
-                <div className={`p-2 rounded-xl ${exportFormat === 'excel' ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2 rounded-xl ${exportFormat === 'excel' ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'}`}>
                   <FileSpreadsheet size={18} />
                 </div>
                 <div className="text-left">
                   <p className="font-black text-sm">Excel Spreadsheet</p>
-                  <p className="text-[10px] font-bold text-gray-400">.XLSX File</p>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500">.XLSX File</p>
                 </div>
               </button>
 
@@ -482,16 +482,16 @@ export default function InvoiceExportModal({
                 onClick={() => setExportFormat('pdf')}
                 className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all font-black text-xs ${
                   exportFormat === 'pdf'
-                    ? 'border-blue-500 bg-blue-50/50 text-blue-800 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 shadow-sm'
+                    : 'border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 text-gray-600 dark:text-slate-300'
                 }`}
               >
-                <div className={`p-2 rounded-xl ${exportFormat === 'pdf' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2 rounded-xl ${exportFormat === 'pdf' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'}`}>
                   <FileText size={18} />
                 </div>
                 <div className="text-left">
                   <p className="font-black text-sm">PDF Audit Report</p>
-                  <p className="text-[10px] font-bold text-gray-400">Executive Table & KPIs</p>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500">Executive Table & KPIs</p>
                 </div>
               </button>
             </div>
@@ -499,7 +499,7 @@ export default function InvoiceExportModal({
 
           {/* 2. Date Range Presets */}
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Time Period</label>
+            <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-2">Time Period</label>
             <div className="grid grid-cols-4 gap-2 mb-3">
               {[
                 { id: 'this_month', label: 'This Month' },
@@ -514,7 +514,7 @@ export default function InvoiceExportModal({
                   className={`py-2 px-1 text-center rounded-xl text-xs font-black transition-all border ${
                     dateRangePreset === p.id
                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      : 'bg-gray-50 dark:bg-[#090d1a] text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800/80'
                   }`}
                 >
                   {p.label}
@@ -524,9 +524,9 @@ export default function InvoiceExportModal({
 
             {/* Custom Date Inputs */}
             {dateRangePreset !== 'all_time' && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-[#090d1a] rounded-2xl border border-gray-200 dark:border-slate-800">
                 <div>
-                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">From Date</label>
+                  <label className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">From Date</label>
                   <input
                     type="date"
                     value={startDate}
@@ -534,11 +534,11 @@ export default function InvoiceExportModal({
                       setStartDate(e.target.value);
                       setDateRangePreset('custom');
                     }}
-                    className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2.5 bg-white dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">To Date</label>
+                  <label className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest block mb-1">To Date</label>
                   <input
                     type="date"
                     value={endDate}
@@ -546,7 +546,7 @@ export default function InvoiceExportModal({
                       setEndDate(e.target.value);
                       setDateRangePreset('custom');
                     }}
-                    className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2.5 bg-white dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -556,11 +556,11 @@ export default function InvoiceExportModal({
           {/* 3. Additional Filters (Status & Company) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Payment Status</label>
+              <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Payment Status</label>
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full p-2.5 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 <option value="all">All Invoices</option>
                 <option value="paid">Paid Only</option>
@@ -570,11 +570,11 @@ export default function InvoiceExportModal({
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Customer / Company</label>
+              <label className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest block mb-1">Customer / Company</label>
               <select
                 value={selectedCompanyId}
                 onChange={e => setSelectedCompanyId(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full p-2.5 bg-gray-50 dark:bg-[#090d1a] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 <option value="all">All Clients</option>
                 {type === 'instant' && <option value="walk_in">Walk-in Customers Only</option>}

@@ -333,15 +333,15 @@ export default function RevenueDashboard() {
   const CustomAreaTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 rounded-2xl shadow-2xl border border-gray-200">
-          <p className="text-sm font-black text-gray-900 mb-3 border-b border-gray-100 pb-2">{label}</p>
+        <div className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800">
+          <p className="text-sm font-black text-gray-900 dark:text-white mb-3 border-b border-gray-100 dark:border-slate-800 pb-2">{label}</p>
           {payload.map((p: any, idx: number) => (
             <div key={idx} className="flex justify-between items-center gap-6 mb-1.5">
-              <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+              <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                 <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color }}></div>
                 {p.name}:
               </span>
-              <span className="text-sm font-black text-gray-900">AED {p.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className="text-sm font-black text-gray-900 dark:text-white">AED {p.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
             </div>
           ))}
         </div>
@@ -355,33 +355,33 @@ export default function RevenueDashboard() {
       // payload contains data for the hovered bar (Monthly or Instant POS)
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 rounded-2xl shadow-2xl border border-gray-200 min-w-[200px]">
-          <p className="text-sm font-black text-gray-900 mb-3 border-b border-gray-100 pb-2">{label}</p>
+        <div className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 min-w-[200px]">
+          <p className="text-sm font-black text-gray-900 dark:text-white mb-3 border-b border-gray-100 dark:border-slate-800 pb-2">{label}</p>
           
           {label === 'Monthly' && (
             <>
               <div className="flex justify-between items-center gap-6 mb-1.5">
-                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                   <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-slate-400"></div>
                   Contract Billed:
                 </span>
-                <span className="text-sm font-black text-gray-900">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm font-black text-gray-900 dark:text-white">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
               {data.MergedPOS > 0 && (
                 <div className="flex justify-between items-center gap-6 mb-1.5">
-                  <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                  <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                     <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-indigo-500"></div>
                     Merged POS:
                   </span>
-                  <span className="text-sm font-black text-gray-900">AED {data.MergedPOS.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <span className="text-sm font-black text-gray-900 dark:text-white">AED {data.MergedPOS.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100">
-                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                   <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500"></div>
                   Collected:
                 </span>
-                <span className="text-sm font-black text-emerald-600">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </>
           )}
@@ -389,28 +389,28 @@ export default function RevenueDashboard() {
           {label === 'Instant POS' && (
             <>
               <div className="flex justify-between items-center gap-6 mb-1">
-                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                   <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-slate-400"></div>
                   Total Billed:
                 </span>
-                <span className="text-sm font-black text-gray-900">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm font-black text-gray-900 dark:text-white">AED {data.Billed.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="pl-4 mb-2 space-y-1">
                 <div className="flex justify-between items-center gap-4">
-                  <span className="text-[10px] font-bold text-gray-500">↳ Individual:</span>
-                  <span className="text-[10px] font-black text-gray-700">AED {stats.instantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400">↳ Individual:</span>
+                  <span className="text-[10px] font-black text-gray-700 dark:text-slate-300">AED {stats.instantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between items-center gap-4">
-                  <span className="text-[10px] font-bold text-gray-500">↳ Merged:</span>
-                  <span className="text-[10px] font-black text-indigo-500">AED {stats.mergedInstantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400">↳ Merged:</span>
+                  <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400">AED {stats.mergedInstantBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
-              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100">
-                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900">
+              <div className="flex justify-between items-center gap-6 mt-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+                <span className="text-xs font-black flex items-center gap-1.5 text-gray-900 dark:text-slate-200">
                   <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500"></div>
                   Collected:
                 </span>
-                <span className="text-sm font-black text-emerald-600">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">AED {data.Collected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </>
           )}
@@ -424,17 +424,17 @@ export default function RevenueDashboard() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 rounded-2xl shadow-2xl border border-gray-200">
-          <p className="text-sm font-black text-gray-900 mb-3 border-b border-gray-100 pb-2 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#0c1427] p-4 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800">
+          <p className="text-sm font-black text-gray-900 dark:text-white mb-3 border-b border-gray-100 dark:border-slate-800 pb-2 flex items-center gap-2">
             <span className="w-3 h-3 rounded-full inline-block shrink-0" style={{ backgroundColor: payload[0].color }}></span>
             {data.name}
           </p>
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-gray-600 flex justify-between gap-4">
-              <span>Total Sales:</span> <span className="text-gray-900 font-black">AED {data.billed.toLocaleString()}</span>
+            <p className="text-xs font-bold text-gray-600 dark:text-slate-400 flex justify-between gap-4">
+              <span>Total Sales:</span> <span className="text-gray-900 dark:text-white font-black">AED {data.billed.toLocaleString()}</span>
             </p>
-            <p className="text-xs font-bold text-gray-600 flex justify-between gap-4">
-              <span>Collected:</span> <span className="text-emerald-600 font-black">AED {data.collected.toLocaleString()}</span>
+            <p className="text-xs font-bold text-gray-600 dark:text-slate-400 flex justify-between gap-4">
+              <span>Collected:</span> <span className="text-emerald-600 dark:text-emerald-400 font-black">AED {data.collected.toLocaleString()}</span>
             </p>
           </div>
         </div>
@@ -446,11 +446,11 @@ export default function RevenueDashboard() {
   const CustomExpenseTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3">
+        <div className="bg-white dark:bg-[#0c1427] p-3 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 flex items-center gap-3">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color || payload[0].payload.fill }}></div>
           <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{payload[0].payload.name}</p>
-            <p className="text-sm font-black text-red-600">AED {payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            <p className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">{payload[0].payload.name}</p>
+            <p className="text-sm font-black text-red-600 dark:text-red-400">AED {payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       );
@@ -458,21 +458,76 @@ export default function RevenueDashboard() {
     return null;
   };
 
-  if (initialLoading) return <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
+  if (initialLoading) return <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] flex items-center justify-center"><Loader2 className="animate-spin text-blue-600 size-12"/></div>;
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] pb-24 font-sans relative">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative">
 
-      {/* ── CONSTANT HEADER ── */}
-      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"/>
+      {/* ── CONSTANT HEADER — Midnight Emerald & Forest Waves (dark) ── */}
+      <div className="bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:from-[#051814] dark:via-[#092b23] dark:to-[#030d0b] text-white pt-10 pb-32 px-6 md:px-12 shadow-2xl relative z-10 overflow-hidden dark:border-b dark:border-emerald-500/20 dark:shadow-[0_12px_40px_rgba(16,185,129,0.15)]">
+        {/* Light mode gradient */}
+        <div className='absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0A192F] to-black dark:hidden' />
 
-        <div className="w-full relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        {/* Dark mode multi-color emerald forest gradient */}
+        <div className='absolute inset-0 hidden dark:block' style={{ background: 'linear-gradient(135deg, #02140d 0%, #05261d 20%, #0a3d2e 40%, #08382a 65%, #031c15 85%, #010a08 100%)' }} />
+
+        {/* Dark mode glowing emerald orbs */}
+        <div className='absolute -top-12 -left-12 w-96 h-96 hidden dark:block bg-emerald-500/25 rounded-full blur-[100px] pointer-events-none' />
+        <div className='absolute bottom-0 right-10 w-96 h-96 hidden dark:block bg-teal-400/20 rounded-full blur-[90px] pointer-events-none' />
+        <div className='absolute top-1/4 right-1/3 w-72 h-72 hidden dark:block bg-lime-400/12 rounded-full blur-[80px] pointer-events-none' />
+
+        {/* Dark mode SVG Midnight Emerald Waves */}
+        <div className='absolute inset-0 w-full h-full pointer-events-none overflow-hidden hidden dark:block'>
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="rev-grad-wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
+                <stop offset="35%" stopColor="#34D399" stopOpacity="0.25" />
+                <stop offset="70%" stopColor="#059669" stopOpacity="0.20" />
+                <stop offset="100%" stopColor="#0D9488" stopOpacity="0.08" />
+              </linearGradient>
+              <linearGradient id="rev-grad-wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#34D399" stopOpacity="0.30" />
+                <stop offset="40%" stopColor="#84CC16" stopOpacity="0.22" />
+                <stop offset="75%" stopColor="#064E3B" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.05" />
+              </linearGradient>
+              <linearGradient id="rev-crest-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#34D399" stopOpacity="0.95" />
+                <stop offset="85%" stopColor="#A7F3D0" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#5EEAD4" stopOpacity="0.4" />
+              </linearGradient>
+              <linearGradient id="rev-crest-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#A3E635" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#34D399" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#2DD4BF" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="rev-glow-emerald" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            {/* Background Emerald Wave */}
+            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80 L1440,320 L0,320 Z" fill="url(#rev-grad-wave1)" />
+            <path d="M0,110 C320,40 560,180 860,90 C1160,10 1320,150 1440,80" stroke="url(#rev-crest-1)" strokeWidth="2.5" strokeLinecap="round" filter="url(#rev-glow-emerald)" />
+            {/* Foreground Jade Wave */}
+            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140 L1440,320 L0,320 Z" fill="url(#rev-grad-wave2)" />
+            <path d="M0,160 C260,200 480,90 780,150 C1080,210 1280,100 1440,140" stroke="url(#rev-crest-2)" strokeWidth="2" strokeLinecap="round" />
+            {/* Subtle Lower Wave Ribbon */}
+            <path d="M0,230 C360,270 680,180 1020,240 C1240,280 1380,210 1440,220" stroke="url(#rev-crest-1)" strokeWidth="1.2" strokeDasharray="6 6" strokeOpacity="0.4" strokeLinecap="round" />
+          </svg>
+        </div>
+
+        {/* Light mode decorative orbs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none dark:hidden"/>
+
+        <div className="w-full relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-3">
-              <TrendingUp className="text-blue-500" size={36}/> Revenue Analytics
+              <TrendingUp className="text-blue-500 dark:text-emerald-400" size={36}/> Revenue Analytics
             </h1>
-            <p className="text-blue-200 font-medium mt-2">Track total sales, collections, and company-wise performance.</p>
+            <p className="text-blue-200 dark:text-emerald-200/80 font-medium mt-2">Track total sales, collections, and company-wise performance.</p>
           </div>
 
           <div className="flex flex-col items-end gap-3 w-full md:w-auto">
@@ -569,34 +624,34 @@ export default function RevenueDashboard() {
 
           {/* Card 2: Invoiced Work of This Period */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-blue-100/60 hover:-translate-y-1 hover:border-blue-200 transition-all duration-200"
+            className="bg-white dark:bg-[#0c1427] p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-blue-100/60 dark:hover:shadow-blue-950/30 hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-500/50 transition-all duration-200"
             onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
           >
             <div className="absolute top-4 right-4 z-20">
-              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(2); }} className="text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(2); }} className="text-gray-300 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
             </div>
             <AnimatePresence>
               {activeInfoCard === 2 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
-                  <h4 className="font-bold mb-2 flex items-center gap-2 text-blue-600"><Info size={14}/> How is this calculated?</h4>
-                  <p className="text-xs leading-relaxed text-gray-600">Total value of cleaning jobs from this period that have had an invoice generated, plus individual (unmerged) POS sales from this period.</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900 dark:text-white" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-blue-600 dark:text-blue-400"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 dark:text-slate-300">Total value of cleaning jobs from this period that have had an invoice generated, plus individual (unmerged) POS sales from this period.</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><FileDigit size={80}/></div>
-            <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Invoiced Work of This Period</p>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">AED {(stats.invoicedBookingsAmount + stats.instantBilled).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 group-hover:scale-125 group-hover:opacity-10 dark:group-hover:opacity-20 transition-all duration-300"><FileDigit size={80}/></div>
+            <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><FileDigit size={12}/> Invoiced Work of This Period</p>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">AED {(stats.invoicedBookingsAmount + stats.instantBilled).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             
             <div className="mt-auto relative z-10 w-full min-w-0 pt-1">
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-blue-50/60 border border-blue-100/50 rounded-lg p-2 flex flex-col justify-center">
-                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">Clean ({stats.invoicedBookingsCount})</p>
-                  <p className="text-sm font-black text-gray-900">{stats.invoicedBookingsAmount.toLocaleString()}</p>
+                <div className="bg-blue-50/60 dark:bg-blue-950/40 border border-blue-100/50 dark:border-blue-800/40 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">Clean ({stats.invoicedBookingsCount})</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-white">{stats.invoicedBookingsAmount.toLocaleString()}</p>
                 </div>
-                <div className="bg-blue-50/60 border border-blue-100/50 rounded-lg p-2 flex flex-col justify-center">
-                  <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">POS ({stats.unmergedInstantCount})</p>
-                  <p className="text-sm font-black text-gray-900">{stats.instantBilled.toLocaleString()}</p>
+                <div className="bg-blue-50/60 dark:bg-blue-950/40 border border-blue-100/50 dark:border-blue-800/40 rounded-lg p-2 flex flex-col justify-center">
+                  <p className="text-[9px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-wider mb-0.5 truncate pr-1">POS ({stats.unmergedInstantCount})</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-white">{stats.instantBilled.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -604,29 +659,29 @@ export default function RevenueDashboard() {
 
           {/* Card 3: Invoice Generated vs Pending */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.12 }}
-            className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-indigo-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-100/60 hover:-translate-y-1 hover:border-indigo-200 transition-all duration-200"
+            className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-[#0c1427] dark:to-[#121933] p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-indigo-100 dark:border-slate-800 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-100/60 dark:hover:shadow-purple-950/30 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-purple-800/50 transition-all duration-200"
             onClick={() => document.getElementById('detailed-work-history')?.scrollIntoView({ behavior: 'smooth' })}
           >
             <div className="absolute top-4 right-4 z-20">
-              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(3); }} className="text-indigo-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(3); }} className="text-indigo-300 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-purple-300 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
             </div>
             <AnimatePresence>
               {activeInfoCard === 3 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-indigo-50/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-indigo-950" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
-                  <h4 className="font-bold mb-2 flex items-center gap-2 text-indigo-600"><Info size={14}/> How is this calculated?</h4>
-                  <p className="text-xs leading-relaxed text-indigo-800">Total amount billed to clients via invoices during this period, and the value of completed jobs that are still waiting to be billed.</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-indigo-50/95 dark:bg-[#0c1427]/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-indigo-950 dark:text-white" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-indigo-600 dark:text-purple-400"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-indigo-800 dark:text-slate-300">Total amount billed to clients via invoices during this period, and the value of completed jobs that are still waiting to be billed.</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-indigo-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Receipt size={80}/></div>
+            <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-indigo-500 dark:text-purple-400 group-hover:scale-125 group-hover:opacity-10 dark:group-hover:opacity-20 transition-all duration-300"><Receipt size={80}/></div>
             
             {/* Top section: Generated */}
-            <div className="mb-2 pb-2 border-b border-indigo-100/50">
-               <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Briefcase size={12}/> Invoice Generated</p>
-               <h2 className="text-lg font-black text-indigo-950 leading-tight">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mb-2 pb-2 border-b border-indigo-100/50 dark:border-slate-800">
+               <p className="text-[9px] font-black text-indigo-600 dark:text-purple-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Briefcase size={12}/> Invoice Generated</p>
+               <h2 className="text-lg font-black text-indigo-950 dark:text-white leading-tight">AED {stats.totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
                {stats.totalDiscount > 0 && (
-                 <p className="mt-1 text-[10px] font-bold text-rose-500 bg-rose-50/80 border border-rose-100 px-2 py-1 rounded-md inline-block">
+                 <p className="mt-1 text-[10px] font-bold text-rose-500 dark:text-rose-300 bg-rose-50/80 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/60 px-2 py-1 rounded-md inline-block">
                    Discount: AED {stats.totalDiscount.toLocaleString()}
                  </p>
                )}
@@ -634,66 +689,66 @@ export default function RevenueDashboard() {
 
             {/* Bottom section: Pending */}
             <div className="mt-auto">
-               <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
-               <h2 className="text-lg font-black text-indigo-800 leading-tight">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+               <p className="text-[9px] font-black text-indigo-400 dark:text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><Receipt size={12}/> Work Not Invoiced</p>
+               <h2 className="text-lg font-black text-indigo-800 dark:text-purple-300 leading-tight">AED {stats.notInvoicedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             </div>
           </motion.div>
 
           {/* Card 4: Collected Amount (Cyan Theme) */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.18 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-cyan-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-cyan-100/60 hover:-translate-y-1 hover:border-cyan-300 transition-all duration-200"
+            className="bg-white dark:bg-[#0c1427] p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-cyan-100 dark:border-cyan-900/40 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-cyan-100/60 dark:hover:shadow-cyan-950/30 hover:-translate-y-1 hover:border-cyan-300 dark:hover:border-cyan-700/50 transition-all duration-200"
             onClick={() => document.getElementById('invoice-history')?.scrollIntoView({ behavior: 'smooth' })}
           >
             <div className="absolute top-4 right-4 z-20">
-              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(4); }} className="text-gray-300 hover:text-cyan-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(4); }} className="text-gray-300 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
             </div>
             <AnimatePresence>
               {activeInfoCard === 4 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-cyan-950" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
-                  <h4 className="font-bold mb-2 flex items-center gap-2 text-cyan-600"><Info size={14}/> How is this calculated?</h4>
-                  <p className="text-xs leading-relaxed text-gray-600">Actual cash received from clients during this period for any invoices, plus the outstanding amount clients still owe.</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-cyan-950 dark:text-white" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-cyan-600 dark:text-cyan-400"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 dark:text-slate-300">Actual cash received from clients during this period for any invoices, plus the outstanding amount clients still owe.</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-cyan-500 group-hover:scale-125 group-hover:opacity-10 transition-all duration-300"><Wallet size={80}/></div>
-            <p className="text-[9px] font-black text-cyan-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Amount</p>
-            <h2 className="text-2xl font-black text-cyan-600">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-            <div className="mt-3 pt-3 border-t border-cyan-50 flex flex-col gap-1">
+            <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-cyan-500 group-hover:scale-125 group-hover:opacity-10 dark:group-hover:opacity-20 transition-all duration-300"><Wallet size={80}/></div>
+            <p className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowDownToLine size={12}/> Collected Amount</p>
+            <h2 className="text-2xl font-black text-cyan-600 dark:text-cyan-400">AED {stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mt-3 pt-3 border-t border-cyan-50 dark:border-slate-800 flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><ArrowUpRight size={10} className="text-amber-500"/> Outstanding Dues</span>
-                <span className="text-xs font-black text-amber-600">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1"><ArrowUpRight size={10} className="text-amber-500"/> Outstanding Dues</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400">AED {stats.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </motion.div>
 
           {/* Card 5: Total Expenses & Actual Revenue */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.24 }}
-            className="bg-white p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1 hover:border-slate-300 transition-all duration-200"
+            className="bg-white dark:bg-[#0c1427] p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-slate-200/60 dark:hover:shadow-slate-900/30 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200"
             onClick={() => document.getElementById('expense-summary')?.scrollIntoView({ behavior: 'smooth' })}
           >
             <div className="absolute top-4 right-4 z-20">
-              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(5); }} className="text-gray-300 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
+              <button onClick={(e) => { e.stopPropagation(); setActiveInfoCard(5); }} className="text-gray-300 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"><Info size={14}/></button>
             </div>
             <AnimatePresence>
               {activeInfoCard === 5 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
-                  <h4 className="font-bold mb-2 flex items-center gap-2 text-emerald-600"><Info size={14}/> How is this calculated?</h4>
-                  <p className="text-xs leading-relaxed text-gray-600">Total money spent on expenses during this period, and your actual net revenue (Collected Amount minus Total Expenses).</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-sm z-30 rounded-[2rem] p-5 flex flex-col justify-center text-gray-900 dark:text-white" onClick={(e) => { e.stopPropagation(); setActiveInfoCard(null); }}>
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><Info size={14}/> How is this calculated?</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 dark:text-slate-300">Total money spent on expenses during this period, and your actual net revenue (Collected Amount minus Total Expenses).</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Top section: Expenses */}
-            <div className="mb-2 pb-2 border-b border-gray-100">
-               <p className="text-[9px] font-black text-red-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingDown size={12}/> Total Expenses</p>
-               <h2 className="text-lg font-black text-red-600 leading-tight">AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mb-2 pb-2 border-b border-gray-100 dark:border-slate-800">
+               <p className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingDown size={12}/> Total Expenses</p>
+               <h2 className="text-lg font-black text-red-600 dark:text-red-400 leading-tight">AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             </div>
 
             {/* Bottom section: Actual Revenue (Green Design) */}
-            <div className="mt-auto bg-emerald-50 rounded-xl p-2.5 border border-emerald-100">
-               <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingUp size={12}/> Actual Revenue</p>
-               <h2 className="text-xl font-black text-emerald-700 leading-tight">AED {stats.actualRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            <div className="mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-2.5 border border-emerald-100 dark:border-emerald-800/40">
+               <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5"><TrendingUp size={12}/> Actual Revenue</p>
+               <h2 className="text-xl font-black text-emerald-700 dark:text-emerald-300 leading-tight">AED {stats.actualRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
             </div>
           </motion.div>
         </div>
@@ -702,8 +757,8 @@ export default function RevenueDashboard() {
         <div id="charts-section" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Area Chart: Daily Trend */}
-          <div className="lg:col-span-2 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 h-[400px] flex flex-col">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-600"/> Daily Revenue Trend (Sales vs Collected)</h3>
+          <div className="lg:col-span-2 bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 h-[400px] flex flex-col">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-600 dark:text-indigo-400"/> Daily Revenue Trend (Sales vs Collected)</h3>
             <div className="flex-1 w-full h-full min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -717,7 +772,7 @@ export default function RevenueDashboard() {
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
                   <RechartsTooltip content={<CustomAreaTooltip />} />
@@ -730,14 +785,14 @@ export default function RevenueDashboard() {
           </div>
 
           {/* Bar Chart: Source Comparison */}
-          <div className="lg:col-span-1 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 h-[400px] flex flex-col">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500"/> Source Performance</h3>
+          <div className="lg:col-span-1 bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 h-[400px] flex flex-col">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500 dark:text-blue-400"/> Source Performance</h3>
             <div className="flex flex-1 min-h-0 gap-3">
               {/* Stacked Bar Chart */}
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sourceBarData} margin={{ top: 10, right: 0, left: -28, bottom: 0 }} barCategoryGap="30%" barGap={3}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} dy={8} interval={0} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                     <RechartsTooltip content={<CustomBarTooltip />} cursor={{fill: 'transparent'}} />
@@ -750,12 +805,12 @@ export default function RevenueDashboard() {
               {/* Text amounts — right side */}
               <div className="w-[100px] shrink-0 flex flex-col justify-center gap-4 py-2">
                 <div className="space-y-2">
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Monthly</p>
+                  <p className="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Monthly</p>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
                     <div>
-                      <p className="text-[8px] font-bold text-gray-400">Billed</p>
-                      <p className="text-[10px] font-black text-gray-800">AED {stats.monthlyBilled.toLocaleString()}</p>
+                      <p className="text-[8px] font-bold text-gray-400 dark:text-slate-400">Billed</p>
+                      <p className="text-[10px] font-black text-gray-800 dark:text-slate-200">AED {stats.monthlyBilled.toLocaleString()}</p>
                     </div>
                   </div>
                   {stats.mergedInstantBilled > 0 && (
@@ -763,37 +818,37 @@ export default function RevenueDashboard() {
                       <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"/>
                       <div>
                         <p className="text-[8px] font-bold text-indigo-400">+ Merged POS</p>
-                        <p className="text-[10px] font-black text-indigo-700">AED {stats.mergedInstantBilled.toLocaleString()}</p>
+                        <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-400">AED {stats.mergedInstantBilled.toLocaleString()}</p>
                       </div>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
                     <div>
-                      <p className="text-[8px] font-bold text-gray-400">Collected</p>
-                      <p className="text-[10px] font-black text-emerald-600">AED {stats.monthlyCollected.toLocaleString()}</p>
+                      <p className="text-[8px] font-bold text-gray-400 dark:text-slate-400">Collected</p>
+                      <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">AED {stats.monthlyCollected.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
-                <div className="w-full h-px bg-gray-100"/>
+                <div className="w-full h-px bg-gray-100 dark:bg-slate-800"/>
                 <div className="space-y-2">
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Instant POS</p>
+                  <p className="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Instant POS</p>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
                     <div>
-                      <p className="text-[8px] font-bold text-gray-400">Total Billed</p>
-                      <p className="text-[10px] font-black text-gray-800 mb-0.5">AED {stats.totalInstantAll.toLocaleString()}</p>
-                      <div className="text-[8px] space-y-0.5 border-l border-gray-200 pl-1.5 ml-0.5">
-                        <p className="text-gray-500 font-medium">Indiv: <span className="font-bold text-gray-700">{stats.instantBilled.toLocaleString()}</span></p>
-                        <p className="text-indigo-400 font-medium">Merged: <span className="font-bold text-indigo-500">{stats.mergedInstantBilled.toLocaleString()}</span></p>
+                      <p className="text-[8px] font-bold text-gray-400 dark:text-slate-400">Total Billed</p>
+                      <p className="text-[10px] font-black text-gray-800 dark:text-slate-200 mb-0.5">AED {stats.totalInstantAll.toLocaleString()}</p>
+                      <div className="text-[8px] space-y-0.5 border-l border-gray-200 dark:border-slate-700 pl-1.5 ml-0.5">
+                        <p className="text-gray-500 dark:text-slate-400 font-medium">Indiv: <span className="font-bold text-gray-700 dark:text-slate-300">{stats.instantBilled.toLocaleString()}</span></p>
+                        <p className="text-indigo-400 font-medium">Merged: <span className="font-bold text-indigo-500 dark:text-indigo-400">{stats.mergedInstantBilled.toLocaleString()}</span></p>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 mt-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
                     <div>
-                      <p className="text-[8px] font-bold text-gray-400">Collected</p>
-                      <p className="text-[10px] font-black text-emerald-600">AED {stats.instantCollected.toLocaleString()}</p>
+                      <p className="text-[8px] font-bold text-gray-400 dark:text-slate-400">Collected</p>
+                      <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">AED {stats.instantCollected.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -807,12 +862,12 @@ export default function RevenueDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Filled Pie Chart */}
-          <div className="lg:col-span-1 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col h-[450px]">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-2 flex items-center gap-2"><PieChartIcon size={16} className="text-indigo-600"/> Sales by Company</h3>
-            <p className="text-xs font-bold text-gray-500 mb-4">Top contributors to total sales</p>
+          <div className="lg:col-span-1 bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col h-[450px]">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center gap-2"><PieChartIcon size={16} className="text-indigo-600 dark:text-indigo-400"/> Sales by Company</h3>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-4">Top contributors to total sales</p>
             <div className="flex-1 w-full min-h-0 flex items-center justify-center relative">
               {companyAnalytics.length === 0 ? (
-                <p className="text-sm font-bold text-gray-400">No data available.</p>
+                <p className="text-sm font-bold text-gray-400 dark:text-slate-500">No data available.</p>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -849,62 +904,62 @@ export default function RevenueDashboard() {
           </div>
 
           {/* Company List */}
-          <div className="lg:col-span-2 bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 h-[450px] flex flex-col">
+          <div className="lg:col-span-2 bg-white dark:bg-[#0c1427] rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 h-[450px] flex flex-col">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2"><Building2 size={16} className="text-blue-600"/> Company Performance</h3>
-              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-black">{companyAnalytics.length} Clients</span>
+              <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2"><Building2 size={16} className="text-blue-600 dark:text-blue-400"/> Company Performance</h3>
+              <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-3 py-1 rounded-lg text-xs font-black">{companyAnalytics.length} Clients</span>
             </div>
             <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-2">
               {companyAnalytics.length === 0 ? (
-                 <div className="text-center py-20 text-gray-400 font-bold">No sales records found.</div>
+                 <div className="text-center py-20 text-gray-400 dark:text-slate-500 font-bold">No sales records found.</div>
               ) : (
                 companyAnalytics.map((comp, i) => (
-                  <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-white hover:shadow-md transition-all duration-150 group">
+                  <div key={i} className="p-4 bg-gray-50 dark:bg-[#090d1a] rounded-2xl border border-gray-100 dark:border-slate-800/80 hover:border-blue-200 dark:hover:border-blue-500/50 hover:bg-white dark:hover:bg-[#0c1427] hover:shadow-md transition-all duration-150 group">
                     {/* Header row */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}>{i + 1}</div>
-                        <h4 className="font-black text-gray-900 text-sm leading-tight flex items-center flex-wrap gap-2">
+                        <h4 className="font-black text-gray-900 dark:text-white text-sm leading-tight flex items-center flex-wrap gap-2">
                           {comp.name}
-                          {comp.id === 'walk_in' && <span className="text-[9px] bg-orange-100 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-md uppercase font-black tracking-widest">Walk-in</span>}
+                          {comp.id === 'walk_in' && <span className="text-[9px] bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-1.5 py-0.5 rounded-md uppercase font-black tracking-widest">Walk-in</span>}
                         </h4>
                       </div>
                       {/* Final Sales + discount summary */}
                       <div className="text-right">
-                        <p className="text-base font-black text-blue-700">AED {comp.billed.toLocaleString()}</p>
+                        <p className="text-base font-black text-blue-700 dark:text-blue-400">AED {comp.billed.toLocaleString()}</p>
                         {(comp.monthlyDiscount + comp.instantDiscount) > 0 && (
-                          <p className="text-[9px] font-black text-rose-500 flex items-center justify-end gap-0.5 mt-0.5">
+                          <p className="text-[9px] font-black text-rose-500 dark:text-rose-400 flex items-center justify-end gap-0.5 mt-0.5">
                             Discount: AED {(comp.monthlyDiscount + comp.instantDiscount).toLocaleString()}
                           </p>
                         )}
-                        <p className="text-[9px] font-bold text-emerald-600 mt-0.5">Collected: AED {comp.collected.toLocaleString()}</p>
+                        <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">Collected: AED {comp.collected.toLocaleString()}</p>
                       </div>
                     </div>
 
                     {/* Breakdown grid */}
-                    <div className="grid grid-cols-2 gap-2 mt-2 border-t border-gray-100 pt-3">
+                    <div className="grid grid-cols-2 gap-2 mt-2 border-t border-gray-100 dark:border-slate-800 pt-3">
                       {/* Monthly column */}
                       {comp.monthlyBilled > 0 && (
-                        <div className="bg-white rounded-xl border border-blue-100 p-2.5">
-                          <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Building2 size={9}/> Monthly Invoice</p>
-                          <p className="text-[11px] font-black text-gray-900">AED {comp.monthlyBilled.toLocaleString()}</p>
+                        <div className="bg-white dark:bg-[#070b14] rounded-xl border border-blue-100 dark:border-blue-900/40 p-2.5">
+                          <p className="text-[8px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Building2 size={9}/> Monthly Invoice</p>
+                          <p className="text-[11px] font-black text-gray-900 dark:text-slate-200">AED {comp.monthlyBilled.toLocaleString()}</p>
                           {comp.monthlyDiscount > 0 && <p className="text-[9px] font-bold text-rose-400 mt-0.5">Discount: AED {comp.monthlyDiscount.toLocaleString()}</p>}
-                          <p className="text-[9px] font-bold text-emerald-500 mt-0.5">Collected: AED {comp.monthlyCollected.toLocaleString()}</p>
+                          <p className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 mt-0.5">Collected: AED {comp.monthlyCollected.toLocaleString()}</p>
                         </div>
                       )}
 
                       {/* POS column */}
                       {comp.instantBilled > 0 && (
-                        <div className="bg-white rounded-xl border border-indigo-100 p-2.5">
-                          <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Store size={9}/> Instant POS</p>
-                          <p className="text-[11px] font-black text-gray-900">AED {comp.instantBilled.toLocaleString()}</p>
+                        <div className="bg-white dark:bg-[#070b14] rounded-xl border border-indigo-100 dark:border-indigo-900/40 p-2.5">
+                          <p className="text-[8px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Store size={9}/> Instant POS</p>
+                          <p className="text-[11px] font-black text-gray-900 dark:text-slate-200">AED {comp.instantBilled.toLocaleString()}</p>
                           {comp.instantDiscount > 0 && <p className="text-[9px] font-bold text-rose-400 mt-0.5">Discount: AED {comp.instantDiscount.toLocaleString()}</p>}
                           {/* Merged vs Individual breakdown */}
                           <div className="mt-1.5 space-y-0.5">
                             {comp.mergedInstantBilled > 0 && (
-                              <p className="text-[8px] font-bold text-teal-500 flex items-center gap-1">
+                              <p className="text-[8px] font-bold text-teal-500 dark:text-teal-400 flex items-center gap-1">
                                 <PackagePlus size={8}/> Merged w/ monthly: AED {comp.mergedInstantBilled.toLocaleString()}
-                                {comp.mergedInstantIds.length > 0 && <span className="bg-teal-100 text-teal-700 px-1 rounded font-black">{comp.mergedInstantIds.length}</span>}
+                                {comp.mergedInstantIds.length > 0 && <span className="bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-1 rounded font-black">{comp.mergedInstantIds.length}</span>}
                               </p>
                             )}
                             {comp.individualInstantBilled > 0 && (
@@ -913,7 +968,7 @@ export default function RevenueDashboard() {
                               </p>
                             )}
                           </div>
-                          <p className="text-[9px] font-bold text-emerald-500 mt-0.5">Collected: AED {comp.instantCollected.toLocaleString()}</p>
+                          <p className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 mt-0.5">Collected: AED {comp.instantCollected.toLocaleString()}</p>
                         </div>
                       )}
                     </div>
@@ -928,24 +983,24 @@ export default function RevenueDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           {/* ── WORK HISTORY (ACCORDION) ── */}
-          <div id="detailed-work-history" className="lg:col-span-7 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col h-[600px]">
-            <div className="p-6 md:p-8 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center shrink-0">
+          <div id="detailed-work-history" className="lg:col-span-7 bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col h-[600px]">
+            <div className="p-6 md:p-8 bg-slate-50/50 dark:bg-[#090d1a] border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><Briefcase size={20} className="text-indigo-600"/> Detailed Work History</h3>
-                <p className="text-xs font-bold text-gray-500 mt-1">Breakdown of Sales by Bookings</p>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2"><Briefcase size={20} className="text-indigo-600 dark:text-indigo-400"/> Detailed Work History</h3>
+                <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1">Breakdown of Sales by Bookings</p>
               </div>
-              <span className="bg-white border border-gray-200 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600">{filteredBookings.length} Tasks</span>
+              <span className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600 dark:text-slate-300">{filteredBookings.length} Tasks</span>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50/30">
+            <div className="p-6 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50/30 dark:bg-[#070b14]/50">
               {filteredBookings.length === 0 ? (
-                <div className="text-center py-20 text-gray-400 font-bold">No completed work found for this period.</div>
+                <div className="text-center py-20 text-gray-400 dark:text-slate-500 font-bold">No completed work found for this period.</div>
               ) : (
                 filteredBookings.map((b) => {
                   const validInventory = b.booking_inventory_logs?.filter((i: any) => i.extra_provided_qty > 0);
 
                   return (
-                    <div key={b.id} className={`border rounded-2xl overflow-hidden transition-all ${expandedBookingId === b.id ? 'border-indigo-300 shadow-md bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                    <div key={b.id} className={`border rounded-2xl overflow-hidden transition-all ${expandedBookingId === b.id ? 'border-indigo-300 dark:border-indigo-500/60 shadow-md bg-white dark:bg-[#0c1427]' : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0c1427] hover:border-gray-300 dark:hover:border-slate-700'}`}>
 
                       {/* Accordion Header */}
                       <div onClick={() => setExpandedBookingId(expandedBookingId === b.id ? null : b.id)} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group">
@@ -953,32 +1008,32 @@ export default function RevenueDashboard() {
 
                           {/* 🚨 HIGHLIGHTED COMPANY NAME */}
                           <div className="inline-flex items-center gap-2 mb-2">
-                             <span className="bg-gray-100 text-gray-900 border border-gray-200 px-3 py-1 rounded-lg text-sm font-black flex items-center gap-1.5 shadow-sm">
-                               <Building2 size={16} className="text-blue-600"/> {b.units?.companies?.name || "Unknown Company"}
+                             <span className="bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 px-3 py-1 rounded-lg text-sm font-black flex items-center gap-1.5 shadow-sm">
+                               <Building2 size={16} className="text-blue-600 dark:text-blue-400"/> {b.units?.companies?.name || "Unknown Company"}
                              </span>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                             <p className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                               Unit {b.units?.unit_number} <span className="text-gray-300 font-normal">|</span> {b.units?.building_name}
+                             <p className="font-bold text-gray-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+                               Unit {b.units?.unit_number} <span className="text-gray-300 dark:text-slate-600 font-normal">|</span> {b.units?.building_name}
                              </p>
                              {b.invoice_no ? (
-                               <span className="text-[9px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded uppercase font-black tracking-widest shadow-sm">Billed</span>
+                               <span className="text-[9px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 px-1.5 py-0.5 rounded uppercase font-black tracking-widest shadow-sm">Billed</span>
                              ) : (
-                               <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded uppercase font-black tracking-widest shadow-sm">Not Invoiced</span>
+                               <span className="text-[9px] bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 px-1.5 py-0.5 rounded uppercase font-black tracking-widest shadow-sm">Not Invoiced</span>
                              )}
                           </div>
-                          <p className="text-xs font-bold text-gray-500 flex items-center gap-2">
-                            <span className="uppercase text-gray-400">{b.booking_ref}</span> • {format(parseISO(b.cleaning_date), 'dd MMM yyyy')}
+                          <p className="text-xs font-bold text-gray-500 dark:text-slate-400 flex items-center gap-2">
+                            <span className="uppercase text-gray-400 dark:text-slate-500">{b.booking_ref}</span> • {format(parseISO(b.cleaning_date), 'dd MMM yyyy')}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-4 text-right">
                           <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total Value</p>
-                            <p className="text-lg font-black text-indigo-700">AED {b.grandTotal.toFixed(2)}</p>
+                            <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Total Value</p>
+                            <p className="text-lg font-black text-indigo-700 dark:text-indigo-400">AED {b.grandTotal.toFixed(2)}</p>
                           </div>
-                          <div className={`p-1.5 rounded-full transition-colors border ${expandedBookingId === b.id ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-gray-50 border-gray-200 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-500'}`}>
+                          <div className={`p-1.5 rounded-full transition-colors border ${expandedBookingId === b.id ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400' : 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 group-hover:text-indigo-500'}`}>
                             {expandedBookingId === b.id ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
                           </div>
                         </div>
@@ -987,26 +1042,26 @@ export default function RevenueDashboard() {
                       {/* Accordion Body (Breakdown) */}
                       <AnimatePresence>
                         {expandedBookingId === b.id && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-indigo-100 bg-indigo-50/20">
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-indigo-100 dark:border-slate-800 bg-indigo-50/20 dark:bg-[#090d1a]/50">
                             <div className="p-5 space-y-4 text-sm">
 
-                              <div className="flex justify-between items-center text-gray-800 font-bold bg-white p-3.5 rounded-xl border border-indigo-100 shadow-sm">
-                                <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-indigo-500"/> Base Service: {b.service_type}</span>
-                                <span className="font-black text-gray-900">AED {b.baseTotal.toFixed(2)}</span>
+                              <div className="flex justify-between items-center text-gray-800 dark:text-slate-200 font-bold bg-white dark:bg-[#0c1427] p-3.5 rounded-xl border border-indigo-100 dark:border-slate-800 shadow-sm">
+                                <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-indigo-500 dark:text-indigo-400"/> Base Service: {b.service_type}</span>
+                                <span className="font-black text-gray-900 dark:text-white">AED {b.baseTotal.toFixed(2)}</span>
                               </div>
 
                               {validInventory && validInventory.length > 0 && (
-                                <div className="pl-4 border-l-[3px] border-indigo-300 space-y-2.5 mt-3">
-                                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><PackagePlus size={12}/> Extra Inventory Provided</p>
+                                <div className="pl-4 border-l-[3px] border-indigo-300 dark:border-indigo-600 space-y-2.5 mt-3">
+                                  <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><PackagePlus size={12}/> Extra Inventory Provided</p>
                                   {validInventory.map((i: any, idx: number) => {
                                      const config = unitConfigs.find(c => c.unit_id === b.unit_id && c.equipment_id === i.equipment_id);
                                      const uPrice = i.supervisor_price !== null ? Number(i.supervisor_price) : Number(config?.extra_unit_price || 0);
                                      const itemTotal = i.extra_provided_qty * uPrice;
                                      if(itemTotal <= 0) return null; // 🚨 Hide 0 value items
                                      return (
-                                       <div key={idx} className="flex justify-between items-center text-gray-800 font-medium text-xs bg-white p-2.5 rounded-xl border border-indigo-50 shadow-sm">
+                                       <div key={idx} className="flex justify-between items-center text-gray-800 dark:text-slate-200 font-medium text-xs bg-white dark:bg-[#0c1427] p-2.5 rounded-xl border border-indigo-50 dark:border-slate-800 shadow-sm">
                                          <span>{i.extra_provided_qty}x {i.equipment_master?.item_name}</span>
-                                         <span className="font-black text-indigo-900">AED {itemTotal.toFixed(2)}</span>
+                                         <span className="font-black text-indigo-900 dark:text-indigo-300">AED {itemTotal.toFixed(2)}</span>
                                        </div>
                                      )
                                   })}
@@ -1014,15 +1069,15 @@ export default function RevenueDashboard() {
                               )}
 
                               {b.booking_extra_added_charges?.length > 0 && (
-                                <div className="pl-4 border-l-[3px] border-red-300 space-y-2.5 mt-3">
-                                  <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle size={12}/> Additional Charges / Damage</p>
+                                <div className="pl-4 border-l-[3px] border-red-300 dark:border-red-600 space-y-2.5 mt-3">
+                                  <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle size={12}/> Additional Charges / Damage</p>
                                   {b.booking_extra_added_charges.map((c: any, idx: number) => (
-                                     <div key={idx} className="flex justify-between items-center text-gray-800 font-medium text-xs bg-white p-2.5 rounded-xl border border-red-50 shadow-sm">
+                                     <div key={idx} className="flex justify-between items-center text-gray-800 dark:text-slate-200 font-medium text-xs bg-white dark:bg-[#0c1427] p-2.5 rounded-xl border border-red-50 dark:border-slate-800 shadow-sm">
                                        <span className="flex items-center gap-1.5">
-                                          <span className="text-[8px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-black">{c.charge_type}</span>
+                                          <span className="text-[8px] bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded uppercase font-black">{c.charge_type}</span>
                                           {c.item_description}
                                        </span>
-                                       <span className="font-black text-red-800">AED {Number(c.amount).toFixed(2)}</span>
+                                       <span className="font-black text-red-800 dark:text-red-400">AED {Number(c.amount).toFixed(2)}</span>
                                      </div>
                                   ))}
                                 </div>
@@ -1041,36 +1096,36 @@ export default function RevenueDashboard() {
           </div>
 
           {/* ── INVOICE HISTORY (LEDGER) ── */}
-          <div id="invoice-history" className="lg:col-span-5 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden h-[600px]">
-            <div className="p-6 md:p-8 border-b border-slate-100 shrink-0">
-              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><Calendar size={20} className="text-blue-600"/> Invoice History</h3>
-              <p className="text-xs font-bold text-gray-500 mt-1">Combined Monthly & POS History</p>
+          <div id="invoice-history" className="lg:col-span-5 bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden h-[600px]">
+            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2"><Calendar size={20} className="text-blue-600 dark:text-blue-400"/> Invoice History</h3>
+              <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1">Combined Monthly & POS History</p>
             </div>
 
-            <div className="p-4 md:p-6 overflow-y-auto space-y-3 custom-scrollbar flex-1 bg-slate-50/30">
+            <div className="p-4 md:p-6 overflow-y-auto space-y-3 custom-scrollbar flex-1 bg-slate-50/30 dark:bg-[#070b14]/50">
               {combinedLedger.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 font-bold">No ledger entries found.</div>
+                <div className="text-center py-10 text-gray-400 dark:text-slate-500 font-bold">No ledger entries found.</div>
               ) : (
                 combinedLedger.map((l: any, i: number) => (
-                  <div key={i} className="flex items-start justify-between p-4 md:p-5 border border-gray-200 rounded-2xl hover:bg-white hover:shadow-md hover:border-blue-200 transition-all bg-white group">
+                  <div key={i} className="flex items-start justify-between p-4 md:p-5 border border-gray-200 dark:border-slate-800 rounded-2xl hover:bg-white dark:hover:bg-[#0e172e] hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500/50 transition-all bg-white dark:bg-[#0c1427] group">
                     <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-xl transition-colors mt-0.5 border ${l.origin === 'Monthly Contract' ? 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100 group-hover:bg-indigo-100'}`}>
+                      <div className={`p-2.5 rounded-xl transition-colors mt-0.5 border ${l.origin === 'Monthly Contract' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/40 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40' : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800/40 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40'}`}>
                         {l.origin === 'Monthly Contract' ? <Building2 size={18}/> : <Store size={18}/>}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-gray-900 leading-tight">{l.name || "Unknown Client"}</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">{l.name || "Unknown Client"}</p>
 
                         <div className="flex flex-col items-start gap-1.5 mt-2">
                            <div className="flex items-center gap-1.5">
-                             <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${l.origin === 'Monthly Contract' ? 'bg-blue-100 text-blue-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                             <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${l.origin === 'Monthly Contract' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300' : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'}`}>
                                {l.origin === 'Monthly Contract' ? 'Reg Bill' : 'Inst Bill'}
                              </span>
-                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{l.invoice_no}</p>
+                             <p className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">{l.invoice_no}</p>
                            </div>
 
                            {/* 🚨 Invoice Date Range for Monthly Bills */}
                            {l.origin === 'Monthly Contract' && l.start_date && l.end_date && (
-                              <span className="text-[9px] bg-gray-50 border border-gray-200 text-gray-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide">
+                              <span className="text-[9px] bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide">
                                 Period: {format(parseISO(l.start_date), 'dd MMM')} - {format(parseISO(l.end_date), 'dd MMM yyyy')}
                               </span>
                            )}
@@ -1083,9 +1138,9 @@ export default function RevenueDashboard() {
                               <PackagePlus size={9}/> Merged Instant POS Bills
                             </p>
                             {l.mergedInstants.map((inst: any) => (
-                              <div key={inst.id} className="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1">
-                                <span className="text-[9px] font-black text-indigo-700 tracking-wide">{inst.invoice_no}</span>
-                                <span className="text-[9px] font-black text-indigo-900 shrink-0">AED {Number(inst.total_amount).toFixed(2)}</span>
+                              <div key={inst.id} className="flex items-center justify-between gap-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-800/40 rounded-lg px-2 py-1">
+                                <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-wide">{inst.invoice_no}</span>
+                                <span className="text-[9px] font-black text-indigo-900 dark:text-indigo-200 shrink-0">AED {Number(inst.total_amount).toFixed(2)}</span>
                               </div>
                             ))}
                           </div>
@@ -1097,19 +1152,19 @@ export default function RevenueDashboard() {
                       <div className="text-right">
                         {Number(l.discount || 0) > 0 && (
                           <p className="text-[9px] font-bold text-rose-400 flex items-center justify-end gap-1 mb-0.5">
-                            <span className="line-through text-gray-400">AED {Number(l.subtotal || l.total_amount).toFixed(2)}</span>
-                            <span className="bg-rose-50 border border-rose-200 text-rose-600 px-1 rounded font-black">-{Number(l.discount).toFixed(2)}</span>
+                            <span className="line-through text-gray-400 dark:text-slate-500">AED {Number(l.subtotal || l.total_amount).toFixed(2)}</span>
+                            <span className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 text-rose-600 dark:text-rose-400 px-1 rounded font-black">-{Number(l.discount).toFixed(2)}</span>
                           </p>
                         )}
-                        <p className="text-base font-black text-gray-900">AED {Number(l.total_amount).toFixed(2)}</p>
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded mt-1 inline-block border shadow-sm ${l.is_paid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                        <p className="text-base font-black text-gray-900 dark:text-white">AED {Number(l.total_amount).toFixed(2)}</p>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded mt-1 inline-block border shadow-sm ${l.is_paid ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'}`}>
                           {l.is_paid ? 'Paid' : 'Due'}
                         </span>
                       </div>
 
                       {/* 🚨 View PDF Button */}
                       {l.pdf_url && (
-                        <a href={l.pdf_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 text-gray-600 hover:bg-gray-900 hover:text-white rounded-lg transition-colors border border-gray-200 text-xs font-black shadow-sm" title="Open PDF">
+                        <a href={l.pdf_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-900 dark:hover:bg-slate-700 hover:text-white rounded-lg transition-colors border border-gray-200 dark:border-slate-700 text-xs font-black shadow-sm" title="Open PDF">
                           <Eye size={14}/> View
                         </a>
                       )}
@@ -1123,22 +1178,22 @@ export default function RevenueDashboard() {
         </div>
 
         {/* ── EXPENSES BY CATEGORY CHART ── */}
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden mt-8">
-          <div className="p-6 md:p-8 border-b border-slate-100">
-            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><PieChartIcon size={20} className="text-red-500"/> Expenses by Category</h3>
-            <p className="text-xs font-bold text-gray-500 mt-1">Spending breakdown across categories</p>
+        <div className="bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden mt-8">
+          <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2"><PieChartIcon size={20} className="text-red-500"/> Expenses by Category</h3>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1">Spending breakdown across categories</p>
           </div>
-          <div className="w-full p-4 md:p-6 bg-slate-50/30 overflow-x-auto custom-scrollbar">
+          <div className="w-full p-4 md:p-6 bg-slate-50/30 dark:bg-[#070b14]/50 overflow-x-auto custom-scrollbar">
             <div className="h-[350px] min-w-[600px]">
               {expenseCategoryData.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-400 font-bold">No expenses found.</div>
+                <div className="flex items-center justify-center h-full text-gray-400 dark:text-slate-500 font-bold">No expenses found.</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={expenseCategoryData} margin={{ top: 20, right: 30, left: 0, bottom: 40 }} barSize={40}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} dy={15} angle={-30} textAnchor="end" />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
-                    <RechartsTooltip content={<CustomExpenseTooltip />} cursor={{fill: '#f8fafc'}} />
+                    <RechartsTooltip content={<CustomExpenseTooltip />} cursor={{fill: '#334155', fillOpacity: 0.1}} />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                       {expenseCategoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
@@ -1152,18 +1207,18 @@ export default function RevenueDashboard() {
         </div>
 
         {/* ── EXPENSES SUMMARY ── */}
-        <div id="expense-summary" className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden mt-8 mb-8">
-          <div className="p-6 md:p-8 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center shrink-0">
+        <div id="expense-summary" className="bg-white dark:bg-[#0c1427] rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden mt-8 mb-8">
+          <div className="p-6 md:p-8 bg-slate-50/50 dark:bg-[#090d1a] border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
             <div>
-              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2"><TrendingDown size={20} className="text-red-600"/> Expense Summary</h3>
-              <p className="text-xs font-bold text-gray-500 mt-1">Expenses recorded in this period</p>
+              <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2"><TrendingDown size={20} className="text-red-600"/> Expense Summary</h3>
+              <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1">Expenses recorded in this period</p>
             </div>
-            <span className="bg-white border border-gray-200 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600 shadow-sm">Total: AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs font-black px-3 py-1.5 rounded-lg text-gray-600 dark:text-slate-300 shadow-sm">Total: AED {stats.totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
           </div>
           
-          <div className="p-4 md:p-6 bg-slate-50/30">
+          <div className="p-4 md:p-6 bg-slate-50/30 dark:bg-[#070b14]/50">
             {expenses.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 font-bold">No expenses recorded for this period.</div>
+              <div className="text-center py-10 text-gray-400 dark:text-slate-500 font-bold">No expenses recorded for this period.</div>
             ) : (
               <div className="space-y-3">
                 {expenses.map((expense) => {
@@ -1178,7 +1233,7 @@ export default function RevenueDashboard() {
                     <motion.div 
                       key={expense.id} 
                       layout
-                      className={`bg-white border border-gray-200 rounded-2xl p-4 md:p-5 transition-all group ${needsExpansion ? 'hover:border-blue-200 hover:shadow-md cursor-pointer' : ''}`}
+                      className={`bg-white dark:bg-[#0c1427] border border-gray-200 dark:border-slate-800 rounded-2xl p-4 md:p-5 transition-all group ${needsExpansion ? 'hover:border-blue-200 dark:hover:border-slate-700 hover:shadow-md cursor-pointer' : ''}`}
                       onClick={() => {
                         if (needsExpansion) setExpandedExpenseId(isExpanded ? null : expense.id);
                       }}
@@ -1191,22 +1246,22 @@ export default function RevenueDashboard() {
                           >
                             {categoryName}
                           </span>
-                          <span className="text-xs font-bold text-gray-400">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</span>
+                          <span className="text-xs font-bold text-gray-400 dark:text-slate-400">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</span>
                         </div>
                         
                         <div className="text-right shrink-0 flex items-center justify-end gap-1.5">
-                          <span className="text-xs font-black text-blue-900">AED</span>
-                          <span className="text-lg font-black text-red-600">{Number(expense.amount).toFixed(2)}</span>
+                          <span className="text-xs font-black text-blue-900 dark:text-blue-400">AED</span>
+                          <span className="text-lg font-black text-red-600 dark:text-red-400">{Number(expense.amount).toFixed(2)}</span>
                           
                           {needsExpansion && (
-                            <div className={`ml-2 p-1 rounded-full transition-colors ${isExpanded ? 'bg-blue-50 text-blue-500' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-400'}`}>
+                            <div className={`ml-2 p-1 rounded-full transition-colors ${isExpanded ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' : 'bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-400'}`}>
                               {isExpanded ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
                             </div>
                           )}
                         </div>
                       </div>
                       
-                      <div className={`text-sm font-medium w-full ${hasDescription ? 'text-gray-700' : 'text-gray-400 italic'}`}>
+                      <div className={`text-sm font-medium w-full ${hasDescription ? 'text-gray-700 dark:text-slate-300' : 'text-gray-400 dark:text-slate-500 italic'}`}>
                         {!hasDescription ? (
                           <span>{description}</span>
                         ) : isExpanded || !needsExpansion ? (
@@ -1214,7 +1269,7 @@ export default function RevenueDashboard() {
                         ) : (
                           <span>
                             {description.substring(0, 150)}... 
-                            <span className="text-blue-600 font-bold text-[10px] ml-1 uppercase tracking-widest hover:underline bg-blue-50 px-1 py-0.5 rounded">Read more</span>
+                            <span className="text-blue-600 dark:text-blue-400 font-bold text-[10px] ml-1 uppercase tracking-widest hover:underline bg-blue-50 dark:bg-blue-950/40 px-1 py-0.5 rounded">Read more</span>
                           </span>
                         )}
                       </div>

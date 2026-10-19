@@ -397,27 +397,27 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 md:p-8">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden"
+        className="w-full max-w-6xl bg-white dark:bg-[#0c1427] border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-6 md:px-8 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
+        <div className="flex justify-between items-center px-6 md:px-8 py-5 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-[#0f172a] shrink-0">
           <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               {isEditMode ? "Edit Duty Log" : "Manage Duty"}
             </h2>
-            <p className="text-sm text-gray-500 font-bold mt-1">
+            <p className="text-sm text-gray-500 dark:text-slate-400 font-bold mt-1">
               Unit {booking?.units?.unit_number} • {booking?.units?.companies?.name}
             </p>
           </div>
-          <button onClick={onClose} className="p-3 bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 rounded-full text-gray-600 transition shadow-sm">
+          <button onClick={onClose} className="p-3 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-slate-700 rounded-full text-gray-600 dark:text-slate-300 transition shadow-sm">
             <X size={22} />
           </button>
         </div>
 
         {/* Scrollable Body (Responsive Grid: 2 cols on lg, 1 col on mobile) */}
-        <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
+        <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-[#0c1427]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-32 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-32 text-gray-400 dark:text-slate-500">
               <Loader2 className="animate-spin mb-4" size={40} />
               <p className="font-bold text-lg uppercase tracking-widest">Loading details...</p>
             </div>
@@ -427,16 +427,16 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
               {/* --- LEFT COLUMN: Settings, Checklist, Equipment --- */}
               <div className="flex-1 space-y-6">
                 {/* Schedule & Team Settings */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-blue-50/40 p-5 md:p-6 rounded-2xl border border-blue-100 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-blue-50/40 dark:bg-slate-900/60 p-5 md:p-6 rounded-2xl border border-blue-100 dark:border-slate-800 shadow-sm">
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Calendar size={14} className="inline mr-1"/> Shift Date</label>
+                    <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase mb-2 block tracking-widest"><Calendar size={14} className="inline mr-1"/> Shift Date</label>
                     <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
+                      className="w-full p-3.5 rounded-xl border border-blue-200 dark:border-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-black shadow-sm transition-all" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Users size={14} className="inline mr-1"/> Assigned Team</label>
+                    <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase mb-2 block tracking-widest"><Users size={14} className="inline mr-1"/> Assigned Team</label>
                     <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
-                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all cursor-pointer">
+                      className="w-full p-3.5 rounded-xl border border-blue-200 dark:border-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-black shadow-sm transition-all cursor-pointer">
                       <option value="" className="text-gray-400">Unassigned</option>
                       {teams.length === 0 && <option disabled>No teams found for this date</option>}
                       {teams.map(t => (
@@ -448,34 +448,34 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
                     {selectedTeam && (() => {
                       const team = teams.find(t => t.id.toString() === selectedTeam);
                       return team?.membersStr ? (
-                        <p className="mt-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-lg border border-indigo-100">
+                        <p className="mt-2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
                           👥 {team.membersStr}
                         </p>
                       ) : null;
                     })()}
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> Start Time</label>
+                    <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> Start Time</label>
                     <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)}
-                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
+                      className="w-full p-3.5 rounded-xl border border-blue-200 dark:border-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-black shadow-sm transition-all" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> End Time</label>
+                    <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase mb-2 block tracking-widest"><Clock size={14} className="inline mr-1"/> End Time</label>
                     <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full p-3.5 rounded-xl border border-blue-200 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white text-gray-900 font-black shadow-sm transition-all" />
+                      className="w-full p-3.5 rounded-xl border border-blue-200 dark:border-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-black shadow-sm transition-all" />
                   </div>
                 </div>
 
                 {/* Checklist Panel */}
-                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
+                <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="p-5 bg-gray-50 dark:bg-[#0f172a] flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800/80 transition-colors"
                     onClick={() => setShowChecklist(!showChecklist)}>
-                    <div className="flex items-center gap-2 font-black text-gray-800 text-lg">
+                    <div className="flex items-center gap-2 font-black text-gray-800 dark:text-white text-lg">
                       <CheckCircle2 size={22} className="text-emerald-500" /> Task Checklist
                     </div>
                     <div className="flex items-center gap-3">
                       <button onClick={(e) => { e.stopPropagation(); setIsChecklistDone(!isChecklistDone); }}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-sm ${isChecklistDone ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>
                         {isChecklistDone && <CheckCircle2 size={16}/>} {isChecklistDone ? "All Done" : "Mark All Done"}
                       </button>
                       {showChecklist ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
@@ -486,17 +486,17 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
                     animate={{ height: showChecklist ? 'auto' : 0 }} 
                     className="overflow-hidden"
                   >
-                    <div className="p-5 text-sm font-bold text-gray-500 bg-white border-t border-gray-100">
+                    <div className="p-5 text-sm font-bold text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-800">
                       (Admin Mode) Checking the button above marks all tasks as completed for this log. No need to check individually.
                     </div>
                   </motion.div>
                 </div>
 
                 {/* Equipment Tracker Panel (ALWAYS MOUNTED FOR DATA PERSISTENCE) */}
-                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="p-5 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
+                <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="p-5 bg-gray-50 dark:bg-[#0f172a] flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800/80 transition-colors"
                     onClick={() => setShowEquipment(!showEquipment)}>
-                    <div className="flex items-center gap-2 font-black text-gray-800 text-lg">
+                    <div className="flex items-center gap-2 font-black text-gray-800 dark:text-white text-lg">
                       <ShieldCheck size={22} className="text-indigo-500" /> Equipment Tracker
                     </div>
                     {showEquipment ? <ChevronUp size={22} className="text-gray-400"/> : <ChevronDown size={22} className="text-gray-400"/>}
@@ -505,13 +505,13 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
                   <motion.div 
                     initial={false} 
                     animate={{ height: showEquipment ? 'auto' : 0 }} 
-                    className="overflow-hidden bg-white"
+                    className="overflow-hidden bg-white dark:bg-[#0c1427]"
                   >
-                    <div className="p-5 border-t border-gray-100">
+                    <div className="p-5 border-t border-gray-100 dark:border-slate-800">
                       {booking?.units?.id ? (
                         <EquipmentTracker bookingId={bookingId} unitId={booking.units.id} onDataChange={setEquipmentData} />
                       ) : (
-                        <p className="text-sm font-bold text-red-600 py-4 text-center bg-red-50 rounded-xl">Unit information missing.</p>
+                        <p className="text-sm font-bold text-red-600 dark:text-red-400 py-4 text-center bg-red-50 dark:bg-red-950/40 rounded-xl">Unit information missing.</p>
                       )}
                     </div>
                   </motion.div>
@@ -520,24 +520,24 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
 
               {/* --- RIGHT COLUMN: Media & Evidence (Drag & Drop) --- */}
               <div className="flex-1 space-y-6">
-                <div className="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-                  <h3 className="font-black text-gray-900 flex items-center gap-2 border-b border-gray-200 pb-3 text-lg"><Camera size={22} className="text-blue-500"/> Photo Evidence</h3>
+                <div className="bg-gray-50 dark:bg-slate-900/60 p-5 md:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm space-y-6">
+                  <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3 text-lg"><Camera size={22} className="text-blue-500"/> Photo Evidence</h3>
                   <DragDropPhotoSection title="Before Work Photos" photos={beforePhotos} setPhotos={setBeforePhotos} />
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-gray-200 dark:bg-slate-800" />
                   <DragDropPhotoSection title="After Work Photos" photos={afterPhotos} setPhotos={setAfterPhotos} />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100 shadow-sm space-y-4">
-                    <h4 className="font-black text-red-800 flex items-center gap-2"><AlertTriangle size={18}/> Damaged Items</h4>
+                  <div className="bg-red-50/50 dark:bg-red-950/20 p-5 rounded-2xl border border-red-100 dark:border-red-900/40 shadow-sm space-y-4">
+                    <h4 className="font-black text-red-800 dark:text-red-400 flex items-center gap-2"><AlertTriangle size={18}/> Damaged Items</h4>
                     <textarea placeholder="Enter remarks..." value={damagedRemarks} onChange={e => setDamagedRemarks(e.target.value)} rows={2}
-                      className="w-full p-3.5 rounded-xl border border-red-200 text-sm outline-none focus:border-red-400 font-black bg-white resize-none shadow-sm" />
+                      className="w-full p-3.5 rounded-xl border border-red-200 dark:border-red-900/50 text-sm outline-none focus:border-red-400 font-black bg-white dark:bg-slate-800 text-gray-900 dark:text-white resize-none shadow-sm" />
                     <DragDropPhotoSection minimal title="" photos={damagedPhotos} setPhotos={setDamagedPhotos} />
                   </div>
-                  <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-sm space-y-4">
-                    <h4 className="font-black text-amber-800 flex items-center gap-2"><Package size={18}/> Lost & Found</h4>
+                  <div className="bg-amber-50/50 dark:bg-amber-950/20 p-5 rounded-2xl border border-amber-100 dark:border-amber-900/40 shadow-sm space-y-4">
+                    <h4 className="font-black text-amber-800 dark:text-amber-400 flex items-center gap-2"><Package size={18}/> Lost & Found</h4>
                     <textarea placeholder="Enter remarks..." value={lostFoundRemarks} onChange={e => setLostFoundRemarks(e.target.value)} rows={2}
-                      className="w-full p-3.5 rounded-xl border border-amber-200 text-sm outline-none focus:border-amber-400 font-black bg-white resize-none shadow-sm" />
+                      className="w-full p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/50 text-sm outline-none focus:border-amber-400 font-black bg-white dark:bg-slate-800 text-gray-900 dark:text-white resize-none shadow-sm" />
                     <DragDropPhotoSection minimal title="" photos={lostFoundPhotos} setPhotos={setLostFoundPhotos} />
                   </div>
                 </div>
@@ -548,7 +548,7 @@ export default function AdminDutyModal({ isOpen, onClose, bookingId, onSuccess }
         </div>
 
         {/* Footer with Progress Bar & Buttons */}
-        <div className="p-6 md:px-8 border-t border-gray-100 bg-white shrink-0">
+        <div className="p-6 md:px-8 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0c1427] shrink-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button 
               onClick={() => handleSubmit("completed")} disabled={loading || submitting}
@@ -617,18 +617,18 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
 
   return (
     <div className={minimal ? "" : "space-y-3"}>
-      {!minimal && <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{title}</h4>}
+      {!minimal && <h4 className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">{title}</h4>}
 
       <div 
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
         onDrop={handleDrop}
-        className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 scale-[1.02]' : 'border-dashed border-gray-200 bg-white'}`}
+        className={`flex flex-wrap gap-3 p-4 rounded-2xl border-2 transition-all min-h-[120px] items-center ${isDragging ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 scale-[1.02]' : 'border-dashed border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'}`}
       >
         {displayPhotos.map((p: any, i: number) => {
           const src = typeof p === 'string' ? p : URL.createObjectURL(p);
           return (
-            <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm group">
+            <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm group">
               <img 
                 src={src} 
                 alt="Upload" 
@@ -636,7 +636,7 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
                 onClick={() => setLightboxIndex(i)}
               />
               <button onClick={() => setPhotos((prev: any) => prev.filter((_:any, idx:number) => idx !== i))} 
-                className="absolute top-1 right-1 bg-white/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50">
+                className="absolute top-1 right-1 bg-white/90 dark:bg-slate-900/90 p-1.5 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition shadow hover:bg-red-50 dark:hover:bg-red-950/40">
                 <Trash2 size={14}/>
               </button>
             </div>
@@ -644,20 +644,20 @@ function DragDropPhotoSection({ title, photos, setPhotos, minimal = false }: any
         })}
 
         {hiddenCount > 0 && !expanded && (
-          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
+          <button onClick={() => setExpanded(true)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex flex-col items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-sm shrink-0">
             <span className="font-black text-xl">+{hiddenCount}</span>
             <span className="text-[9px] font-bold uppercase tracking-widest mt-1">View All</span>
           </button>
         )}
 
         {expanded && photos.length > 4 && (
-          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm shrink-0">
+          <button onClick={() => setExpanded(false)} className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex flex-col items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-sm shrink-0">
             <Eye size={20} className="mb-1" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Show Less</span>
           </button>
         )}
 
-        <label className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-blue-300 flex flex-col items-center justify-center text-blue-500 cursor-pointer hover:bg-blue-50 transition bg-white shadow-sm shrink-0">
+        <label className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-700 flex flex-col items-center justify-center text-blue-500 dark:text-blue-400 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/40 transition bg-white dark:bg-slate-900/60 shadow-sm shrink-0">
           <UploadCloud size={24} className="mb-1" />
           <span className="text-[9px] font-black uppercase tracking-widest">Add Files</span>
           <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
