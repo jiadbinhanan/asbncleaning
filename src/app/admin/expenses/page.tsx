@@ -728,77 +728,102 @@ export default function ExpensesPage() {
     <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       
       {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0814]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-amber-500/20 shadow-sm transition-colors mb-3">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#0c0a1a] via-[#1a142e] to-[#0a0714] text-white border-b border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.18)] transition-all relative overflow-hidden">
+        {/* Glowing volcanic orb */}
+        <div className="absolute top-0 right-0 w-48 h-16 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+
         {/* Top slim bar */}
-        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+        <div className="relative px-3.5 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-400/30 flex items-center justify-center shrink-0">
               <TrendingUp size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Expense Management
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-amber-300/80 capitalize">
+              <p className="text-[10px] font-bold text-amber-300/80 capitalize">
                 {filterType === 'month' ? `Month: ${selectedMonth}` : filterType === 'custom' ? 'Custom Date' : 'All Expenses'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Quick Add Expense Button */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Quick Excel Export */}
             <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg font-black text-xs shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all"
+              onClick={exportExcel}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-emerald-300 hover:text-white transition-all shrink-0"
+              title="Export Excel"
+              aria-label="Export Excel"
             >
-              <Plus size={14} /> Add
+              <FileText size={15} />
+            </button>
+
+            {/* Quick PDF Export */}
+            <button
+              onClick={exportPDF}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-rose-300 hover:text-white transition-all shrink-0"
+              title="Export PDF"
+              aria-label="Export PDF"
+            >
+              <FileText size={15} />
             </button>
 
             {/* Refresh Button */}
             <button
               onClick={fetchExpensesAndStats}
               disabled={loading}
-              className="p-1.5 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-gray-300 hover:text-white transition-all disabled:opacity-50 shrink-0"
               title="Refresh Expenses"
               aria-label="Refresh Expenses"
             >
               {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
             </button>
+
+            {/* Quick Add Expense Button */}
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-black text-xs shadow-md shadow-blue-500/20 transition-all shrink-0"
+            >
+              <Plus size={14} /> Add
+            </button>
           </div>
         </div>
 
         {/* Filter Controls (Month / Custom / All) */}
-        <div className="flex items-center gap-1.5 px-3 pb-2.5 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setFilterType('month')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-              filterType === 'month'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
-            }`}
-          >
-            By Month
-          </button>
-          <button
-            onClick={() => setFilterType('custom')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-              filterType === 'custom'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
-            }`}
-          >
-            Custom Date
-          </button>
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-              filterType === 'all'
-                ? 'bg-slate-700 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
-            }`}
-          >
-            All Data
-          </button>
+        <div className="relative flex items-center gap-1.5 px-3 pb-2.5 overflow-x-auto no-scrollbar">
+          <div className="flex bg-white/10 p-0.5 rounded-xl border border-white/10">
+            <button
+              onClick={() => setFilterType('month')}
+              className={`px-3 py-1 rounded-lg text-xs font-black shrink-0 transition-all ${
+                filterType === 'month'
+                  ? 'bg-amber-500/30 text-amber-200 border border-amber-400/40 shadow-sm'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              By Month
+            </button>
+            <button
+              onClick={() => setFilterType('custom')}
+              className={`px-3 py-1 rounded-lg text-xs font-black shrink-0 transition-all ${
+                filterType === 'custom'
+                  ? 'bg-amber-500/30 text-amber-200 border border-amber-400/40 shadow-sm'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Custom Date
+            </button>
+            <button
+              onClick={() => setFilterType('all')}
+              className={`px-3 py-1 rounded-lg text-xs font-black shrink-0 transition-all ${
+                filterType === 'all'
+                  ? 'bg-amber-500/30 text-amber-200 border border-amber-400/40 shadow-sm'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              All Data
+            </button>
+          </div>
         </div>
 
         {/* Sub-pickers for month or custom */}
@@ -808,14 +833,14 @@ export default function ExpensesPage() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="px-3 pb-2.5 flex items-center gap-2 overflow-hidden"
+              className="relative px-3 pb-2.5 flex items-center gap-2 overflow-hidden"
             >
-              <span className="text-xs font-bold text-gray-500 dark:text-slate-400">Month:</span>
+              <span className="text-xs font-bold text-amber-300">Month:</span>
               <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+                className="bg-white/10 border border-white/20 rounded-lg text-xs font-bold text-white px-2 py-1 flex-1 outline-none dark-color-scheme"
               />
             </motion.div>
           )}
@@ -824,20 +849,20 @@ export default function ExpensesPage() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="px-3 pb-2.5 flex items-center gap-1.5 overflow-hidden"
+              className="relative px-3 pb-2.5 flex items-center gap-1.5 overflow-hidden"
             >
               <input
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+                className="bg-white/10 border border-white/20 rounded-lg text-xs font-bold text-white px-2 py-1 flex-1 outline-none dark-color-scheme"
               />
-              <span className="text-gray-400 text-xs">-</span>
+              <span className="text-white/60 text-xs">-</span>
               <input
                 type="date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
-                className="bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold text-gray-900 dark:text-white px-2 py-1 flex-1 outline-none"
+                className="bg-white/10 border border-white/20 rounded-lg text-xs font-bold text-white px-2 py-1 flex-1 outline-none dark-color-scheme"
               />
             </motion.div>
           )}
@@ -955,21 +980,21 @@ export default function ExpensesPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="w-full px-4 md:px-8 xl:px-12 -mt-12 relative z-20 space-y-6">
+      <div className="w-full px-3 md:px-8 xl:px-12 mt-3 md:-mt-12 relative z-20 space-y-5 md:space-y-6">
         
         {/* Tab Switcher */}
-        <div className="flex bg-white/80 dark:bg-[#0c1427]/90 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 mx-auto -mt-6 relative z-30 transition-colors">
+        <div className="flex bg-white/90 dark:bg-[#0c1427]/90 backdrop-blur-md p-1 md:p-1.5 rounded-xl md:rounded-2xl w-fit shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 mx-auto mt-0 md:-mt-6 relative z-30 transition-colors">
           <button 
             onClick={() => setActiveTab('transactions')} 
-            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
+            className={`px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg md:rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 sm:gap-2 ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
           >
-            Flexible Expenses <Kbd variant="glass" size="xs">1</Kbd>
+            Flexible Expenses <span className="hidden sm:inline-flex"><Kbd variant="glass" size="xs">1</Kbd></span>
           </button>
           <button 
             onClick={() => setActiveTab('planner')} 
-            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${activeTab === 'planner' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
+            className={`px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg md:rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 sm:gap-2 ${activeTab === 'planner' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'}`}
           >
-            Fixed Expenses <Kbd variant="glass" size="xs">2</Kbd>
+            Fixed Expenses <span className="hidden sm:inline-flex"><Kbd variant="glass" size="xs">2</Kbd></span>
           </button>
         </div>
 
@@ -1034,26 +1059,26 @@ export default function ExpensesPage() {
             </div>
             
             {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 w-full md:w-auto overflow-x-auto justify-end">
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto justify-start md:justify-end pb-1 no-scrollbar shrink-0">
               <button
                 onClick={fetchExpensesAndStats}
                 title="Refresh Expenses (Alt+R)"
                 aria-label="Refresh Expenses"
-                className="p-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center shadow-sm"
+                className="p-2 sm:p-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center shadow-sm shrink-0"
               >
-                <RotateCw size={16} />
+                <RotateCw size={15} />
               </button>
-              <button onClick={exportExcel} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-sm shadow-sm">
-                <FileText size={16} /> Excel <Kbd variant="glass" size="xs">Alt+E</Kbd>
+              <button onClick={exportExcel} className="flex shrink-0 items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-xs sm:text-sm shadow-sm">
+                <FileText size={15} /> Excel <span className="hidden sm:inline-flex"><Kbd variant="glass" size="xs">Alt+E</Kbd></span>
               </button>
-              <button onClick={exportPDF} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors font-bold text-sm shadow-sm">
-                <FileText size={16} /> PDF <Kbd variant="glass" size="xs">Alt+P</Kbd>
+              <button onClick={exportPDF} className="flex shrink-0 items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors font-bold text-xs sm:text-sm shadow-sm">
+                <FileText size={15} /> PDF <span className="hidden sm:inline-flex"><Kbd variant="glass" size="xs">Alt+P</Kbd></span>
               </button>
-              <button onClick={() => setIsSettingsModalOpen(true)} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-bold text-sm shadow-sm">
-                <Settings size={16} /> <span className="hidden sm:inline">Settings</span> <Kbd variant="glass" size="xs">Alt+S</Kbd>
+              <button onClick={() => setIsSettingsModalOpen(true)} className="flex shrink-0 items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors font-bold text-xs sm:text-sm shadow-sm">
+                <Settings size={15} /> <span className="hidden sm:inline">Settings</span> <span className="hidden sm:inline-flex"><Kbd variant="glass" size="xs">Alt+S</Kbd></span>
               </button>
-              <button onClick={() => setIsAddModalOpen(true)} className="flex shrink-0 items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all text-sm whitespace-nowrap">
-                <Plus size={18} /> Add Expense <Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd>
+              <button onClick={() => setIsAddModalOpen(true)} className="flex shrink-0 items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all text-xs sm:text-sm whitespace-nowrap">
+                <Plus size={16} /> Add Expense <span className="hidden sm:inline-flex"><Kbd variant="dark" size="xs" className="bg-blue-800 text-blue-200 border-blue-700">Alt+N</Kbd></span>
               </button>
             </div>
           </div>

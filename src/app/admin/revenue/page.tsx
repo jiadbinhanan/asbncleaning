@@ -507,21 +507,21 @@ export default function RevenueDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-clip">
 
       {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#06141a]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-emerald-500/20 shadow-sm transition-colors mb-3">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#02140d] via-[#0a3d2e] to-[#031c15] text-white border-b border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.18)] transition-all mb-3">
         {/* Top slim bar */}
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <TrendingUp size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Revenue Analytics
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-emerald-300/80 capitalize">
+              <p className="text-[10px] font-bold text-emerald-300/80 capitalize">
                 {dateFilter === 'this_month' ? 'This Month' : dateFilter === 'last_month' ? 'Last Month' : dateFilter === 'all_time' ? 'All Time' : 'Custom Period'}
               </p>
             </div>
@@ -533,26 +533,26 @@ export default function RevenueDashboard() {
               fetchRevenueData();
             }}
             disabled={isRefreshing}
-            className="p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all disabled:opacity-50 shrink-0"
             title="Refresh"
             aria-label="Refresh"
           >
-            {isRefreshing ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
+            {isRefreshing ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
           </button>
         </div>
 
         {/* Company Selector */}
         <div className="px-3 pb-2">
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#0c1427] px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800">
-            <Building2 size={13} className="text-emerald-500 shrink-0" />
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/15">
+            <Building2 size={13} className="text-emerald-400 shrink-0" />
             <select
               value={selectedCompanyId}
               onChange={(e) => setSelectedCompanyId(e.target.value)}
-              className="bg-transparent text-xs font-bold text-gray-800 dark:text-slate-200 outline-none w-full cursor-pointer"
+              className="bg-transparent text-xs font-bold text-white outline-none w-full cursor-pointer dark-color-scheme"
             >
-              <option value="all">All Companies & Walk-ins</option>
+              <option value="all" className="bg-[#0c1427] text-white">All Companies & Walk-ins</option>
               {allCompanies.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.id} className="bg-[#0c1427] text-white">
                   {c.name}
                 </option>
               ))}
@@ -564,40 +564,40 @@ export default function RevenueDashboard() {
         <div className="flex items-center gap-1.5 px-3 pb-2.5 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setDateFilter('this_month')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
               dateFilter === 'this_month'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-emerald-100 border border-white/10'
             }`}
           >
             This Month
           </button>
           <button
             onClick={() => setDateFilter('last_month')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
               dateFilter === 'last_month'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-emerald-100 border border-white/10'
             }`}
           >
             Last Month
           </button>
           <button
             onClick={() => setDateFilter('all_time')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
               dateFilter === 'all_time'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-emerald-100 border border-white/10'
             }`}
           >
             All Time
           </button>
           <button
             onClick={() => setDateFilter('custom')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
               dateFilter === 'custom'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+                ? 'bg-teal-500 text-white shadow-md shadow-teal-500/30 border border-teal-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-emerald-100 border border-white/10'
             }`}
           >
             Custom
@@ -617,18 +617,18 @@ export default function RevenueDashboard() {
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                className="bg-gray-50 dark:bg-[#0c1427] border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-900 dark:text-white px-2 py-1.5 rounded-lg flex-1 outline-none"
+                className="bg-white/10 border border-white/20 text-xs font-bold text-white px-2 py-1.5 rounded-lg flex-1 outline-none dark-color-scheme"
               />
-              <span className="text-gray-400 text-xs">-</span>
+              <span className="text-white/60 text-xs">-</span>
               <input
                 type="date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
-                className="bg-gray-50 dark:bg-[#0c1427] border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-900 dark:text-white px-2 py-1.5 rounded-lg flex-1 outline-none"
+                className="bg-white/10 border border-white/20 text-xs font-bold text-white px-2 py-1.5 rounded-lg flex-1 outline-none dark-color-scheme"
               />
               <button
                 onClick={applyCustomDate}
-                className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+                className="bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black px-3 py-1.5 rounded-lg shadow-sm"
               >
                 Apply
               </button>

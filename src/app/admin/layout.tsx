@@ -108,15 +108,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <div 
-        className={`flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ease-in-out
+        className={`flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-clip transition-all duration-300 ease-in-out
           ${/* Desktop: Adjust margin based on sidebar state so it doesn't overlap content */ ''}
           ${isDesktopCollapsed ? 'md:ml-[64px]' : 'md:ml-[210px]'}
         `}
       >
-        <TopNav onMenuClick={() => setIsMobileOpen(true)} />
+        <TopNav onMenuClick={() => setIsMobileOpen(prev => !prev)} isMobileOpen={isMobileOpen} />
 
-        {/* Padding and Margin set to 0 completely, strict overflow containment */}
-        <main className="flex-1 p-0 m-0 w-full max-w-full overflow-x-hidden">
+        {/* Padding and Margin set to 0 completely, strict overflow containment with overflow-x-clip to preserve position: sticky */}
+        <main className="flex-1 p-0 m-0 w-full max-w-full overflow-x-clip">
           {children}
         </main>
       </div>

@@ -170,13 +170,13 @@ export default function ChecklistManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans w-full max-w-full overflow-x-clip">
 
       {/* 1. MOBILE DEDICATED STICKY HEADER (Under TopNav h-16) */}
-      <div className="md:hidden sticky top-16 z-30 bg-[#0A192F]/95 dark:bg-[#070b14]/95 backdrop-blur-md border-b border-emerald-500/20 px-3 py-2.5 text-white shadow-lg">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#050716] via-[#0e1a38] to-[#04101e] text-white border-b border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.18)] transition-all mb-3 px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <ClipboardList size={18} />
             </div>
             <div className="min-w-0">
@@ -192,13 +192,13 @@ export default function ChecklistManagement() {
               onClick={fetchTemplates}
               disabled={loading}
               aria-label="Refresh templates"
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all"
+              className="p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all disabled:opacity-50"
             >
               {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
             </button>
             <button
               onClick={() => handleOpenEditor()}
-              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-sm transition-all flex items-center gap-1"
+              className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1 active:scale-95"
             >
               <Plus size={14} /> New
             </button>

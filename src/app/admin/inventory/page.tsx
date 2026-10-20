@@ -169,20 +169,20 @@ export default function InventoryManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-clip">
 
       {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#06060d]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-amber-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#06060d] via-[#1a1032] to-[#090b1c] text-white border-b border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <Package size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Inventory
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-amber-300/80">
+              <p className="text-[10px] font-bold text-amber-300/80">
                 {activeTab === 'stock' ? `${filteredEquipment.length} equipment` : `${ledgerLogs.length} logs`}
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function InventoryManagement() {
               onClick={fetchData}
               title="Refresh Inventory"
               aria-label="Refresh Inventory"
-              className="p-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg border border-gray-200 dark:border-slate-700"
+              className="p-1.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-lg border border-white/15 transition-all"
             >
               <RotateCw size={14} />
             </button>
@@ -202,7 +202,7 @@ export default function InventoryManagement() {
             {/* Adjust Stock */}
             <button
               onClick={() => openAdjustModal()}
-              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+              className="px-2.5 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-amber-500/20 active:scale-95"
             >
               <ArrowRightLeft size={14} /> Adjust
             </button>
@@ -210,11 +210,11 @@ export default function InventoryManagement() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-gray-100 dark:bg-slate-800 p-0.5 rounded-xl border border-gray-200 dark:border-slate-700 mt-2">
+        <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15 mt-2">
           <button
             onClick={() => setActiveTab('stock')}
             className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1 ${
-              activeTab === 'stock' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              activeTab === 'stock' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-200 hover:text-white'
             }`}
           >
             <Package size={13} /> Current Stock
@@ -222,7 +222,7 @@ export default function InventoryManagement() {
           <button
             onClick={() => setActiveTab('ledger')}
             className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all flex items-center justify-center gap-1 ${
-              activeTab === 'ledger' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              activeTab === 'ledger' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-200 hover:text-white'
             }`}
           >
             <History size={13} /> Ledger Logs

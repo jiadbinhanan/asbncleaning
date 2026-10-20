@@ -77,7 +77,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       >
         <SupervisorTopNav onMenuClick={() => setIsMobileOpen(true)} />
 
-        <main className="p-4 md:p-8 overflow-x-hidden">
+        <main className="p-4 md:p-8 overflow-x-clip">
           {children}
         </main>
       </div>

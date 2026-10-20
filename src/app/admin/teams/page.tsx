@@ -334,20 +334,20 @@ export default function AdminTeamManagement() {
   // JSX
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen pb-20 font-sans text-gray-800 dark:text-slate-200 bg-[#F8FAFC] dark:bg-[#070b14] w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen pb-20 font-sans text-gray-800 dark:text-slate-200 bg-[#F8FAFC] dark:bg-[#070b14] w-full max-w-full overflow-x-clip">
 
       {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#040e1a]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#070412] via-[#190f38] to-[#090418] text-white border-b border-purple-500/30 shadow-[0_4px_24px_rgba(168,85,247,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <Briefcase size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Team Directory
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+              <p className="text-[10px] font-bold text-purple-300/80">
                 {activeTab === 'active' ? `${activeTeams.length} squads` : `${archivedTeams.length} archived`}
               </p>
             </div>
@@ -357,7 +357,7 @@ export default function AdminTeamManagement() {
             {/* New Squad */}
             <button
               onClick={openCreateModal}
-              className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+              className="px-2.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-purple-500/20 active:scale-95"
             >
               <UserPlus size={14} /> Add
             </button>
@@ -365,11 +365,11 @@ export default function AdminTeamManagement() {
         </div>
 
         {/* Tab Pill Buttons */}
-        <div className="flex bg-gray-100 dark:bg-[#081528] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800 mt-2">
+        <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15 mt-2">
           <button
             onClick={() => { setActiveTab('active'); closeAssignPanel(); }}
             className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all ${
-              activeTab === 'active' ? 'bg-white dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              activeTab === 'active' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-200 hover:text-white'
             }`}
           >
             Active Roster
@@ -377,7 +377,7 @@ export default function AdminTeamManagement() {
           <button
             onClick={() => { setActiveTab('archived'); closeAssignPanel(); }}
             className={`flex-1 py-1.5 rounded-lg font-black text-xs transition-all ${
-              activeTab === 'archived' ? 'bg-white dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 shadow-sm' : 'text-gray-500 dark:text-slate-400'
+              activeTab === 'archived' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-200 hover:text-white'
             }`}
           >
             Archived History
@@ -385,13 +385,13 @@ export default function AdminTeamManagement() {
         </div>
 
         {activeTab === 'archived' && (
-          <div className="flex items-center gap-2 mt-2 bg-gray-50 dark:bg-[#0c1a30] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-cyan-500/20">
-            <Filter size={14} className="text-cyan-500 shrink-0" />
+          <div className="flex items-center gap-2 mt-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+            <Filter size={14} className="text-purple-300 shrink-0" />
             <input
               type="date"
               value={archiveDate}
               onChange={e => setArchiveDate(e.target.value)}
-              className="bg-transparent outline-none text-gray-700 dark:text-slate-200 font-bold text-xs w-full cursor-pointer"
+              className="bg-transparent outline-none text-white font-bold text-xs w-full cursor-pointer dark-color-scheme"
             />
           </div>
         )}

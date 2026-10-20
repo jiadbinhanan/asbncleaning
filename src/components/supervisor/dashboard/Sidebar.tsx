@@ -50,7 +50,7 @@ export default function SupervisorSidebar({
         onClick={() => {
           if (window.innerWidth >= 768) setIsDesktopCollapsed(!isDesktopCollapsed);
         }}
-        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 flex flex-col transition-all duration-300 ease-in-out cursor-pointer
+        className={`fixed inset-y-0 left-0 h-[100dvh] max-h-[100dvh] bg-white border-r border-gray-200 z-50 flex flex-col transition-all duration-300 ease-in-out cursor-pointer
           ${
             isMobileOpen ? 'translate-x-0' : '-translate-x-full'
           }
@@ -94,7 +94,7 @@ export default function SupervisorSidebar({
         </div>
 
         {/* Menu Items */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar py-6 px-4 space-y-2">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar py-6 px-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (

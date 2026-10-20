@@ -349,22 +349,22 @@ export default function WorkRecords() {
   ]);
 
   return (
-    <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-hidden'>
+    <div className='min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-clip'>
 
       {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0814]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-rose-500/20 shadow-sm transition-colors mb-4">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#09030b] via-[#1a0518] to-[#120416] text-white border-b border-rose-500/30 shadow-[0_4px_24px_rgba(244,63,94,0.18)] transition-all mb-3">
         {/* Top Slim Action Bar */}
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
           {/* Left: Compact Title & Badge */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-rose-500/20 text-blue-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <FileCheck size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Work Records
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-rose-300/80">
+              <p className="text-[10px] font-bold text-rose-300/80">
                 {stats.totalBookings} records
               </p>
             </div>
@@ -378,13 +378,13 @@ export default function WorkRecords() {
                 setShowMobileSearch(prev => !prev);
                 if (showFilters) setShowFilters(false);
               }}
-              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              className={`p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                searchQuery || showMobileSearch ? 'bg-rose-500/30 text-rose-200 border-rose-400/50 ring-1 ring-rose-400/40' : ''
               }`}
               title="Search"
               aria-label="Search"
             >
-              <Search size={16} />
+              <Search size={15} />
             </button>
 
             {/* Filter Toggle */}
@@ -393,37 +393,37 @@ export default function WorkRecords() {
                 setShowFilters(prev => !prev);
                 if (showMobileSearch) setShowMobileSearch(false);
               }}
-              className={`relative p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                showFilters || filterCompany || filterStatus || filterHasExtra ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30' : ''
+              className={`relative p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                showFilters || filterCompany || filterStatus || filterHasExtra ? 'bg-rose-500/30 text-rose-200 border-rose-400/50 ring-1 ring-rose-400/40' : ''
               }`}
               title="Filters"
               aria-label="Filters"
             >
-              <Filter size={16} />
+              <Filter size={15} />
               {(filterCompany || filterStatus || filterHasExtra) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0c0814]" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-400 ring-2 ring-[#120416]" />
               )}
             </button>
 
             {/* Export CSV */}
             <button
               onClick={handleExportCSV}
-              className="p-2 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+              className="p-1.5 rounded-lg text-rose-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all"
               title="Export CSV"
               aria-label="Export CSV"
             >
-              <FileSpreadsheet size={16} />
+              <FileSpreadsheet size={15} />
             </button>
 
             {/* Refresh */}
             <button
               onClick={fetchRecords}
               disabled={loading}
-              className="p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all disabled:opacity-50"
               title="Refresh"
               aria-label="Refresh"
             >
-              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={16} />}
+              {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={15} />}
             </button>
           </div>
         </div>
@@ -435,7 +435,7 @@ export default function WorkRecords() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="px-3 pb-2.5 overflow-hidden border-t border-gray-100 dark:border-slate-800/80 pt-2"
+              className="px-3 pb-2.5 overflow-hidden border-t border-white/10 pt-2"
             >
               <div className="relative flex items-center">
                 <input
@@ -443,14 +443,14 @@ export default function WorkRecords() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search ID, company, unit..."
-                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-8 pr-8 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-rose-500"
                   autoFocus
                 />
                 <Search size={14} className="absolute left-2.5 text-gray-400" />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-white p-0.5"
+                    className="absolute right-2 text-gray-400 hover:text-white p-0.5"
                   >
                     <X size={14} />
                   </button>
@@ -463,8 +463,8 @@ export default function WorkRecords() {
                     onClick={() => setSearchQuery(searchQuery === s.value ? "" : s.value)}
                     className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
                       searchQuery === s.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                        ? 'bg-rose-600 text-white'
+                        : 'bg-white/10 text-gray-300 hover:text-white hover:bg-white/20'
                     }`}
                   >
                     {s.label}
@@ -475,36 +475,36 @@ export default function WorkRecords() {
           )}
         </AnimatePresence>
 
-        {/* Mobile 3-Column Micro Metrics Grid (Clean, Side-by-side, No collision) */}
+        {/* Mobile 3-Column Micro Metrics Grid (Clean, Side-by-side, Desktop Theme Integrated) */}
         {!loading && (
           <div className="grid grid-cols-3 gap-2 px-3 pb-2.5 pt-1">
-            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-rose-500/20 rounded-xl p-2 flex items-center gap-1.5">
-              <div className="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+            <div className="bg-white/10 dark:bg-black/40 border border-white/15 dark:border-rose-500/20 backdrop-blur-md rounded-xl p-2 flex items-center gap-1.5 shadow-sm">
+              <div className="p-1 rounded-lg bg-rose-500/20 text-rose-300 shrink-0">
                 <Activity size={13} />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-bold text-gray-400 dark:text-rose-300/70 uppercase truncate">Records</p>
-                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.totalBookings}</p>
+                <p className="text-[9px] font-bold text-rose-200/80 uppercase truncate">Records</p>
+                <p className="text-xs font-black text-white leading-tight">{stats.totalBookings}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-amber-500/20 rounded-xl p-2 flex items-center gap-1.5">
-              <div className="p-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
+            <div className="bg-white/10 dark:bg-black/40 border border-white/15 dark:border-amber-500/20 backdrop-blur-md rounded-xl p-2 flex items-center gap-1.5 shadow-sm">
+              <div className="p-1 rounded-lg bg-amber-500/20 text-amber-300 shrink-0">
                 <Wallet size={13} />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-bold text-gray-400 dark:text-amber-300/70 uppercase truncate">Extra</p>
-                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight truncate">AED {stats.totalExtra.toFixed(0)}</p>
+                <p className="text-[9px] font-bold text-amber-200/80 uppercase truncate">Extra</p>
+                <p className="text-xs font-black text-white leading-tight truncate">AED {stats.totalExtra.toFixed(0)}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-[#120816]/70 border border-gray-100 dark:border-purple-500/20 rounded-xl p-2 flex items-center gap-1.5">
-              <div className="p-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
+            <div className="bg-white/10 dark:bg-black/40 border border-white/15 dark:border-purple-500/20 backdrop-blur-md rounded-xl p-2 flex items-center gap-1.5 shadow-sm">
+              <div className="p-1 rounded-lg bg-purple-500/20 text-purple-300 shrink-0">
                 <FileCheck size={13} />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-bold text-gray-400 dark:text-purple-300/70 uppercase truncate">Audits</p>
-                <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.pendingAudits}</p>
+                <p className="text-[9px] font-bold text-purple-200/80 uppercase truncate">Audits</p>
+                <p className="text-xs font-black text-white leading-tight">{stats.pendingAudits}</p>
               </div>
             </div>
           </div>

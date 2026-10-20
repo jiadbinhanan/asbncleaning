@@ -340,21 +340,21 @@ export default function CompanyManagement() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] font-sans pb-24 w-full max-w-full overflow-x-hidden">
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] font-sans pb-24 w-full max-w-full overflow-x-clip">
         <Toaster position="top-center" />
 
         {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-        <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#050914]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-blue-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+        <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#050914] via-[#0e1832] to-[#070d1e] text-white border-b border-blue-500/30 shadow-[0_4px_24px_rgba(59,130,246,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-amber-500/20 text-blue-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center shrink-0 shadow-sm">
                 <Building2 size={18} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+                <h1 className="text-sm font-black text-white leading-tight truncate">
                   Properties
                 </h1>
-                <p className="text-[10px] font-bold text-gray-500 dark:text-blue-300/80">
+                <p className="text-[10px] font-bold text-blue-300/80">
                   {companies.length} clients registered
                 </p>
               </div>
@@ -362,17 +362,17 @@ export default function CompanyManagement() {
 
             <div className="flex items-center gap-1.5 shrink-0">
               {/* View Toggle */}
-              <div className="flex bg-gray-100 dark:bg-slate-800 p-0.5 rounded-lg border border-gray-200 dark:border-slate-700">
+              <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-lg border border-white/15">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-blue-200 hover:text-white'}`}
                   title="Grid View"
                 >
                   <Grid size={14} />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400'}`}
+                  className={`p-1.5 rounded-md text-xs transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'text-blue-200 hover:text-white'}`}
                   title="List View"
                 >
                   <List size={14} />
@@ -383,7 +383,7 @@ export default function CompanyManagement() {
               <button
                 onClick={fetchEverything}
                 disabled={loading}
-                className="p-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg border border-gray-200 dark:border-slate-700"
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-lg border border-white/15 transition-all disabled:opacity-50"
                 title="Refresh"
               >
                 {loading ? <DotsLoader size="xs" variant="primary" /> : <RotateCw size={14} />}
@@ -392,7 +392,7 @@ export default function CompanyManagement() {
               {/* Add Client */}
               <button
                 onClick={() => setIsAddCompanyOpen(true)}
-                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-blue-500/20 active:scale-95"
               >
                 <Plus size={14} /> Add
               </button>

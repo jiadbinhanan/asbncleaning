@@ -366,12 +366,11 @@ export default function TeamsManagerModal() {
             variants={modalVariants}
             initial="hidden" animate="visible" exit="exit"
             transition={{ type: 'spring' as const, stiffness: 320, damping: 28 }}
-            className="relative w-full sm:max-w-6xl bg-[#F8FAFC] dark:bg-[#070b14] rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden"
-            style={{ height: '94vh' }}
+            className="relative w-full sm:max-w-6xl bg-[#F8FAFC] dark:bg-[#070b14] rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl z-10 flex flex-col overflow-hidden h-[85dvh] sm:h-[88vh] max-h-[calc(100dvh-3.5rem)]"
           >
 
             {/* ══ HEADER ══════════════════════════════════════════════════ */}
-            <div className="bg-gradient-to-br from-[#0A192F] via-[#112240] to-black text-white px-6 pt-7 pb-6 relative overflow-hidden shrink-0">
+            <div className="bg-gradient-to-br from-[#0A192F] via-[#112240] to-black text-white px-4 pt-5 pb-4 sm:px-6 sm:pt-7 sm:pb-6 relative overflow-hidden shrink-0">
               <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
 
               {/* Top row */}

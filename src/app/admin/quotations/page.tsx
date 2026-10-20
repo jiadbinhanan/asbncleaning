@@ -321,32 +321,32 @@ export default function QuotationManager() {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <div className="min-h-screen pb-20 bg-[#F4F7FA] dark:bg-[#070b14] w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen pb-20 bg-[#F4F7FA] dark:bg-[#070b14] w-full max-w-full overflow-x-clip">
 
       {/* ── MOBILE APP-OPTIMIZED HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-[#0c0819]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-purple-500/20 shadow-sm transition-colors mb-3">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#070512] via-[#1a0f35] to-[#0b051b] text-white border-b border-purple-500/30 shadow-[0_4px_24px_rgba(168,85,247,0.18)] transition-all mb-3">
         {/* Top slim bar */}
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <FileText size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Quotations
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-purple-300/80 capitalize">
+              <p className="text-[10px] font-bold text-purple-300/80 capitalize">
                 {activeView === 'generator' ? 'Generator' : activeView === 'history' ? `${quotations.length} quotes` : 'Templates'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {activeView === "generator" && (
               <button
                 onClick={handleSaveAndDownload}
                 disabled={isGenerating || loadingTemplates}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-black text-xs shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:opacity-60"
+                className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg font-black text-xs shadow-md shadow-purple-500/20 transition-all disabled:opacity-60"
               >
                 {isGenerating ? <DotsLoader size="xs" variant="white" /> : <Download size={14} />}
                 <span>Save</span>
@@ -356,7 +356,7 @@ export default function QuotationManager() {
               <button
                 onClick={fetchQuotations}
                 disabled={loadingHistory}
-                className="p-1.5 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all disabled:opacity-50"
                 title="Refresh history"
                 aria-label="Refresh history"
               >
@@ -372,10 +372,10 @@ export default function QuotationManager() {
             <button
               key={tab.id}
               onClick={() => setActiveView(tab.id)}
-              className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                 activeView === tab.id
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30 border border-purple-400/50'
+                  : 'bg-white/10 hover:bg-white/20 text-purple-200 border border-white/10'
               }`}
             >
               {tab.icon}

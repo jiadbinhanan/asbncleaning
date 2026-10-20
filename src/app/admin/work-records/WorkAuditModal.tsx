@@ -351,15 +351,15 @@ export default function WorkAuditModal({
     <motion.div
       initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 220 }}
-      className='fixed bottom-0 left-0 w-full h-[92vh] z-50 flex flex-col rounded-t-[2.5rem] overflow-hidden shadow-[0_-24px_80px_-10px_rgba(0,0,0,0.4)]'
+      className='fixed bottom-0 inset-x-0 w-full h-[85dvh] sm:h-[88vh] max-h-[calc(100dvh-4rem)] z-50 flex flex-col rounded-t-[2rem] sm:rounded-t-[2.5rem] overflow-hidden shadow-[0_-24px_80px_-10px_rgba(0,0,0,0.4)]'
     >
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div className='bg-gradient-to-r from-gray-900 via-[#0d1f35] to-gray-900 text-white shrink-0'>
-        <div className='flex justify-center pt-3 pb-1'>
+        <div className='flex justify-center pt-2.5 pb-1'>
           <div className='w-12 h-1 bg-white/20 rounded-full' />
         </div>
 
-        <div className='px-6 md:px-10 pt-3 pb-4 flex justify-between items-start'>
+        <div className='px-4 sm:px-6 md:px-10 pt-2 sm:pt-3 pb-3 sm:pb-4 flex justify-between items-start'>
           <div className='flex-1 min-w-0 pr-4'>
             <p className='text-[9px] font-black text-blue-300 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5'>
               <ShieldCheck size={11} /> Admin · Work Audit Report

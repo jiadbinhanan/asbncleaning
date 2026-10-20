@@ -821,7 +821,7 @@ export default function InvoiceManagement() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative transition-colors duration-200 w-full max-w-full overflow-x-clip">
       <Toaster position="top-center" />
 
       {/* Delete modal (History tab) */}
@@ -844,30 +844,30 @@ export default function InvoiceManagement() {
       </AnimatePresence>
 
       {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#040817]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-indigo-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#040817] via-[#0d1433] to-[#050b1d] text-white border-b border-indigo-500/30 shadow-[0_4px_24px_rgba(99,102,241,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
         {/* Top bar */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-indigo-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-cyan-300 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <FileDigit size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Invoices
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-indigo-300/80">
+              <p className="text-[10px] font-bold text-indigo-300/80">
                 {activeMainTab === 'monthly' ? (activeTab === 'history' ? `${filteredHistory.length} invoices` : 'Monthly Billing') : 'Instant POS'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {activeTab === 'history' && (
               <>
                 <button
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                    showAdvancedFilters || activeFilterCount > 0 ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+                  className={`p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                    showAdvancedFilters || activeFilterCount > 0 ? 'bg-indigo-500/30 text-indigo-200 border-indigo-400/50 ring-1 ring-indigo-400/40' : ''
                   }`}
                   title="Filters"
                   aria-label="Filters"
@@ -876,7 +876,7 @@ export default function InvoiceManagement() {
                 </button>
                 <button
                   onClick={() => setIsExportModalOpen(true)}
-                  className="p-2 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all"
                   title="Export"
                   aria-label="Export"
                 >
@@ -890,11 +890,11 @@ export default function InvoiceManagement() {
         {/* Dual Segmented Controls */}
         <div className="grid grid-cols-2 gap-1.5 pt-1">
           {/* Main Tab (Monthly / Instant) */}
-          <div className="flex bg-gray-100 dark:bg-[#0c1427] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800">
+          <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15">
             <button
               onClick={() => setActiveMainTab('monthly')}
               className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
-                activeMainTab === 'monthly' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+                activeMainTab === 'monthly' ? 'bg-blue-600 text-white shadow-sm' : 'text-indigo-200 hover:text-white'
               }`}
             >
               <Calendar size={11} /> Monthly
@@ -902,7 +902,7 @@ export default function InvoiceManagement() {
             <button
               onClick={() => setActiveMainTab('instant')}
               className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
-                activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+                activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-200 hover:text-white'
               }`}
             >
               <PackagePlus size={11} /> POS
@@ -910,11 +910,11 @@ export default function InvoiceManagement() {
           </div>
 
           {/* Sub Tab (Generate / History) */}
-          <div className="flex bg-gray-100 dark:bg-[#0c1427] p-0.5 rounded-xl border border-gray-200 dark:border-slate-800">
+          <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15">
             <button
               onClick={() => setActiveTab('generate')}
               className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
-                activeTab === 'generate' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-gray-500 dark:text-slate-400'
+                activeTab === 'generate' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-indigo-200 hover:text-white'
               }`}
             >
               <PlusCircle size={11} /> New
@@ -922,7 +922,7 @@ export default function InvoiceManagement() {
             <button
               onClick={() => setActiveTab('history')}
               className={`flex-1 py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 ${
-                activeTab === 'history' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-gray-500 dark:text-slate-400'
+                activeTab === 'history' ? (activeMainTab === 'instant' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-indigo-200 hover:text-white'
               }`}
             >
               <History size={11} /> History

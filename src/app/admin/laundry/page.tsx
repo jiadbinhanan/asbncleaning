@@ -230,13 +230,13 @@ export default function AdminLaundryManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-24 font-sans relative w-full max-w-full overflow-x-clip">
       
       {/* 1. MOBILE DEDICATED STICKY HEADER (Under TopNav h-16) */}
-      <div className="md:hidden sticky top-16 z-30 bg-[#0A192F]/95 dark:bg-[#070b14]/95 backdrop-blur-md border-b border-cyan-500/20 px-3 py-2.5 text-white shadow-lg space-y-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#030e16] via-[#092233] to-[#04121c] text-white border-b border-cyan-500/30 shadow-[0_4px_24px_rgba(6,182,212,0.18)] transition-all mb-3 px-3 py-2.5 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <WashingMachine size={18} />
             </div>
             <div className="min-w-0">
@@ -251,8 +251,8 @@ export default function AdminLaundryManagement() {
               aria-label="Toggle Search"
               className={`p-1.5 rounded-lg border transition-all ${
                 showMobileSearch || searchQuery
-                  ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/40"
-                  : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                  ? "bg-cyan-500/30 text-cyan-200 border-cyan-400/50 shadow-sm"
+                  : "bg-white/10 text-white/80 border-white/10 hover:bg-white/20 hover:text-white"
               }`}
             >
               <Search size={15} />
@@ -260,7 +260,7 @@ export default function AdminLaundryManagement() {
             <button
               onClick={fetchLaundry}
               aria-label="Refresh Laundry"
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white/80 hover:text-white transition-all"
             >
               <RotateCw size={15} />
             </button>
@@ -270,11 +270,11 @@ export default function AdminLaundryManagement() {
         {/* Dual Segmented Controls on Mobile */}
         <div className="flex items-center gap-2">
           {/* Dispatch vs Receive */}
-          <div className="flex bg-white/10 dark:bg-white/5 p-0.5 rounded-xl border border-white/10 flex-1">
+          <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15 flex-1">
             <button
               onClick={() => { setActiveTab('send'); setViewMode('pending'); }}
               className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
-                activeTab === 'send' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                activeTab === 'send' ? 'bg-cyan-600 text-white shadow-sm' : 'text-cyan-200 hover:text-white'
               }`}
             >
               <Send size={12} /> Dispatch
@@ -282,7 +282,7 @@ export default function AdminLaundryManagement() {
             <button
               onClick={() => { setActiveTab('receive'); setViewMode('pending'); }}
               className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
-                activeTab === 'receive' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                activeTab === 'receive' ? 'bg-emerald-600 text-white shadow-sm' : 'text-cyan-200 hover:text-white'
               }`}
             >
               <PackageCheck size={12} /> Receive
@@ -290,11 +290,11 @@ export default function AdminLaundryManagement() {
           </div>
 
           {/* Action vs History */}
-          <div className="flex bg-white/10 dark:bg-white/5 p-0.5 rounded-xl border border-white/10 shrink-0">
+          <div className="flex bg-white/10 backdrop-blur-md p-0.5 rounded-xl border border-white/15 shrink-0">
             <button
               onClick={() => setViewMode('pending')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
-                viewMode === 'pending' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                viewMode === 'pending' ? 'bg-blue-600 text-white shadow-sm' : 'text-cyan-200 hover:text-white'
               }`}
             >
               Action
@@ -302,7 +302,7 @@ export default function AdminLaundryManagement() {
             <button
               onClick={() => setViewMode('history')}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
-                viewMode === 'history' ? 'bg-gray-900 dark:bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                viewMode === 'history' ? 'bg-blue-600 text-white shadow-sm' : 'text-cyan-200 hover:text-white'
               }`}
             >
               <History size={11} /> History

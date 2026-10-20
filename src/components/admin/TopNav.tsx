@@ -9,9 +9,10 @@ import ThemeToggle from '@/components/common/ThemeToggle';
 
 interface TopNavProps {
   onMenuClick: () => void;
+  isMobileOpen?: boolean;
 }
 
-export default function TopNav({ onMenuClick }: TopNavProps) {
+export default function TopNav({ onMenuClick, isMobileOpen = false }: TopNavProps) {
   const supabase = createClient();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
 
@@ -37,17 +38,41 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
     : 'AD';
 
   return (
-    <header className="h-16 md:h-[68px] bg-white dark:bg-[#090e1a]/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-colors duration-300">
+    <header className="h-16 md:h-[68px] w-full bg-white/95 dark:bg-[#090e1a]/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800/80 px-3 sm:px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-colors duration-300">
 
       {/* ── LEFT: Hamburger + Modal buttons ───────────────────────── */}
       <div className="flex items-center gap-2 md:gap-3">
 
-        {/* Hamburger — mobile only */}
+        {/* Animated Hamburger — mobile only */}
         <button
           onClick={onMenuClick}
-          className="md:hidden p-2 -ml-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800/80 rounded-xl transition-colors shrink-0"
+          aria-label={isMobileOpen ? "Close navigation menu" : "Open navigation menu"}
+          className="md:hidden w-10 h-10 -ml-1 flex flex-col items-center justify-center gap-1.5 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800/80 rounded-xl transition-colors shrink-0"
         >
-          <Menu size={22} />
+          <motion.span
+            animate={{
+              rotate: isMobileOpen ? 45 : 0,
+              y: isMobileOpen ? 7 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="w-5 h-0.5 bg-current rounded-full origin-center"
+          />
+          <motion.span
+            animate={{
+              opacity: isMobileOpen ? 0 : 1,
+              x: isMobileOpen ? -8 : 0,
+            }}
+            transition={{ duration: 0.15 }}
+            className="w-5 h-0.5 bg-current rounded-full"
+          />
+          <motion.span
+            animate={{
+              rotate: isMobileOpen ? -45 : 0,
+              y: isMobileOpen ? -7 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="w-5 h-0.5 bg-current rounded-full origin-center"
+          />
         </button>
 
         {/* Teams button with hotkey indicator */}

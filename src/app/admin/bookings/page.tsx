@@ -649,22 +649,22 @@ export default function BookingManagement() {
   };
 
   return (
-    <div className="min-h-screen pb-10 p-2 md:p-4 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen pb-10 w-full max-w-full overflow-x-clip">
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ duration: 4000 }} />
 
       {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#0c1427]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-3 -mx-2 px-3 pt-2.5 pb-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#030816] via-[#091e3e] to-[#040e22] text-white border-b border-cyan-500/30 shadow-[0_4px_24px_rgba(6,182,212,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
         {/* Top Row: Title + Action Icons */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <ClipboardList size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Bookings
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+              <p className="text-[10px] font-bold text-cyan-300/80">
                 {filteredBookings.length} records
               </p>
             </div>
@@ -677,13 +677,13 @@ export default function BookingManagement() {
                 setShowMobileSearch(prev => !prev);
                 if (showFilters) setShowFilters(false);
               }}
-              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              className={`p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                searchQuery || showMobileSearch ? 'bg-cyan-500/30 text-cyan-200 border-cyan-400/50 ring-1 ring-cyan-400/40' : ''
               }`}
               title="Search"
               aria-label="Search"
             >
-              <Search size={16} />
+              <Search size={15} />
             </button>
 
             {/* Filter Toggle */}
@@ -692,32 +692,32 @@ export default function BookingManagement() {
                 setShowFilters(prev => !prev);
                 if (showMobileSearch) setShowMobileSearch(false);
               }}
-              className={`relative p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                showFilters || filterCompany || filterStatus ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30' : ''
+              className={`relative p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                showFilters || filterCompany || filterStatus ? 'bg-rose-500/30 text-rose-200 border-rose-400/50 ring-1 ring-rose-400/40' : ''
               }`}
               title="Filters"
               aria-label="Filters"
             >
-              <Filter size={16} />
+              <Filter size={15} />
               {(filterCompany || filterStatus) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#0c1427]" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-400 ring-2 ring-[#040e22]" />
               )}
             </button>
 
             {/* Export Excel */}
             <button
               onClick={handleExportExcel}
-              className="p-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+              className="p-1.5 rounded-lg text-emerald-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all"
               title="Export Excel"
               aria-label="Export Excel"
             >
-              <FileSpreadsheet size={16} />
+              <FileSpreadsheet size={15} />
             </button>
 
             {/* New Booking Button */}
             <button
               onClick={() => setIsAddOpen(true)}
-              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+              className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
             >
               <Plus size={14} strokeWidth={3} />
               <span>New</span>
@@ -727,21 +727,21 @@ export default function BookingManagement() {
 
         {/* Micro 4-Metric Bar */}
         <div className="grid grid-cols-4 gap-1.5 pt-1">
-          <div className="bg-gray-50 dark:bg-[#070b14] border border-gray-100 dark:border-slate-800/80 rounded-lg px-2 py-1 text-center">
-            <p className="text-[8px] font-black uppercase text-gray-400 tracking-wider">Total</p>
-            <p className="text-xs font-black text-gray-900 dark:text-white leading-tight">{stats.total}</p>
+          <div className="bg-white/10 border border-white/15 rounded-lg px-2 py-1 text-center shadow-sm">
+            <p className="text-[8px] font-black uppercase text-cyan-200/80 tracking-wider">Total</p>
+            <p className="text-xs font-black text-white leading-tight">{stats.total}</p>
           </div>
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 text-center">
-            <p className="text-[8px] font-black uppercase text-amber-500 tracking-wider">Pending</p>
-            <p className="text-xs font-black text-amber-600 dark:text-amber-400 leading-tight">{stats.pending}</p>
+          <div className="bg-amber-500/20 border border-amber-500/30 rounded-lg px-2 py-1 text-center shadow-sm">
+            <p className="text-[8px] font-black uppercase text-amber-300 tracking-wider">Pending</p>
+            <p className="text-xs font-black text-amber-200 leading-tight">{stats.pending}</p>
           </div>
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-2 py-1 text-center">
-            <p className="text-[8px] font-black uppercase text-blue-500 tracking-wider">Active</p>
-            <p className="text-xs font-black text-blue-600 dark:text-blue-400 leading-tight">{stats.active}</p>
+          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg px-2 py-1 text-center shadow-sm">
+            <p className="text-[8px] font-black uppercase text-blue-300 tracking-wider">Active</p>
+            <p className="text-xs font-black text-blue-200 leading-tight">{stats.active}</p>
           </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 text-center">
-            <p className="text-[8px] font-black uppercase text-emerald-500 tracking-wider">Done</p>
-            <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 leading-tight">{stats.completed}</p>
+          <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg px-2 py-1 text-center shadow-sm">
+            <p className="text-[8px] font-black uppercase text-emerald-300 tracking-wider">Done</p>
+            <p className="text-xs font-black text-emerald-200 leading-tight">{stats.completed}</p>
           </div>
         </div>
 
@@ -752,7 +752,7 @@ export default function BookingManagement() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="pt-2 overflow-hidden"
+              className="pt-2 overflow-hidden border-t border-white/10 mt-2"
             >
               <div className="relative flex items-center">
                 <input
@@ -760,14 +760,14 @@ export default function BookingManagement() {
                   placeholder="Search ref, company, unit..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-8 pr-8 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-cyan-500"
                   autoFocus
                 />
                 <Search size={14} className="absolute left-2.5 text-gray-400" />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2.5 text-gray-400 hover:text-white"
                   >
                     <X size={12} />
                   </button>
@@ -778,7 +778,8 @@ export default function BookingManagement() {
         </AnimatePresence>
       </div>
 
-      {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
+      <div className="px-3 md:px-4">
+        {/* ── DESKTOP HEADER (hidden md:block — 100% untouched) ── */}
       <div className="hidden md:block">
         <div className='bg-gradient-to-br from-gray-900 via-[#0A192F] to-black text-white pt-6 pb-6 px-4 md:px-8 shadow-2xl relative z-10 mb-4 rounded-3xl overflow-hidden dark:border dark:border-cyan-500/20 dark:shadow-[0_12px_40px_rgba(6,182,212,0.15)]'>
           {/* Light mode gradient */}
@@ -1534,6 +1535,7 @@ export default function BookingManagement() {
         />
       )}
 
+      </div>
     </div>
   );
 }

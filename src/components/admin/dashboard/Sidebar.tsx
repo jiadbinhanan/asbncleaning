@@ -366,15 +366,15 @@ export default function Sidebar({
         animate={{ width: isDesktopCollapsed ? 64 : 210 }}
         transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         className={`
-          fixed top-0 left-0 h-screen z-50 flex flex-col
+          fixed inset-y-0 left-0 h-[100dvh] max-h-[100dvh] z-50 flex flex-col
           bg-white/96 ${themeStyling.bgDark} backdrop-blur-sm
           border-r border-slate-200/80 ${themeStyling.borderDark}
           shadow-[4px_0_28px_-4px_rgba(148,163,184,0.15)] dark:shadow-[4px_0_28px_-4px_rgba(0,0,0,0.6)]
           cursor-pointer
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
-          w-[210px] md:w-auto
-          transition-colors duration-300
+          w-[240px] md:w-auto
+          transition-[transform,colors] duration-300 ease-in-out
         `}
       >
         <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${themeStyling.topLine} transition-all duration-300`} />
@@ -448,8 +448,8 @@ export default function Sidebar({
           </motion.button>
         </div>
 
-        {/* ── Menu Container ── */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 custom-scrollbar relative z-10">
+        {/* ── Menu Container (Scrollable) ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-3 px-2 pb-8 custom-scrollbar relative z-10">
           {menuCategories.map((category, catIdx) => (
             <div key={category.label}>
               {catIdx === 0 ? (

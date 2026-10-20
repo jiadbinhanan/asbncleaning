@@ -152,35 +152,35 @@ export default function EmployeeManagement() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-[#070b14] pb-10 font-sans w-full max-w-full overflow-x-clip">
 
       {/* ── MOBILE APP-OPTIMIZED STICKY HEADER (md:hidden) ── */}
-      <div className="md:hidden sticky top-16 z-30 bg-white/95 dark:bg-[#030816]/95 backdrop-blur-xl border-b border-gray-200/80 dark:border-cyan-500/20 shadow-sm transition-colors mb-2 px-3 pt-2.5 pb-2">
+      <div className="md:hidden sticky top-16 z-30 bg-gradient-to-r from-[#030816] via-[#091b38] to-[#040e22] text-white border-b border-cyan-500/30 shadow-[0_4px_24px_rgba(6,182,212,0.18)] transition-all mb-3 px-3 pt-2.5 pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0 shadow-sm">
               <User size={18} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white leading-tight truncate">
+              <h1 className="text-sm font-black text-white leading-tight truncate">
                 Staff Directory
               </h1>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-cyan-300/80">
+              <p className="text-[10px] font-bold text-cyan-300/80">
                 {filteredEmployees.length} active staff
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Search Toggle */}
             <button
               onClick={() => setShowMobileSearch(prev => !prev)}
-              className={`p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors ${
-                searchQuery || showMobileSearch ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30' : ''
+              className={`p-1.5 rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all ${
+                searchQuery || showMobileSearch ? 'bg-cyan-500/30 text-cyan-200 border-cyan-400/50 ring-1 ring-cyan-400/40' : ''
               }`}
               title="Search staff"
             >
-              <Search size={16} />
+              <Search size={15} />
             </button>
 
             {/* Refresh */}
@@ -191,15 +191,15 @@ export default function EmployeeManagement() {
               }}
               title="Refresh Directory"
               aria-label="Refresh Directory"
-              className="p-2 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-1.5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg transition-all"
             >
-              <RotateCw size={16} />
+              <RotateCw size={15} />
             </button>
 
             {/* Add Staff */}
             <button
               onClick={() => setIsAddOpen(true)}
-              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-sm active:scale-95"
+              className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-cyan-500/20 active:scale-95"
             >
               <Plus size={14} /> Add
             </button>
@@ -213,7 +213,7 @@ export default function EmployeeManagement() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="pt-2 overflow-hidden"
+              className="pt-2 overflow-hidden border-t border-white/10 mt-2"
             >
               <div className="relative flex items-center">
                 <input
@@ -221,12 +221,12 @@ export default function EmployeeManagement() {
                   placeholder="Search by name, username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-8 py-2 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-8 pr-8 py-2 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-cyan-500"
                   autoFocus
                 />
                 <Search size={14} className="absolute left-2.5 text-gray-400" />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-2.5 text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setSearchQuery('')} className="absolute right-2.5 text-gray-400 hover:text-white">
                     <X size={12} />
                   </button>
                 )}
