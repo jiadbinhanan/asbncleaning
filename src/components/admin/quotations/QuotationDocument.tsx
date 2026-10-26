@@ -21,11 +21,20 @@ export type TemplateSection = {
   rows: string[][];  // each row is an array of cell values matching columns order
 };
 
+export const DEFAULT_QUOTATION_TERMS: string[] = [
+  "Prices quoted are valid for 30 days from the issue date.",
+  "Payment terms: 50% advance, 50% upon delivery.",
+  "Delivery timeline: Within 10 working days after confirmation.",
+  "All products include standard manufacturer warranty.",
+  "Transportation and installation fees are excluded unless specified.",
+];
+
 export interface QuotationProps {
   quoteNo: string;
   date: string;
   customerName: string;
   sections: TemplateSection[];  // comes from quotation_templates.sections (DB)
+  terms?: string[];             // dynamic Terms & Conditions
 }
 
 // ---------------------------------------------------------------------------
@@ -372,42 +381,44 @@ const IntroText = ({ customerName }: { customerName: string }) => (
 // 6. LAST PAGE FIXED CONTENT — Terms & Signature
 // ---------------------------------------------------------------------------
 
-const TermsAndSignature = () => (
-  <>
-    <SectionTitle title="TERMS & CONDITIONS" />
-    <View style={styles.termsBox}>
-      <Text style={styles.termItem}>• Prices quoted are valid for 30 days from the issue date.</Text>
-      <Text style={styles.termItem}>• Payment terms: 50% advance, 50% upon delivery.</Text>
-      <Text style={styles.termItem}>• Delivery timeline: Within 10 working days after confirmation.</Text>
-      <Text style={styles.termItem}>• All products include standard manufacturer warranty.</Text>
-      <Text style={styles.termItem}>• Transportation and installation fees are excluded unless specified.</Text>
-    </View>
+const TermsAndSignature = ({ terms }: { terms?: string[] }) => {
+  const displayTerms = terms && terms.length > 0 ? terms : DEFAULT_QUOTATION_TERMS;
 
-    <View style={styles.signatureSection}>
-      <View style={styles.sigBlock}>
-        <View style={styles.stampArea} />
-        <View style={styles.sigLine} />
-        <Text style={styles.sigText}>CUSTOMER SIGNATURE</Text>
+  return (
+    <>
+      <SectionTitle title="TERMS & CONDITIONS" />
+      <View style={styles.termsBox}>
+        {displayTerms.map((term, idx) => (
+          <Text key={idx} style={styles.termItem}>• {term}</Text>
+        ))}
       </View>
-      <View style={styles.sigBlock}>
-        <View style={styles.stampArea}>
-          <Image src="/stamp_btm_invoice.png" style={styles.stampImg} />
+
+      <View style={styles.signatureSection}>
+        <View style={styles.sigBlock}>
+          <View style={styles.stampArea} />
+          <View style={styles.sigLine} />
+          <Text style={styles.sigText}>CUSTOMER SIGNATURE</Text>
         </View>
-        <View style={styles.sigLine} />
-        <Text style={styles.sigText}>AUTHORIZED SIGNATORY</Text>
-        <Text style={styles.sigSubText}>BTM Cleaning and Technical Service Co.</Text>
+        <View style={styles.sigBlock}>
+          <View style={styles.stampArea}>
+            <Image src="/stamp_btm_invoice.png" style={styles.stampImg} />
+          </View>
+          <View style={styles.sigLine} />
+          <Text style={styles.sigText}>AUTHORIZED SIGNATORY</Text>
+          <Text style={styles.sigSubText}>BTM Cleaning and Technical Service Co.</Text>
+        </View>
       </View>
-    </View>
 
-    <View style={styles.thankYou}>
-      <Text style={styles.thankYouTitle}>THANK YOU FOR YOUR BUSINESS</Text>
-      <Text style={styles.thankYouSub}>
-        We appreciate the opportunity to work with you and look forward to a
-        long-term partnership.
-      </Text>
-    </View>
-  </>
-);
+      <View style={styles.thankYou}>
+        <Text style={styles.thankYouTitle}>THANK YOU FOR YOUR BUSINESS</Text>
+        <Text style={styles.thankYouSub}>
+          We appreciate the opportunity to work with you and look forward to a
+          long-term partnership.
+        </Text>
+      </View>
+    </>
+  );
+};
 
 // ---------------------------------------------------------------------------
 // 7. PAGE NUMBER HELPER
@@ -436,6 +447,7 @@ export const QuotationDocument = ({
   date,
   customerName,
   sections,
+  terms,
 }: QuotationProps) => {
 
   return (
@@ -482,7 +494,7 @@ export const QuotationDocument = ({
           ))}
 
           {/* Terms & signature always at the end, after all sections */}
-          <TermsAndSignature />
+          <TermsAndSignature terms={terms} />
 
         </View>
 

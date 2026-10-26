@@ -4,15 +4,16 @@ import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Download, History, User, DollarSign,
-  ArrowLeft, Search, Calendar, ExternalLink, Building2, RefreshCw,
+  Search, Calendar, ExternalLink, Building2, RefreshCw,
   ChevronDown, AlertCircle, LayoutTemplate, Trash2, RotateCw,
+  Plus, ArrowUp, ArrowDown, ListOrdered,
 } from "lucide-react";
 import DotsLoader from "@/components/common/DotsLoader";
 import { TableSkeleton } from "@/components/common/Skeleton";
 import Kbd from "@/components/common/Kbd";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { format } from "date-fns";
-import { QuotationDocument } from "@/components/admin/quotations/QuotationDocument";
+import { QuotationDocument, DEFAULT_QUOTATION_TERMS } from "@/components/admin/quotations/QuotationDocument";
 import type { TemplateSection } from "@/components/admin/quotations/QuotationDocument";
 import TemplateBuilder from "@/components/admin/quotations/TemplateBuilder";
 import { getQuotationUploadSignature, saveQuotationRecord, deleteQuotationRecord } from "./actions";
@@ -35,6 +36,7 @@ type Template = {
   name: string;
   is_default: boolean;
   sections: TemplateSection[];
+  terms?: string[];
 };
 
 type ActiveView = "generator" | "history" | "templates";
@@ -71,6 +73,7 @@ export default function QuotationManager() {
   const [date, setDate] = useState("");
   const [customerName, setCustomerName] = useState("Valued Customer");
   const [editableSections, setEditableSections] = useState<TemplateSection[]>([]);
+  const [editableTerms, setEditableTerms] = useState<string[]>([]);
 
   // --- History states ---
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -93,10 +96,20 @@ export default function QuotationManager() {
   const fetchTemplates = useCallback(async () => {
     setLoadingTemplates(true);
     setTemplateError("");
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("quotation_templates")
-      .select("id, name, is_default, sections")
+      .select("id, name, is_default, sections, terms")
       .order("created_at", { ascending: true });
+
+    if (error && error.code === "42703") {
+      // Fallback if terms column does not exist yet in DB
+      const fallback = await supabase
+        .from("quotation_templates")
+        .select("id, name, is_default, sections")
+        .order("created_at", { ascending: true });
+      data = fallback.data as unknown as typeof data;
+      error = fallback.error;
+    }
 
     if (error || !data) {
       setTemplateError("Failed to load templates. Please refresh.");
@@ -104,11 +117,18 @@ export default function QuotationManager() {
       return;
     }
 
-    setTemplates(data as Template[]);
-    const def = (data as Template[]).find((t) => t.is_default) ?? data[0];
+    const rawList = data as unknown as Template[];
+    const normalized = rawList.map((t) => ({
+      ...t,
+      terms: Array.isArray(t.terms) && t.terms.length > 0 ? t.terms : [...DEFAULT_QUOTATION_TERMS],
+    }));
+
+    setTemplates(normalized as Template[]);
+    const def = (normalized as Template[]).find((t) => t.is_default) ?? normalized[0];
     if (def) {
       setSelectedTemplateId(def.id);
       setEditableSections(cloneSections(def.sections));
+      setEditableTerms(def.terms ? [...def.terms] : [...DEFAULT_QUOTATION_TERMS]);
     }
     setLoadingTemplates(false);
   }, [supabase]);
@@ -117,7 +137,10 @@ export default function QuotationManager() {
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplateId(templateId);
     const tpl = templates.find((t) => t.id === templateId);
-    if (tpl) setEditableSections(cloneSections(tpl.sections));
+    if (tpl) {
+      setEditableSections(cloneSections(tpl.sections));
+      setEditableTerms(tpl.terms ? [...tpl.terms] : [...DEFAULT_QUOTATION_TERMS]);
+    }
   };
 
   // ── Edit a cell (DB untouched) ──────────────────────────────────────────
@@ -149,6 +172,40 @@ export default function QuotationManager() {
           : { ...tpl.sections[sectionIdx], rows: tpl.sections[sectionIdx].rows.map((r) => [...r]) }
       )
     );
+  };
+
+  // ── Terms: quote-specific actions ────────────────────────────────────────
+  const handleTermEdit = (idx: number, value: string) => {
+    setEditableTerms((prev) => {
+      const copy = [...prev];
+      copy[idx] = value;
+      return copy;
+    });
+  };
+
+  const handleAddTerm = () => {
+    setEditableTerms((prev) => [...prev, ""]);
+  };
+
+  const handleRemoveTerm = (idx: number) => {
+    setEditableTerms((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleMoveTerm = (idx: number, direction: "up" | "down") => {
+    setEditableTerms((prev) => {
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const temp = copy[idx];
+      copy[idx] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+  };
+
+  const handleResetTerms = () => {
+    const tpl = templates.find((t) => t.id === selectedTemplateId);
+    setEditableTerms(tpl?.terms ? [...tpl.terms] : [...DEFAULT_QUOTATION_TERMS]);
   };
 
   // ── Fetch history ───────────────────────────────────────────────────────
@@ -210,12 +267,14 @@ export default function QuotationManager() {
     setIsGenerating(true);
     try {
       const { pdf } = await import("@react-pdf/renderer");
+      const cleanTerms = editableTerms.filter((t) => t.trim() !== "");
       const blob = await pdf(
         <QuotationDocument
           quoteNo={quoteNo}
           date={date}
           customerName={customerName}
           sections={editableSections}
+          terms={cleanTerms.length > 0 ? cleanTerms : undefined}
         />
       ).toBlob();
       const pdfFile = new File([blob], `${quoteNo}.pdf`, { type: "application/pdf" });
@@ -627,6 +686,91 @@ export default function QuotationManager() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Editable Terms & Conditions */}
+                {editableSections.length > 0 && (
+                  <div className="bg-white dark:bg-[#0c0819]/80 dark:backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-purple-500/20">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 md:mb-6 border-b border-gray-100 dark:border-slate-800 pb-3 md:pb-4">
+                      <div className="flex items-center gap-2">
+                        <ListOrdered size={20} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                        <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">
+                          Terms &amp; Conditions
+                        </h2>
+                        <span className="text-xs font-medium text-gray-400 dark:text-slate-500 hidden sm:inline ml-2">
+                          Changes apply only to this PDF
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleResetTerms}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800/80 rounded-xl transition-colors"
+                          title="Reset to template default terms"
+                        >
+                          <RefreshCw size={12} /> Reset to Template
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddTerm}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 rounded-xl text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all"
+                        >
+                          <Plus size={13} /> Add Term
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {editableTerms.map((term, tIdx) => (
+                        <div key={tIdx} className="flex items-center gap-2 group/term">
+                          <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 flex items-center justify-center text-xs font-black shrink-0">
+                            {tIdx + 1}
+                          </div>
+                          <input
+                            type="text"
+                            value={term}
+                            onChange={(e) => handleTermEdit(tIdx, e.target.value)}
+                            placeholder="e.g. Payment terms: 50% advance, 50% upon delivery."
+                            className="flex-1 py-2.5 px-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white dark:focus:bg-[#090d1a] transition-all min-w-0"
+                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              disabled={tIdx === 0}
+                              onClick={() => handleMoveTerm(tIdx, "up")}
+                              className="p-2 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg disabled:opacity-20 transition-all"
+                              title="Move up"
+                            >
+                              <ArrowUp size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={tIdx === editableTerms.length - 1}
+                              onClick={() => handleMoveTerm(tIdx, "down")}
+                              className="p-2 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg disabled:opacity-20 transition-all"
+                              title="Move down"
+                            >
+                              <ArrowDown size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTerm(tIdx)}
+                              className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                              title="Remove term"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {editableTerms.length === 0 && (
+                        <div className="text-center py-6 border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl text-xs text-gray-400 dark:text-slate-500">
+                          No custom terms added. Click &quot;Add Term&quot; or &quot;Reset to Template&quot;.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

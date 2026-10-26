@@ -8,11 +8,13 @@ import {
   X, ChevronDown, ChevronUp, GripVertical, AlertCircle,
   LayoutTemplate, TableProperties, RowsIcon,
   Columns3, ArrowUpDown, Layers, RefreshCw, Info,
+  ArrowUp, ArrowDown, ListOrdered,
 } from "lucide-react";
 import DotsLoader from "@/components/common/DotsLoader";
 import { CardGridSkeleton } from "@/components/common/Skeleton";
 import Kbd from "@/components/common/Kbd";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { DEFAULT_QUOTATION_TERMS } from "@/components/admin/quotations/QuotationDocument";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +38,7 @@ type Template = {
   name: string;
   is_default: boolean;
   sections: TemplateSection[];
+  terms?: string[];
   created_at: string;
   updated_at: string;
 };
@@ -175,7 +178,12 @@ export default function TemplateBuilder() {
     if (error || !data) {
       setError("Could not load templates. Check your connection.");
     } else {
-      setTemplates(data as Template[]);
+      const rawList = data as unknown as Template[];
+      const normalized = rawList.map((t) => ({
+        ...t,
+        terms: Array.isArray(t.terms) && t.terms.length > 0 ? t.terms : [...DEFAULT_QUOTATION_TERMS],
+      }));
+      setTemplates(normalized as Template[]);
     }
     setLoading(false);
   }, [supabase]);
@@ -214,25 +222,43 @@ export default function TemplateBuilder() {
     setSaveError("");
     setSaving(true);
 
-    const payload = {
+    const cleanTerms = (editing.terms ?? DEFAULT_QUOTATION_TERMS).filter((t) => t.trim() !== "");
+
+    const payload: Record<string, unknown> = {
       name: editing.name.trim(),
       is_default: editing.is_default,
       sections: editing.sections,
+      terms: cleanTerms,
     };
 
-    let dbError: any = null;
+    let dbError: { message?: string } | null = null;
 
     if (editing.id.startsWith("NEW_")) {
       // Insert
-      const { error } = await supabase.from("quotation_templates").insert([payload]);
-      dbError = error;
+      let res = await supabase.from("quotation_templates").insert([payload]);
+      if (res.error && res.error.code === "42703") {
+        // Fallback: terms column does not exist yet in DB
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.terms;
+        res = await supabase.from("quotation_templates").insert([fallbackPayload]);
+      }
+      dbError = res.error;
     } else {
       // Update
-      const { error } = await supabase
+      let res = await supabase
         .from("quotation_templates")
         .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", editing.id);
-      dbError = error;
+      if (res.error && res.error.code === "42703") {
+        // Fallback: terms column does not exist yet in DB
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.terms;
+        res = await supabase
+          .from("quotation_templates")
+          .update({ ...fallbackPayload, updated_at: new Date().toISOString() })
+          .eq("id", editing.id);
+      }
+      dbError = res.error;
     }
 
     setSaving(false);
@@ -272,6 +298,7 @@ export default function TemplateBuilder() {
       name: `${tpl.name} (Copy)`,
       is_default: false,
       sections: cloneSections(tpl.sections),
+      terms: tpl.terms ? [...tpl.terms] : [...DEFAULT_QUOTATION_TERMS],
       created_at: "",
       updated_at: "",
     };
@@ -286,6 +313,7 @@ export default function TemplateBuilder() {
       name: "",
       is_default: false,
       sections: [],
+      terms: [...DEFAULT_QUOTATION_TERMS],
       created_at: "",
       updated_at: "",
     };
@@ -325,8 +353,57 @@ export default function TemplateBuilder() {
     setEditing({
       ...tpl,
       sections: cloneSections(tpl.sections),
+      terms: tpl.terms && tpl.terms.length > 0 ? [...tpl.terms] : [...DEFAULT_QUOTATION_TERMS],
     });
     setSaveError("");
+  };
+
+  // ── Terms: Actions ────────────────────────────────────────────────────────
+  const handleTermChange = (idx: number, val: string) => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const terms = [...(prev.terms ?? DEFAULT_QUOTATION_TERMS)];
+      terms[idx] = val;
+      return { ...prev, terms };
+    });
+  };
+
+  const handleAddTerm = () => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const terms = [...(prev.terms ?? DEFAULT_QUOTATION_TERMS)];
+      terms.push("");
+      return { ...prev, terms };
+    });
+  };
+
+  const handleRemoveTerm = (idx: number) => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const terms = [...(prev.terms ?? DEFAULT_QUOTATION_TERMS)];
+      terms.splice(idx, 1);
+      return { ...prev, terms };
+    });
+  };
+
+  const handleMoveTerm = (idx: number, direction: "up" | "down") => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const terms = [...(prev.terms ?? DEFAULT_QUOTATION_TERMS)];
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= terms.length) return prev;
+      const temp = terms[idx];
+      terms[idx] = terms[targetIdx];
+      terms[targetIdx] = temp;
+      return { ...prev, terms };
+    });
+  };
+
+  const handleResetTerms = () => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      return { ...prev, terms: [...DEFAULT_QUOTATION_TERMS] };
+    });
   };
 
   // ── Section: toggle accordion ──────────────────────────────────────────────
@@ -1024,6 +1101,105 @@ export default function TemplateBuilder() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Terms and Conditions Editor ── */}
+      <div className="bg-white dark:bg-[#0c1427] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm p-5 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+              <ListOrdered size={20} />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-900 dark:text-white text-base">
+                Terms &amp; Conditions
+              </h3>
+              <p className="text-xs text-gray-400 dark:text-slate-400">
+                Default bullet points printed on the final page of quotations using this template.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetTerms}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800/80 rounded-xl transition-colors"
+              title="Reset to default terms"
+            >
+              <RefreshCw size={13} /> Reset Defaults
+            </button>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleAddTerm}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow-sm transition-all"
+            >
+              <Plus size={14} /> Add Line
+            </motion.button>
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          {(editing.terms ?? DEFAULT_QUOTATION_TERMS).map((term, tIdx) => (
+            <motion.div
+              key={tIdx}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 group/term"
+            >
+              {/* Bullet / Number indicator */}
+              <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 flex items-center justify-center text-xs font-black shrink-0">
+                {tIdx + 1}
+              </div>
+
+              {/* Text input */}
+              <input
+                type="text"
+                value={term}
+                onChange={(e) => handleTermChange(tIdx, e.target.value)}
+                placeholder="e.g. Payment terms: 50% advance, 50% upon delivery."
+                className="flex-1 py-2.5 px-3.5 bg-gray-50 dark:bg-[#070b14] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white dark:focus:bg-[#090d1a] transition-all min-w-0"
+              />
+
+              {/* Move up / down */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  disabled={tIdx === 0}
+                  onClick={() => handleMoveTerm(tIdx, "up")}
+                  className="p-2 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+                  title="Move up"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  disabled={tIdx === (editing.terms ?? DEFAULT_QUOTATION_TERMS).length - 1}
+                  onClick={() => handleMoveTerm(tIdx, "down")}
+                  className="p-2 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+                  title="Move down"
+                >
+                  <ArrowDown size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTerm(tIdx)}
+                  className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                  title="Delete term"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+
+          {(editing.terms ?? DEFAULT_QUOTATION_TERMS).length === 0 && (
+            <div className="text-center py-6 border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl text-xs text-gray-400 dark:text-slate-500">
+              No terms added. Click &quot;Add Line&quot; or &quot;Reset Defaults&quot;.
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Floating save reminder (shows when sections > 0) */}
       <AnimatePresence>
